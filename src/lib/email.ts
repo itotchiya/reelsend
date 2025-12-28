@@ -1,33 +1,40 @@
 import nodemailer from "nodemailer";
 
+// Log SMTP configuration (without password) for debugging
+console.log("[SMTP_CONFIG] Host:", process.env.SMTP_HOST);
+console.log("[SMTP_CONFIG] Port:", process.env.SMTP_PORT);
+console.log("[SMTP_CONFIG] User:", process.env.SMTP_USER ? "SET" : "NOT SET");
+console.log("[SMTP_CONFIG] Password:", process.env.SMTP_PASSWORD ? "SET" : "NOT SET");
+console.log("[SMTP_CONFIG] From:", process.env.SMTP_FROM);
+
 // Create transporter using SMTP
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: parseInt(process.env.SMTP_PORT || "587"),
-    secure: process.env.SMTP_SECURE === "true",
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD,
-    },
+  host: process.env.SMTP_HOST || "smtp.gmail.com",
+  port: parseInt(process.env.SMTP_PORT || "587"),
+  secure: process.env.SMTP_SECURE === "true",
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASSWORD,
+  },
 });
 
 interface InvitationEmailParams {
-    to: string;
-    inviterName: string;
-    roleName: string;
-    inviteToken: string;
+  to: string;
+  inviterName: string;
+  roleName: string;
+  inviteToken: string;
 }
 
 export async function sendInvitationEmail({
-    to,
-    inviterName,
-    roleName,
-    inviteToken,
+  to,
+  inviterName,
+  roleName,
+  inviteToken,
 }: InvitationEmailParams) {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const setupUrl = `${appUrl}/setup-account?token=${inviteToken}`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const setupUrl = `${appUrl}/setup-account?token=${inviteToken}`;
 
-    const html = `
+  const html = `
     <!DOCTYPE html>
     <html>
       <head>
@@ -75,19 +82,19 @@ export async function sendInvitationEmail({
     </html>
   `;
 
-    const mailOptions = {
-        from: process.env.SMTP_FROM || '"Reelsend" <noreply@reelsend.com>',
-        to,
-        subject: `${inviterName} has invited you to join Reelsend`,
-        html,
-    };
+  const mailOptions = {
+    from: process.env.SMTP_FROM || '"Reelsend" <noreply@reelsend.com>',
+    to,
+    subject: `${inviterName} has invited you to join Reelsend`,
+    html,
+  };
 
-    try {
-        console.log("[EMAIL_SEND] From:", mailOptions.from, "To:", mailOptions.to);
-        await transporter.sendMail(mailOptions);
-        return { success: true };
-    } catch (error) {
-        console.error("Failed to send invitation email:", error);
-        return { success: false, error };
-    }
+  try {
+    console.log("[EMAIL_SEND] From:", mailOptions.from, "To:", mailOptions.to);
+    await transporter.sendMail(mailOptions);
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send invitation email:", error);
+    return { success: false, error };
+  }
 }
