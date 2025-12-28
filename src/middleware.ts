@@ -11,7 +11,7 @@ export default auth((req) => {
         nextUrl.pathname.startsWith(route)
     );
 
-    // Portal routes (for external clients)
+    // Portal routes (for external clients) s
     const isPortalRoute = nextUrl.pathname.startsWith("/portal");
 
     // If user is not logged in and trying to access protected route
