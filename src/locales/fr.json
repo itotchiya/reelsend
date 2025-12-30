@@ -131,7 +131,6 @@
         "noAudiences": "Aucune audience pour le moment",
         "noTemplates": "Aucun modèle pour le moment",
         "public": "Public",
-        "private": "Privé",
-        "copyPortalLink": "Copier le Lien Portail"
+        "private": "Privé"
     }
 }
