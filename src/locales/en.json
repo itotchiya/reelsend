@@ -131,6 +131,7 @@
         "noAudiences": "No audiences yet",
         "noTemplates": "No templates yet",
         "public": "Public",
-        "private": "Private"
+        "private": "Private",
+        "copyPortalLink": "Copy Portal Link"
     }
 }
