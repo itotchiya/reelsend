@@ -46,6 +46,10 @@ export default async function ClientDetailPage({ params }: PageProps) {
                 take: 5,
                 orderBy: { createdAt: "desc" },
             },
+            smtpTestLogs: {
+                take: 10,
+                orderBy: { testedAt: "desc" },
+            },
         },
     });
 
@@ -74,6 +78,10 @@ export default async function ClientDetailPage({ params }: PageProps) {
             ...t,
             createdAt: t.createdAt.toISOString(),
             updatedAt: t.updatedAt.toISOString(),
+        })),
+        smtpTestLogs: client.smtpTestLogs.map((log) => ({
+            ...log,
+            testedAt: log.testedAt.toISOString(),
         })),
     };
 

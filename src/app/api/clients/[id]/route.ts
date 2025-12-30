@@ -33,6 +33,10 @@ export async function GET(req: Request, { params }: RouteParams) {
                         domains: true,
                     },
                 },
+                smtpTestLogs: {
+                    orderBy: { testedAt: "desc" },
+                    take: 10,
+                },
             },
         });
 
@@ -69,6 +73,7 @@ export async function PATCH(req: Request, { params }: RouteParams) {
             logo,
             brandColors,
             active,
+            status,
             isPublic,
             smtpHost,
             smtpPort,
@@ -104,6 +109,7 @@ export async function PATCH(req: Request, { params }: RouteParams) {
                 ...(logo !== undefined && { logo }),
                 ...(brandColors !== undefined && { brandColors }),
                 ...(active !== undefined && { active }),
+                ...(status !== undefined && { status }),
                 ...(isPublic !== undefined && { isPublic }),
                 ...(smtpHost !== undefined && { smtpHost }),
                 ...(smtpPort !== undefined && { smtpPort }),

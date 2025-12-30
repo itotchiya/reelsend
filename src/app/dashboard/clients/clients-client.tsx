@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { InteractiveCard } from "@/components/ui/interactive-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { InteractiveCard } from "@/components/ui/interactive-card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     Dialog,
     DialogClose,
@@ -23,6 +24,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 import {
     Building2,
     Plus,
@@ -32,11 +34,17 @@ import {
     Users,
     Mail,
     FileText,
+    Upload,
+    Lock,
+    Unlock,
+    Globe,
+    AlertCircle
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 import { Spinner } from "@/components/ui/spinner";
+import { toast } from "sonner";
 
 interface Client {
     id: string;
@@ -45,6 +53,9 @@ interface Client {
     logo: string | null;
     brandColors: any | null;
     active: boolean;
+    status: string;
+    isPublic: boolean;
+    smtpVerified: boolean;
     createdAt: string;
     updatedAt: string;
     _count: {
@@ -70,26 +81,52 @@ export function ClientsClient({
     const router = useRouter();
     const { t } = useI18n();
     const [clients, setClients] = useState<Client[]>(initialClients);
-    const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
     const [loading, setLoading] = useState(false);
+    const [uploadingLogo, setUploadingLogo] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Form states
     const [formName, setFormName] = useState("");
     const [formSlug, setFormSlug] = useState("");
+    const [formLogo, setFormLogo] = useState<string | null>(null);
 
     const resetForm = () => {
         setFormName("");
         setFormSlug("");
+        setFormLogo(null);
     };
 
-    const generateSlug = (name: string) => {
-        return name
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-|-$/g, "");
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !selectedClient) return;
+
+        setUploadingLogo(true);
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("clientId", selectedClient.id);
+
+            const res = await fetch("/api/upload/client-logo", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (res.ok) {
+                const { url } = await res.json();
+                setFormLogo(url);
+                toast.success("Logo uploaded successfully");
+            } else {
+                const error = await res.text();
+                toast.error(error || "Failed to upload logo");
+            }
+        } catch (error) {
+            toast.error("Failed to upload logo");
+        } finally {
+            setUploadingLogo(false);
+        }
     };
 
     const handleEditClient = async (e: React.FormEvent) => {
@@ -104,17 +141,21 @@ export function ClientsClient({
                 body: JSON.stringify({
                     name: formName,
                     slug: formSlug,
+                    logo: formLogo,
                 }),
             });
 
             if (res.ok) {
                 const updatedClient = await res.json();
-                setClients(clients.map((c) => (c.id === updatedClient.id ? updatedClient : c)));
+                setClients(clients.map((c) => (c.id === updatedClient.id ? { ...c, ...updatedClient } : c)));
                 setIsEditOpen(false);
                 resetForm();
+                toast.success("Client updated successfully");
+            } else {
+                toast.error("Failed to update client");
             }
         } catch (error) {
-            console.error(error);
+            toast.error("Failed to update client");
         } finally {
             setLoading(false);
         }
@@ -132,9 +173,12 @@ export function ClientsClient({
             if (res.ok) {
                 setClients(clients.filter((c) => c.id !== selectedClient.id));
                 setIsDeleteOpen(false);
+                toast.success("Client deleted successfully");
+            } else {
+                toast.error("Failed to delete client");
             }
         } catch (error) {
-            console.error(error);
+            toast.error("Failed to delete client");
         } finally {
             setLoading(false);
         }
@@ -144,12 +188,22 @@ export function ClientsClient({
         setSelectedClient(client);
         setFormName(client.name);
         setFormSlug(client.slug);
+        setFormLogo(client.logo);
         setIsEditOpen(true);
     };
 
     const openDelete = (client: Client) => {
         setSelectedClient(client);
         setIsDeleteOpen(true);
+    };
+
+    const getInitials = (name: string) => {
+        return name
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2);
     };
 
     return (
@@ -191,102 +245,178 @@ export function ClientsClient({
                 ) : (
                     /* Client Grid */
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {clients.map((client) => {
-                            const initials = client.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")
-                                .toUpperCase()
-                                .slice(0, 2);
+                        {clients.map((client) => (
+                            <InteractiveCard
+                                key={client.id}
+                                onClick={() => router.push(`/dashboard/clients/${client.slug}`)}
+                                className="group h-full"
+                            >
+                                <div className="flex flex-col h-full space-y-5">
+                                    {/* Header Section */}
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="relative">
+                                                <Avatar className="h-14 w-14 rounded-2xl border-2 border-background shadow-sm">
+                                                    <AvatarImage src={client.logo || ""} className="object-cover" />
+                                                    <AvatarFallback className="rounded-2xl bg-muted text-lg font-bold">
+                                                        {getInitials(client.name)}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                {/* Status Indicator Color Dot */}
+                                                <div className={cn(
+                                                    "absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-background",
+                                                    (client.status?.toLowerCase() === "active" || (!client.status && client.active)) ? "bg-blue-500" :
+                                                        client.status?.toLowerCase() === "suspended" ? "bg-yellow-500" : "bg-red-500"
+                                                )} />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <h3 className="font-bold text-lg truncate leading-tight">{client.name}</h3>
+                                                <p className="text-sm text-muted-foreground/80 font-medium">@{client.slug}</p>
+                                            </div>
+                                        </div>
 
-                            return (
-                                <InteractiveCard
-                                    key={client.id}
-                                    className="h-full"
-                                    onClick={() => router.push(`/dashboard/clients/${client.slug}`)}
-                                >
-                                    <div className="flex flex-col h-full relative">
-                                        {/* Actions Dropdown */}
                                         {(canEdit || canDelete) && (
-                                            <div className="absolute top-0 right-0" onClick={(e) => e.stopPropagation()}>
+                                            <div onClick={(e) => e.stopPropagation()}>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                            <MoreVertical className="h-4 w-4" />
+                                                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-muted/50">
+                                                            <MoreVertical className="h-5 w-5 opacity-60 group-hover:opacity-100 transition-opacity" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
+                                                    <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl border-muted/20">
                                                         {canEdit && (
-                                                            <DropdownMenuItem onClick={() => openEdit(client)}>
-                                                                <Pencil className="mr-2 h-4 w-4" />
-                                                                {t.common.edit}
+                                                            <DropdownMenuItem onClick={() => openEdit(client)} className="py-2.5 rounded-lg cursor-pointer">
+                                                                <Pencil className="mr-3 h-4 w-4 opacity-70" />
+                                                                <span className="font-medium">{t.common.edit}</span>
                                                             </DropdownMenuItem>
                                                         )}
                                                         {canDelete && (
                                                             <DropdownMenuItem
                                                                 onClick={() => openDelete(client)}
-                                                                className="text-destructive focus:text-destructive"
+                                                                className="py-2.5 rounded-lg text-destructive focus:text-destructive cursor-pointer"
                                                             >
-                                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                                {t.common.delete}
+                                                                <Trash2 className="mr-3 h-4 w-4 opacity-70" />
+                                                                <span className="font-medium">{t.common.delete}</span>
                                                             </DropdownMenuItem>
                                                         )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </div>
                                         )}
+                                    </div>
 
-                                        {/* Logo/Avatar */}
-                                        <div className="flex items-center gap-4 mb-4">
-                                            {client.logo ? (
-                                                <img
-                                                    src={client.logo}
-                                                    alt={client.name}
-                                                    className="h-14 w-14 rounded-xl object-cover border"
-                                                />
+                                    {/* Middle Section: Badges (Modern) */}
+                                    <div className="flex items-center gap-2">
+                                        <div className={cn(
+                                            "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-colors",
+                                            (client.status?.toLowerCase() === "active" || (!client.status && client.active))
+                                                ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                                                : client.status?.toLowerCase() === "suspended"
+                                                    ? "bg-yellow-500/10 text-yellow-600 border-yellow-500/20"
+                                                    : "bg-red-500/10 text-red-600 border-red-500/20"
+                                        )}>
+                                            <span className={cn("h-1.5 w-1.5 rounded-full",
+                                                (client.status?.toLowerCase() === "active" || (!client.status && client.active)) ? "bg-blue-500" :
+                                                    client.status?.toLowerCase() === "suspended" ? "bg-yellow-500" : "bg-red-500"
+                                            )} />
+                                            <span className="capitalize">{client.status || (client.active ? (t.clients?.active || "active") : (t.clients?.inactive || "inactive"))}</span>
+                                        </div>
+
+                                        {/* Portal Privacy Badge */}
+                                        <div className={cn(
+                                            "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-colors",
+                                            client.isPublic
+                                                ? "bg-indigo-500/10 text-indigo-600 border-indigo-500/20"
+                                                : "bg-zinc-500/10 text-zinc-600 border-zinc-500/20"
+                                        )}>
+                                            {client.isPublic ? <Unlock className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+                                            {client.isPublic ? "Public" : "Private"}
+                                        </div>
+
+                                        {/* SMTP Status Badge */}
+                                        <div className={cn(
+                                            "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-colors",
+                                            client.smtpVerified
+                                                ? "bg-green-500/10 text-green-600 border-green-500/20"
+                                                : "bg-orange-500/10 text-orange-600 border-orange-500/20"
+                                        )}>
+                                            {client.smtpVerified ? (
+                                                <div className="flex items-center gap-1.5">
+                                                    <Mail className="h-3 w-3" />
+                                                    <span>SMTP Verified</span>
+                                                </div>
                                             ) : (
-                                                <div className="h-14 w-14 rounded-xl bg-muted flex items-center justify-center">
-                                                    <span className="text-xl font-bold text-foreground">{initials}</span>
+                                                <div className="flex items-center gap-1.5">
+                                                    <AlertCircle className="h-3 w-3" />
+                                                    <span>SMTP Fix Required</span>
                                                 </div>
                                             )}
-                                            <div className="flex-1 min-w-0">
-                                                <h3 className="text-lg font-bold truncate">{client.name}</h3>
-                                                <p className="text-sm text-muted-foreground">@{client.slug}</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Status Badge */}
-                                        <div className="mb-4">
-                                            <Badge variant={client.active ? "default" : "secondary"}>
-                                                {client.active ? (t.clients?.active || "Active") : (t.clients?.inactive || "Inactive")}
-                                            </Badge>
-                                        </div>
-
-                                        {/* Stats */}
-                                        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mt-auto">
-                                            <div className="flex items-center gap-1.5">
-                                                <Mail className="h-3.5 w-3.5" />
-                                                <span>{client._count.campaigns} {t.common.campaigns?.toLowerCase() || "campaigns"}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <Users className="h-3.5 w-3.5" />
-                                                <span>{client._count.audiences} {t.common.audiences?.toLowerCase() || "audiences"}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <FileText className="h-3.5 w-3.5" />
-                                                <span>{client._count.templates} {t.common.templates?.toLowerCase() || "templates"}</span>
-                                            </div>
                                         </div>
                                     </div>
-                                </InteractiveCard>
-                            );
-                        })}
+
+                                    {/* KPI Section - Interactive Badges */}
+                                    <div className="grid grid-cols-3 gap-3 pt-2 mt-auto">
+                                        {[
+                                            {
+                                                label: t.common.campaigns,
+                                                count: client._count.campaigns,
+                                                icon: Mail,
+                                                tab: "campaigns",
+                                                color: "indigo"
+                                            },
+                                            {
+                                                label: t.common.audiences,
+                                                count: client._count.audiences,
+                                                icon: Users,
+                                                tab: "audiences",
+                                                color: "violet"
+                                            },
+                                            {
+                                                label: t.common.templates,
+                                                count: client._count.templates,
+                                                icon: FileText,
+                                                tab: "templates",
+                                                color: "blue"
+                                            }
+                                        ].map((kpi) => (
+                                            <div
+                                                key={kpi.tab}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    router.push(`/dashboard/clients/${client.slug}?tab=${kpi.tab}`);
+                                                }}
+                                                className="relative group/kpi flex flex-col items-center justify-center p-3 rounded-2xl border border-dotted border-muted/40 bg-muted/5 hover:bg-muted/10 transition-all duration-300 overflow-hidden cursor-pointer active:scale-95 hover:border-muted/60 hover:-translate-y-0.5"
+                                            >
+                                                {/* Beautiful Blur Overlay */}
+                                                <div className={cn(
+                                                    "absolute inset-0 opacity-0 group-hover/kpi:opacity-100 transition-opacity duration-300",
+                                                    kpi.color === "indigo" ? "bg-indigo-500/[0.12]" :
+                                                        kpi.color === "violet" ? "bg-violet-500/[0.12]" : "bg-blue-500/[0.12]"
+                                                )} />
+
+                                                <div className="relative flex flex-col items-center space-y-1">
+                                                    <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-tight group-hover/kpi:text-muted-foreground transition-colors">
+                                                        {kpi.label}
+                                                    </span>
+                                                    <span className="text-xl font-black tabular-nums tracking-tight">
+                                                        {kpi.count}
+                                                    </span>
+                                                </div>
+
+                                                {/* Subtle Background Icon */}
+                                                <kpi.icon className="absolute -bottom-1 -right-1 h-10 w-10 text-muted-foreground/5 opacity-0 group-hover/kpi:opacity-10 transition-all duration-500 rotate-12 group-hover/kpi:rotate-0 group-hover/kpi:scale-110" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </InteractiveCard>
+                        ))}
                     </div>
                 )}
 
                 {/* Edit Client Dialog */}
                 <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                    <DialogContent className="sm:max-w-[425px]">
+                    <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                             <DialogTitle>{t.clients?.editClient || "Edit Client"}</DialogTitle>
                             <DialogDescription>
@@ -294,6 +424,46 @@ export function ClientsClient({
                             </DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleEditClient} className="space-y-4 py-4">
+                            {/* Logo Upload */}
+                            <div className="space-y-2">
+                                <Label>Logo</Label>
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="h-16 w-16 rounded-lg">
+                                        <AvatarImage src={formLogo || ""} className="object-cover" />
+                                        <AvatarFallback className="rounded-lg bg-muted text-lg font-semibold">
+                                            {getInitials(formName || "C")}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={handleLogoUpload}
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="gap-2"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={uploadingLogo}
+                                        >
+                                            {uploadingLogo ? (
+                                                <Spinner className="h-4 w-4" />
+                                            ) : (
+                                                <Upload className="h-4 w-4" />
+                                            )}
+                                            Upload Logo
+                                        </Button>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            PNG, JPG, WebP or SVG. Max 10MB.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="space-y-2">
                                 <Label htmlFor="edit-name">{t.clients?.clientName || "Client Name"}</Label>
                                 <Input
@@ -326,7 +496,7 @@ export function ClientsClient({
 
                 {/* Delete Client Dialog */}
                 <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                    <DialogContent className="sm:max-w-[425px]">
+                    <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                             <DialogTitle className="text-destructive">
                                 {t.clients?.deleteClient || "Delete Client"}
@@ -347,7 +517,7 @@ export function ClientsClient({
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
-            </PageContent >
+            </PageContent>
         </>
     );
 }

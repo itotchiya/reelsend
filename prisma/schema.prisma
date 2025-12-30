@@ -156,6 +156,7 @@ model Client {
   brandColors Json?    // { primary, secondary, cta }
   fonts       Json?    // { heading, body }
   active      Boolean  @default(true)
+  status      String   @default("active") // active, suspended, deactivated
   isPublic    Boolean  @default(false)
   
   // SMTP Settings
@@ -164,6 +165,8 @@ model Client {
   smtpUser     String?
   smtpPassword String?
   smtpSecure   Boolean @default(true)
+  smtpVerified Boolean @default(false)
+  smtpLastTested DateTime?
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -174,6 +177,7 @@ model Client {
   campaigns      Campaign[]
   portalUsers    ClientPortalUser[]
   shareableLinks ShareableLink[]
+  smtpTestLogs   SmtpTestLog[]
 }
 
 model Domain {
@@ -395,3 +399,24 @@ model ActivityLog {
   @@index([resource, resourceId])
   @@index([createdAt])
 }
+
+// ============================================
+// SMTP TEST LOGS
+// ============================================
+
+model SmtpTestLog {
+  id           String   @id @default(cuid())
+  clientId     String
+  smtpHost     String
+  smtpPort     Int
+  smtpUser     String
+  smtpSecure   Boolean
+  success      Boolean
+  errorMessage String?
+  testedAt     DateTime @default(now())
+  
+  client       Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  @@index([clientId, testedAt])
+}
+

@@ -15,9 +15,15 @@ import {
     Link as LinkIcon,
     Lock,
     Unlock,
-    Calendar
+    Calendar,
+    AlertCircle,
+    ChevronRight,
+    CheckCircle,
+    XCircle,
+    History,
 } from "lucide-react";
 import { useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
@@ -26,6 +32,15 @@ import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
 import { useEffect } from "react";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Spinner } from "@/components/ui/spinner";
+import { CreateAudienceDialog } from "@/components/dashboard/create-audience-dialog";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 
 interface Audience {
     id: string;
@@ -50,14 +65,27 @@ interface Template {
     createdAt: string;
 }
 
+interface SmtpTestLog {
+    id: string;
+    smtpHost: string;
+    smtpPort: number;
+    smtpUser: string;
+    smtpSecure: boolean;
+    success: boolean;
+    errorMessage: string | null;
+    testedAt: string;
+}
+
 interface Client {
     id: string;
     name: string;
     slug: string;
     logo: string | null;
     brandColors: any | null;
+    status?: string;
     active: boolean;
     isPublic: boolean;
+    smtpVerified: boolean;
     createdAt: string;
     updatedAt: string;
     _count: {
@@ -69,6 +97,7 @@ interface Client {
     audiences: Audience[];
     campaigns: Campaign[];
     templates: Template[];
+    smtpTestLogs?: SmtpTestLog[];
 }
 
 interface ClientDetailClientProps {
@@ -79,8 +108,13 @@ interface ClientDetailClientProps {
 export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps) {
     const { t } = useI18n();
 
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const activeTab = searchParams?.get("tab") || "campaigns";
+
     const [isPublic, setIsPublic] = useState(client.isPublic);
     const [updating, setUpdating] = useState(false);
+    const [isCreateAudienceOpen, setIsCreateAudienceOpen] = useState(false);
     const { setOverride, removeOverride } = useBreadcrumbs();
 
     useEffect(() => {
@@ -122,7 +156,11 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
 
     return (
         <>
-            <PageHeader title={client.name} showBack>
+            <PageHeader
+                title={client.name}
+                showBack
+                onBack={() => router.push("/dashboard/clients")}
+            >
                 <ButtonGroup>
                     <Button
                         variant="outline"
@@ -148,138 +186,175 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
             </PageHeader>
             <PageContent>
                 <div className="space-y-8">
-                    {/* Luma-style Profile Header */}
+                    {/* Header with Avatar Only */}
                     <div className="relative">
-                        {/* Dynamic Gradient Cover */}
+                        {/* Gradient Cover */}
                         <div
-                            className="h-48 md:h-64 rounded-3xl overflow-hidden relative group"
+                            className="h-32 rounded-2xl overflow-hidden"
                             style={{
                                 background: `linear-gradient(135deg, ${client.brandColors?.primary || '#6366f1'} 0%, ${client.brandColors?.secondary || '#a855f7'} 100%)`
                             }}
-                        >
-                            <div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors" />
-                        </div>
+                        />
 
-                        {/* Logo and Info */}
-                        <div className="px-8 -mt-16 relative">
-                            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6">
-                                <div className="space-y-6">
-                                    {/* Logo with thick stroke background */}
-                                    <div className="h-32 w-32 md:h-40 md:w-40 rounded-[2.5rem] bg-background p-2 flex items-center justify-center overflow-hidden border-[12px] border-background relative z-20">
-                                        {client.logo ? (
-                                            <div className="relative w-full h-full flex items-center justify-center">
-                                                <img
-                                                    src={client.logo}
-                                                    alt={client.name}
-                                                    className="w-full h-full object-contain"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <div className="h-full w-full rounded-[1.5rem] bg-gradient-to-br from-indigo-500/10 to-purple-500/10 flex items-center justify-center">
-                                                <span className="text-4xl font-bold text-indigo-500">{initials}</span>
-                                            </div>
-                                        )}
+                        {/* Avatar positioned at bottom of cover */}
+                        <div className="px-6 -mt-10 relative">
+                            <div className="h-20 w-20 rounded-xl bg-background border-2 border-background flex items-center justify-center overflow-hidden shadow-none">
+                                {client.logo ? (
+                                    <img
+                                        src={client.logo}
+                                        alt={client.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="h-full w-full bg-muted flex items-center justify-center">
+                                        <span className="text-xl font-bold text-muted-foreground">{initials}</span>
                                     </div>
-
-                                    {/* Text Info below Logo */}
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-3">
-                                            <h2 className="text-4xl font-extrabold tracking-tight text-foreground">
-                                                {client.name}
-                                            </h2>
-                                            <Badge variant={client.active ? "default" : "secondary"} className="h-6">
-                                                {client.active ? (t.clients?.active || "Active") : (t.clients?.inactive || "Inactive")}
-                                            </Badge>
-                                        </div>
-                                        <div className="flex items-center gap-4 text-lg">
-                                            <p className="text-muted-foreground font-semibold">@{client.slug}</p>
-                                            <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-                                            <div className="flex items-center gap-2 text-muted-foreground">
-                                                <Calendar className="h-4 w-4" />
-                                                <span>{new Date(client.createdAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Primary Action Row */}
-                                <div className="flex items-center gap-3 md:mb-2">
-                                    <Link href={`/dashboard/clients/${client.slug}/settings`}>
-                                        <Button variant="outline" size="lg" className="rounded-full px-6 gap-2">
-                                            <Settings className="h-4 w-4" />
-                                            {t.common.settings}
-                                        </Button>
-                                    </Link>
-                                    <Button size="lg" className="rounded-full px-8 font-bold">
-                                        Client Details
-                                    </Button>
-                                </div>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Stats Cards */}
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <Card className="bg-dashboard-surface/50 border-none shadow-none hover:bg-dashboard-surface transition-colors">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">
-                                    {t.common.campaigns}
-                                </CardTitle>
-                                <Mail className="h-4 w-4 text-muted-foreground opacity-50" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{client._count.campaigns}</div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-dashboard-surface/50 border-none shadow-none hover:bg-dashboard-surface transition-colors">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">
-                                    {t.common.audiences}
-                                </CardTitle>
-                                <Users className="h-4 w-4 text-muted-foreground opacity-50" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{client._count.audiences}</div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-dashboard-surface/50 border-none shadow-none hover:bg-dashboard-surface transition-colors">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">
-                                    {t.common.templates}
-                                </CardTitle>
-                                <FileText className="h-4 w-4 text-muted-foreground opacity-50" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{client._count.templates}</div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-dashboard-surface/50 border-none shadow-none hover:bg-dashboard-surface transition-colors">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">
-                                    {t.common.domains}
-                                </CardTitle>
-                                <Globe className="h-4 w-4 text-muted-foreground opacity-50" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{client._count.domains}</div>
-                            </CardContent>
-                        </Card>
+                    {/* Client Details Section */}
+                    <div className="rounded-xl border border-dashed p-6">
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <p className="text-lg font-semibold">{client.name}</p>
+                                <div className={cn(
+                                    "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-colors",
+                                    (client.status?.toLowerCase() === "active" || (!client.status && client.active))
+                                        ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                                        : client.status?.toLowerCase() === "suspended"
+                                            ? "bg-yellow-500/10 text-yellow-600 border-yellow-500/20"
+                                            : "bg-red-500/10 text-red-600 border-red-500/20"
+                                )}>
+                                    <span className={cn("h-1.5 w-1.5 rounded-full",
+                                        (client.status?.toLowerCase() === "active" || (!client.status && client.active)) ? "bg-blue-500" :
+                                            client.status?.toLowerCase() === "suspended" ? "bg-yellow-500" : "bg-red-500"
+                                    )} />
+                                    <span className="capitalize">{client.status || (client.active ? (t.clients?.active || "active") : (t.clients?.inactive || "inactive"))}</span>
+                                </div>
+
+                                <div className={cn(
+                                    "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-colors",
+                                    client.smtpVerified
+                                        ? "bg-green-500/10 text-green-600 border-green-500/20"
+                                        : "bg-orange-500/10 text-orange-600 border-orange-500/20"
+                                )}>
+                                    {client.smtpVerified ? (
+                                        <>
+                                            <Mail className="h-3 w-3" />
+                                            <span>{t.clients.smtpVerified}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <AlertCircle className="h-3 w-3" />
+                                            <span>{t.clients.smtpFixRequired}</span>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                            <Link href={`/dashboard/clients/${client.slug}/edit`}>
+                                <Button size="sm" className="gap-2">
+                                    <Settings className="h-4 w-4" />
+                                    {t.clients.editClient}
+                                </Button>
+                            </Link>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                            <div className="space-y-1">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wider">{t.clients.slug}</p>
+                                <p className="font-medium text-muted-foreground">@{client.slug}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wider">{t.clients.created}</p>
+                                <p className="font-medium text-muted-foreground">
+                                    {new Date(client.createdAt).toLocaleDateString(undefined, {
+                                        day: 'numeric',
+                                        month: 'long',
+                                        year: 'numeric'
+                                    })}
+                                </p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wider">{t.clients.lastUpdated}</p>
+                                <p className="font-medium text-muted-foreground">
+                                    {new Date(client.updatedAt).toLocaleDateString(undefined, {
+                                        day: 'numeric',
+                                        month: 'long',
+                                        year: 'numeric'
+                                    })}
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
+                    {/* Stats Cards with dashed border */}
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        {[
+                            { label: t.common.campaigns, count: client._count.campaigns, icon: Mail, color: "indigo" },
+                            { label: t.common.audiences, count: client._count.audiences, icon: Users, color: "violet" },
+                            { label: t.common.templates, count: client._count.templates, icon: FileText, color: "blue" },
+                            { label: t.common.domains, count: client._count.domains, icon: Globe, color: "emerald" }
+                        ].map((stat) => (
+                            <div
+                                key={stat.label}
+                                className="relative group rounded-xl border border-dashed border-muted-foreground/30 p-4 transition-all duration-300 hover:border-muted-foreground/50 overflow-hidden"
+                            >
+                                <div className={cn(
+                                    "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none",
+                                    stat.color === "indigo" ? "bg-indigo-500/[0.05]" :
+                                        stat.color === "violet" ? "bg-violet-500/[0.05]" :
+                                            stat.color === "blue" ? "bg-blue-500/[0.05]" : "bg-emerald-500/[0.05]"
+                                )} />
+                                <div className="relative z-10">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <p className="text-sm text-muted-foreground uppercase tracking-wider font-semibold text-[10px]">{stat.label}</p>
+                                        <stat.icon className="h-4 w-4 text-muted-foreground/50" />
+                                    </div>
+                                    <p className="text-2xl font-bold">{stat.count}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+
                     {/* Tabs for related data */}
-                    <Tabs defaultValue="campaigns" className="space-y-4">
-                        <TabsList className="bg-muted/50 p-1">
-                            <TabsTrigger value="campaigns">{t.common.campaigns}</TabsTrigger>
-                            <TabsTrigger value="audiences">{t.common.audiences}</TabsTrigger>
-                            <TabsTrigger value="templates">{t.common.templates}</TabsTrigger>
+                    <Tabs
+                        defaultValue={activeTab}
+                        value={activeTab}
+                        onValueChange={(value) => {
+                            const params = new URLSearchParams(searchParams?.toString());
+                            params.set("tab", value);
+                            router.replace(`?${params.toString()}`, { scroll: false });
+                        }}
+                    >
+                        <TabsList className="bg-muted/30 p-1">
+                            <TabsTrigger value="campaigns" className="gap-2">
+                                {t.common.campaigns}
+                                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-bold bg-muted-foreground/10 text-muted-foreground border-none">
+                                    {client._count.campaigns}
+                                </Badge>
+                            </TabsTrigger>
+                            <TabsTrigger value="audiences" className="gap-2">
+                                {t.common.audiences}
+                                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-bold bg-muted-foreground/10 text-muted-foreground border-none">
+                                    {client._count.audiences}
+                                </Badge>
+                            </TabsTrigger>
+                            <TabsTrigger value="templates" className="gap-2">
+                                {t.common.templates}
+                                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-bold bg-muted-foreground/10 text-muted-foreground border-none">
+                                    {client._count.templates}
+                                </Badge>
+                            </TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="campaigns" className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold">{t.clients?.recentCampaigns || "Recent Campaigns"}</h3>
-                                <Button size="sm" className="gap-2 bg-indigo-600 hover:bg-indigo-700">
+                                <h3 className="text-lg font-semibold">{t.clients.recentCampaigns}</h3>
+                                <Button size="sm" className="gap-2">
                                     <Plus className="h-4 w-4" />
-                                    {t.clients?.createCampaign || "Create Campaign"}
+                                    {t.clients.createCampaign}
                                 </Button>
                             </div>
                             {client.campaigns.length === 0 ? (
@@ -289,40 +364,62 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                                             <Mail className="h-6 w-6 text-muted-foreground" />
                                         </div>
                                         <p className="text-muted-foreground font-medium">
-                                            {t.clients?.noCampaigns || "No campaigns yet"}
+                                            {t.clients.noCampaigns}
                                         </p>
                                     </CardContent>
                                 </Card>
                             ) : (
-                                <div className="grid gap-4">
-                                    {client.campaigns.map((campaign) => (
-                                        <Card key={campaign.id} className="hover:bg-dashboard-surface transition-colors border-none shadow-none bg-dashboard-surface/50">
-                                            <CardHeader className="py-4">
-                                                <div className="flex items-center justify-between">
-                                                    <CardTitle className="text-base font-semibold">{campaign.name}</CardTitle>
-                                                    <Badge
-                                                        variant={
-                                                            campaign.status === "SENT" ? "default" :
-                                                                campaign.status === "DRAFT" ? "secondary" : "outline"
-                                                        }
-                                                    >
-                                                        {campaign.status}
-                                                    </Badge>
-                                                </div>
-                                                <CardDescription>{campaign.subject}</CardDescription>
-                                            </CardHeader>
-                                        </Card>
-                                    ))}
+                                <div className="rounded-xl border border-dashed overflow-hidden bg-card/30">
+                                    <Table>
+                                        <TableHeader className="bg-muted/30">
+                                            <TableRow className="hover:bg-transparent border-dashed">
+                                                <TableHead className="w-[300px] uppercase text-[10px] font-bold tracking-wider py-4">{t.tables.name}</TableHead>
+                                                <TableHead className="uppercase text-[10px] font-bold tracking-wider py-4">{t.tables.subject}</TableHead>
+                                                <TableHead className="uppercase text-[10px] font-bold tracking-wider py-4">{t.tables.status}</TableHead>
+                                                <TableHead className="text-right uppercase text-[10px] font-bold tracking-wider py-4"></TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {client.campaigns.map((campaign) => (
+                                                <TableRow
+                                                    key={campaign.id}
+                                                    className="group cursor-pointer hover:bg-muted/50 transition-colors border-dashed"
+                                                    onClick={() => router.push(`/dashboard/clients/${client.slug}/campaigns/${campaign.id}`)}
+                                                >
+                                                    <TableCell className="font-bold py-4">{campaign.name}</TableCell>
+                                                    <TableCell className="text-muted-foreground py-4">{campaign.subject}</TableCell>
+                                                    <TableCell className="py-4">
+                                                        <Badge
+                                                            variant={
+                                                                campaign.status === "SENT" ? "default" :
+                                                                    campaign.status === "DRAFT" ? "secondary" : "outline"
+                                                            }
+                                                            className="font-bold text-[10px] uppercase tracking-wider"
+                                                        >
+                                                            {campaign.status}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-right py-4">
+                                                        <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors ml-auto" />
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
                                 </div>
                             )}
                         </TabsContent>
 
                         <TabsContent value="audiences" className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold">{t.clients?.recentAudiences || "Recent Audiences"}</h3>
-                                <Button size="sm" className="gap-2 bg-indigo-600 hover:bg-indigo-700">
+                                <h3 className="text-lg font-semibold">{t.audiences.recentAudiences}</h3>
+                                <Button
+                                    size="sm"
+                                    className="gap-2"
+                                    onClick={() => setIsCreateAudienceOpen(true)}
+                                >
                                     <Plus className="h-4 w-4" />
-                                    {t.clients?.createAudience || "Create Audience"}
+                                    {t.audiences.createAudience}
                                 </Button>
                             </div>
                             {client.audiences.length === 0 ? (
@@ -332,37 +429,54 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                                             <Users className="h-6 w-6 text-muted-foreground" />
                                         </div>
                                         <p className="text-muted-foreground font-medium">
-                                            {t.clients?.noAudiences || "No audiences yet"}
+                                            {t.clients.noAudiences}
                                         </p>
                                     </CardContent>
                                 </Card>
                             ) : (
-                                <div className="grid gap-4">
-                                    {client.audiences.map((audience) => (
-                                        <Card key={audience.id} className="hover:bg-dashboard-surface transition-colors border-none shadow-none bg-dashboard-surface/50">
-                                            <CardHeader className="py-4">
-                                                <div className="flex items-center justify-between">
-                                                    <CardTitle className="text-base font-semibold">{audience.name}</CardTitle>
-                                                    <Badge variant="secondary" className="font-medium">
-                                                        {audience.contactCount} contacts
-                                                    </Badge>
-                                                </div>
-                                                {audience.description && (
-                                                    <CardDescription>{audience.description}</CardDescription>
-                                                )}
-                                            </CardHeader>
-                                        </Card>
-                                    ))}
+                                <div className="rounded-xl border border-dashed overflow-hidden bg-card/30">
+                                    <Table>
+                                        <TableHeader className="bg-muted/30">
+                                            <TableRow className="hover:bg-transparent border-dashed">
+                                                <TableHead className="w-[300px] uppercase text-[10px] font-bold tracking-wider py-4">{t.tables.name}</TableHead>
+                                                <TableHead className="uppercase text-[10px] font-bold tracking-wider py-4">{t.tables.description}</TableHead>
+                                                <TableHead className="uppercase text-[10px] font-bold tracking-wider py-4">{t.tables.contacts}</TableHead>
+                                                <TableHead className="text-right uppercase text-[10px] font-bold tracking-wider py-4"></TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {client.audiences.map((audience) => (
+                                                <TableRow
+                                                    key={audience.id}
+                                                    className="group cursor-pointer hover:bg-muted/50 transition-colors border-dashed"
+                                                    onClick={() => router.push(`/dashboard/clients/${client.slug}/audiences/${audience.id}`)}
+                                                >
+                                                    <TableCell className="font-bold py-4">{audience.name}</TableCell>
+                                                    <TableCell className="text-muted-foreground py-4 line-clamp-1 h-auto max-w-[400px]">
+                                                        {audience.description || "—"}
+                                                    </TableCell>
+                                                    <TableCell className="py-4">
+                                                        <Badge variant="secondary" className="font-bold text-[10px] uppercase tracking-wider bg-muted/50">
+                                                            {audience.contactCount} {t.audiences.contacts}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-right py-4">
+                                                        <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors ml-auto" />
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
                                 </div>
                             )}
                         </TabsContent>
 
                         <TabsContent value="templates" className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold">{t.clients?.recentTemplates || "Recent Templates"}</h3>
-                                <Button size="sm" className="gap-2 bg-indigo-600 hover:bg-indigo-700">
+                                <h3 className="text-lg font-semibold">{t.clients.recentTemplates}</h3>
+                                <Button size="sm" className="gap-2">
                                     <Plus className="h-4 w-4" />
-                                    {t.clients?.createTemplate || "Create Template"}
+                                    {t.clients.createTemplate}
                                 </Button>
                             </div>
                             {client.templates.length === 0 ? (
@@ -372,28 +486,54 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                                             <FileText className="h-6 w-6 text-muted-foreground" />
                                         </div>
                                         <p className="text-muted-foreground font-medium">
-                                            {t.clients?.noTemplates || "No templates yet"}
+                                            {t.clients.noTemplates}
                                         </p>
                                     </CardContent>
                                 </Card>
                             ) : (
-                                <div className="grid gap-4">
-                                    {client.templates.map((template) => (
-                                        <Card key={template.id} className="hover:bg-dashboard-surface transition-colors border-none shadow-none bg-dashboard-surface/50">
-                                            <CardHeader className="py-4">
-                                                <CardTitle className="text-base font-semibold">{template.name}</CardTitle>
-                                                {template.description && (
-                                                    <CardDescription>{template.description}</CardDescription>
-                                                )}
-                                            </CardHeader>
-                                        </Card>
-                                    ))}
+                                <div className="rounded-xl border border-dashed overflow-hidden bg-card/30">
+                                    <Table>
+                                        <TableHeader className="bg-muted/30">
+                                            <TableRow className="hover:bg-transparent border-dashed">
+                                                <TableHead className="w-[300px] uppercase text-[10px] font-bold tracking-wider py-4">{t.tables.name}</TableHead>
+                                                <TableHead className="uppercase text-[10px] font-bold tracking-wider py-4">{t.tables.description}</TableHead>
+                                                <TableHead className="text-right uppercase text-[10px] font-bold tracking-wider py-4"></TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {client.templates.map((template) => (
+                                                <TableRow
+                                                    key={template.id}
+                                                    className="group cursor-pointer hover:bg-muted/50 transition-colors border-dashed"
+                                                    onClick={() => router.push(`/dashboard/clients/${client.slug}/templates/${template.id}`)}
+                                                >
+                                                    <TableCell className="font-bold py-4">{template.name}</TableCell>
+                                                    <TableCell className="text-muted-foreground py-4 line-clamp-1 h-auto max-w-[500px]">
+                                                        {template.description || "—"}
+                                                    </TableCell>
+                                                    <TableCell className="text-right py-4">
+                                                        <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors ml-auto" />
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
                                 </div>
                             )}
                         </TabsContent>
                     </Tabs>
                 </div>
             </PageContent>
+
+            <CreateAudienceDialog
+                open={isCreateAudienceOpen}
+                onOpenChange={setIsCreateAudienceOpen}
+                clientId={client.id}
+                onSuccess={() => {
+                    // Refresh the page data
+                    router.refresh();
+                }}
+            />
         </>
     );
 }

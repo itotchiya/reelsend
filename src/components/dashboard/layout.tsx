@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
+import { NotificationsToggle } from "@/components/notifications-toggle";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { useI18n } from "@/lib/i18n";
 import {
     LayoutDashboard,
@@ -28,6 +30,7 @@ import {
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
+    SidebarFooter,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
@@ -106,8 +109,18 @@ export function AppSidebar() {
     const pathname = usePathname();
     const { data: session } = useSession();
     const { t } = useI18n();
+    const { user: userProfile } = useUserProfile();
 
     const userPermissions = (session?.user as any)?.permissions as string[] | undefined;
+    const userName = userProfile?.name || session?.user?.name || "User";
+    const userEmail = userProfile?.email || session?.user?.email || "";
+    const userImage = userProfile?.image || null;
+    const initials = userName
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
 
     // Translation map for navigation labels
     const navLabels: Record<string, string> = {
@@ -196,6 +209,50 @@ export function AppSidebar() {
                     </SidebarGroup>
                 ))}
             </SidebarContent>
+
+            <SidebarFooter className="p-4">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <SidebarMenuButton
+                            size="lg"
+                            className="w-full flex items-center gap-3 px-3 h-14 hover:bg-background/60 rounded-xl transition-all"
+                        >
+                            <Avatar className="h-8 w-8 rounded-full shrink-0">
+                                <AvatarImage src={userImage || ""} className="rounded-full" />
+                                <AvatarFallback className="rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                                    {initials}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col items-start flex-1 min-w-0">
+                                <span className="text-sm font-bold truncate w-full text-foreground tracking-tight">{userName}</span>
+                                <span className="text-[11px] text-muted-foreground truncate w-full">{userEmail}</span>
+                            </div>
+                            <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                        </SidebarMenuButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56" side="right" sideOffset={10}>
+                        <div className="px-2 py-2">
+                            <p className="text-sm font-medium">{userName}</p>
+                            <p className="text-xs text-muted-foreground">{userEmail}</p>
+                        </div>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                            <Link href="/dashboard/settings" className="cursor-pointer">
+                                <Settings className="mr-2 h-4 w-4" />
+                                {t.common.settings}
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            className="text-destructive cursor-pointer focus:text-destructive focus:bg-destructive/10"
+                            onClick={() => signOut({ callbackUrl: "/login" })}
+                        >
+                            <LogOut className="mr-2 h-4 w-4" />
+                            {t.common.signOut}
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </SidebarFooter>
         </Sidebar>
     );
 }
@@ -231,84 +288,65 @@ function DashboardBreadcrumb() {
     // Filter out UUID-like segments for display but keep paths correct
     const displaySegments = segments.filter(s => !s.match(/^[a-z0-9]{20,}$/i));
 
+    // Handle ellipsis for long paths (> 4 items)
+    const MAX_ITEMS = 4;
+    const items = displaySegments.map((segment) => ({
+        label: getSegmentLabel(segment),
+        href: "/" + segments.slice(0, segments.indexOf(segment) + 1).join("/"),
+    }));
+
+    let visibleItems = items;
+    let hasEllipsis = false;
+
+    if (items.length > MAX_ITEMS) {
+        // Keep the first item and the last (MAX_ITEMS - 1) items
+        const firstItem = items[0];
+        const lastItems = items.slice(-(MAX_ITEMS - 1));
+        visibleItems = [firstItem, ...lastItems];
+        hasEllipsis = true;
+    }
+
     return (
         <Breadcrumb>
             <BreadcrumbList>
-                {displaySegments.map((segment, index) => {
-                    const href = "/" + segments.slice(0, segments.indexOf(segment) + 1).join("/");
-                    const isLast = index === displaySegments.length - 1;
-                    const label = getSegmentLabel(segment);
+                {visibleItems.map((item, index) => {
+                    const isLast = index === visibleItems.length - 1;
+                    const isFirst = index === 0;
 
                     return (
-                        <React.Fragment key={href}>
+                        <React.Fragment key={item.href}>
                             {index > 0 && <BreadcrumbSeparator>/</BreadcrumbSeparator>}
-                            <BreadcrumbItem>
-                                {isLast ? (
-                                    <BreadcrumbPage className="font-medium">{label}</BreadcrumbPage>
-                                ) : (
-                                    <BreadcrumbLink href={href} className="text-muted-foreground hover:text-foreground transition-colors">
-                                        {label}
-                                    </BreadcrumbLink>
-                                )}
-                            </BreadcrumbItem>
+                            {isFirst && hasEllipsis && (
+                                <>
+                                    <BreadcrumbItem>
+                                        <BreadcrumbLink href={item.href} className="text-muted-foreground hover:text-foreground transition-colors overflow-hidden text-ellipsis whitespace-nowrap max-w-[100px] inline-block align-bottom">
+                                            {item.label}
+                                        </BreadcrumbLink>
+                                    </BreadcrumbItem>
+                                    <BreadcrumbSeparator>/</BreadcrumbSeparator>
+                                    <BreadcrumbItem>
+                                        <span className="text-muted-foreground">...</span>
+                                    </BreadcrumbItem>
+                                </>
+                            )}
+                            {(!isFirst || !hasEllipsis) && (
+                                <BreadcrumbItem>
+                                    {isLast ? (
+                                        <BreadcrumbPage className="font-bold text-foreground overflow-hidden text-ellipsis whitespace-nowrap max-w-[150px] sm:max-w-[200px]">
+                                            {item.label}
+                                        </BreadcrumbPage>
+                                    ) : (
+                                        <BreadcrumbLink href={item.href} className="text-muted-foreground hover:text-foreground transition-colors overflow-hidden text-ellipsis whitespace-nowrap max-w-[100px] sm:max-w-[150px] inline-block align-bottom">
+                                            {item.label}
+                                        </BreadcrumbLink>
+                                    )}
+                                </BreadcrumbItem>
+                            )}
                         </React.Fragment>
                     );
                 })}
             </BreadcrumbList>
         </Breadcrumb>
-    );
-}
-
-// Header user dropdown component
-function HeaderUserDropdown() {
-    const { data: session } = useSession();
-    const { t } = useI18n();
-
-    const userName = session?.user?.name || "User";
-    const userEmail = session?.user?.email || "";
-
-    // Get initials for avatar
-    const initials = userName
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
-
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="secondary" className="flex items-center gap-2 rounded-lg px-3 py-2 outline-none border border-border/50">
-                    <Avatar className="h-7 w-7">
-                        <AvatarImage src={session?.user?.image || ""} />
-                        <AvatarFallback className="text-xs font-medium bg-primary text-primary-foreground">{initials}</AvatarFallback>
-                    </Avatar>
-                    <span className="hidden sm:block text-sm font-medium truncate max-w-[120px]">{userName}</span>
-                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground hidden sm:block" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-                <div className="px-2 py-2">
-                    <p className="text-sm font-medium">{userName}</p>
-                    <p className="text-xs text-muted-foreground">{userEmail}</p>
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                    <Link href="/dashboard/settings" className="cursor-pointer">
-                        <Settings className="mr-2 h-4 w-4" />
-                        {t.common.settings}
-                    </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                    className="text-destructive cursor-pointer focus:text-destructive focus:bg-destructive/10"
-                    onClick={() => signOut({ callbackUrl: "/login" })}
-                >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    {t.common.signOut}
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
     );
 }
 
@@ -321,28 +359,34 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     <AppSidebar />
 
                     {/* Main area wrapper */}
-                    <div className="flex-1 flex flex-col">
+                    <div className="flex-1 flex flex-col min-w-0">
                         {/* Top header bar */}
-                        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 bg-dashboard-bg px-4">
-                            {/* Left side: sidebar toggle + breadcrumbs */}
+                        <header className="sticky top-0 z-20 flex h-16 items-center gap-4 bg-dashboard-bg px-4">
+                            {/* Left side: sidebar toggle + breadcrumbs (hidden on mobile) */}
                             <div className="flex items-center gap-3">
                                 <SidebarTrigger className="h-9 w-9" />
                                 <Separator orientation="vertical" className="h-5" />
-                                <DashboardBreadcrumb />
+                                <div className="hidden md:block">
+                                    <DashboardBreadcrumb />
+                                </div>
                             </div>
 
-                            {/* Right side: language, theme, user profile */}
-                            <div className="ml-auto flex items-center gap-2">
+                            {/* Right side: notifications, language, theme */}
+                            <div className="ml-auto flex items-center gap-1 sm:gap-2">
+                                <NotificationsToggle />
                                 <LanguageToggle />
                                 <ThemeToggle />
-                                <Separator orientation="vertical" className="h-6 mx-1" />
-                                <HeaderUserDropdown />
                             </div>
                         </header>
 
+                        {/* Mobile Breadcrumb Sub-header */}
+                        <div className="md:hidden px-4 pb-3 flex items-center h-10 -mt-2">
+                            <DashboardBreadcrumb />
+                        </div>
+
                         {/* Content area - only top rounded, connects to bottom */}
                         <main className="flex-1 flex flex-col overflow-hidden px-4 pb-0">
-                            <div className="bg-dashboard-surface rounded-t-xl flex-1 flex flex-col overflow-y-auto min-h-0">
+                            <div className="bg-dashboard-surface rounded-t-xl flex-1 flex flex-col overflow-y-auto min-h-0 shadow-none border-t border-x border-border/50">
                                 {children}
                             </div>
                         </main>
