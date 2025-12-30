@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { I18nProvider } from "@/lib/i18n";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,6 +20,8 @@ export const metadata: Metadata = {
   description: "Professional email campaign management platform for agencies",
 };
 
+import { Toaster } from "sonner";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,9 +34,13 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <I18nProvider>
+            <AuthProvider>{children}</AuthProvider>
+            <Toaster position="top-right" richColors />
+          </I18nProvider>
         </ThemeProvider>
       </body>
     </html>
   );
 }
+

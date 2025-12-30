@@ -70,7 +70,7 @@ const roles = [
             "audiences:view", "audiences:create", "audiences:import", "audiences:edit", "audiences:delete",
             "domains:view", "domains:create", "domains:verify", "domains:delete",
             "analytics:view", "analytics:export",
-            "settings:view", "users:manage", "portal:share",
+            "settings:view", "portal:share",
         ],
     },
     {

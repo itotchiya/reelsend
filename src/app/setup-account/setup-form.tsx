@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Eye, EyeOff } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 interface SetupFormProps {
     token: string;
@@ -14,6 +15,7 @@ interface SetupFormProps {
 
 export default function SetupForm({ token, email }: SetupFormProps) {
     const router = useRouter();
+    const { t } = useI18n();
     const [name, setName] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -54,7 +56,6 @@ export default function SetupForm({ token, email }: SetupFormProps) {
                 throw new Error(message || "Failed to set up account");
             }
 
-            // Redirect to login with success message
             router.push("/login?setup=success");
         } catch (err) {
             setError(err instanceof Error ? err.message : "Something went wrong");
@@ -67,7 +68,7 @@ export default function SetupForm({ token, email }: SetupFormProps) {
         <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
                 <Label htmlFor="email" className="text-zinc-700 dark:text-zinc-300">
-                    Email
+                    {t.auth.email}
                 </Label>
                 <Input
                     id="email"
@@ -80,7 +81,7 @@ export default function SetupForm({ token, email }: SetupFormProps) {
 
             <div className="space-y-2">
                 <Label htmlFor="name" className="text-zinc-700 dark:text-zinc-300">
-                    Full Name
+                    {t.setup.fullName}
                 </Label>
                 <Input
                     id="name"
@@ -94,7 +95,7 @@ export default function SetupForm({ token, email }: SetupFormProps) {
 
             <div className="space-y-2">
                 <Label htmlFor="password" className="text-zinc-700 dark:text-zinc-300">
-                    Password
+                    {t.auth.password}
                 </Label>
                 <div className="relative">
                     <Input
@@ -118,7 +119,7 @@ export default function SetupForm({ token, email }: SetupFormProps) {
 
             <div className="space-y-2">
                 <Label htmlFor="confirmPassword" className="text-zinc-700 dark:text-zinc-300">
-                    Confirm Password
+                    {t.setup.confirmPassword}
                 </Label>
                 <Input
                     id="confirmPassword"
@@ -139,20 +140,20 @@ export default function SetupForm({ token, email }: SetupFormProps) {
             <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white"
+                className="w-full"
             >
                 {loading ? (
                     <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Setting up...
+                        {t.setup.settingUp}
                     </>
                 ) : (
-                    "Complete Setup"
+                    t.setup.completeSetup
                 )}
             </Button>
 
             <p className="text-center text-xs text-zinc-500 dark:text-zinc-400">
-                By continuing, you agree to our Terms of Service and Privacy Policy.
+                {t.setup.termsAgreement}
             </p>
         </form>
     );

@@ -33,16 +33,16 @@ function InteractiveCard({
             onMouseLeave={() => setVisible(false)}
             onClick={onClick}
             className={cn(
-                "relative rounded-xl p-px bg-slate-200 dark:bg-slate-800 backdrop-blur-md overflow-hidden cursor-pointer",
+                "relative rounded-xl p-px bg-zinc-200 dark:bg-zinc-800 backdrop-blur-md overflow-hidden cursor-pointer",
                 className
             )}
             {...props}
         >
-            {/* Gradient glow blob - follows mouse */}
+            {/* Gradient glow blob - follows mouse - neutral grayscale */}
             <div
                 className={cn(
                     "pointer-events-none blur-3xl rounded-full absolute z-0 transition-opacity duration-500",
-                    "bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-300",
+                    "bg-gradient-to-r from-zinc-400 via-zinc-500 to-zinc-300",
                     "size-60",
                     visible ? "opacity-100" : "opacity-0"
                 )}
@@ -53,7 +53,7 @@ function InteractiveCard({
             />
 
             {/* Card content with semi-transparent background - allows gradient to show through */}
-            <div className="relative z-10 bg-white/90 dark:bg-slate-900/75 p-6 h-full w-full rounded-[11px]">
+            <div className="relative z-10 bg-white/90 dark:bg-zinc-900/90 p-6 h-full w-full rounded-[11px]">
                 {children}
             </div>
         </div>

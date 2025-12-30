@@ -61,18 +61,9 @@ export default async function RolesPage() {
     }));
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Roles & Permissions</h1>
-                <p className="text-muted-foreground">
-                    Manage user roles and their access permissions
-                </p>
-            </div>
-
-            <RolesClient
-                initialRoles={rolesData}
-                permissionsByCategory={permissionsByCategory}
-            />
-        </div>
+        <RolesClient
+            initialRoles={rolesData}
+            permissionsByCategory={permissionsByCategory}
+        />
     );
 }

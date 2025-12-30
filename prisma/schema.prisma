@@ -156,6 +156,15 @@ model Client {
   brandColors Json?    // { primary, secondary, cta }
   fonts       Json?    // { heading, body }
   active      Boolean  @default(true)
+  isPublic    Boolean  @default(false)
+  
+  // SMTP Settings
+  smtpHost     String?
+  smtpPort     Int?
+  smtpUser     String?
+  smtpPassword String?
+  smtpSecure   Boolean @default(true)
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   

@@ -1,22 +1,11 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-// Log SMTP configuration (without password) for debugging
-console.log("[SMTP_CONFIG] Host:", process.env.SMTP_HOST);
-console.log("[SMTP_CONFIG] Port:", process.env.SMTP_PORT);
-console.log("[SMTP_CONFIG] User:", process.env.SMTP_USER ? "SET" : "NOT SET");
-console.log("[SMTP_CONFIG] Password:", process.env.SMTP_PASSWORD ? "SET" : "NOT SET");
-console.log("[SMTP_CONFIG] From:", process.env.SMTP_FROM);
+// Initialize Resend with API key
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Create transporter using SMTP
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: parseInt(process.env.SMTP_PORT || "587"),
-  secure: process.env.SMTP_SECURE === "true",
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD,
-  },
-});
+// Log configuration for debugging
+console.log("[RESEND] API Key:", process.env.RESEND_API_KEY ? "SET" : "NOT SET");
+console.log("[RESEND] From:", process.env.RESEND_FROM);
 
 interface InvitationEmailParams {
   to: string;
@@ -44,10 +33,7 @@ export async function sendInvitationEmail({
       <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5; padding: 40px 20px;">
         <div style="max-width: 500px; margin: 0 auto; background: white; border-radius: 12px; padding: 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 32px;">
-            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 12px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
-              <span style="color: white; font-size: 24px; font-weight: bold;">R</span>
-            </div>
-            <h1 style="color: #18181b; font-size: 24px; margin: 0;">You're Invited!</h1>
+            <h1 style="color: #18181b; font-size: 24px; margin: 0;">You're Invited to Reelsend!</h1>
           </div>
           
           <p style="color: #52525b; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">
@@ -59,7 +45,7 @@ export async function sendInvitationEmail({
           </p>
           
           <div style="text-align: center; margin-bottom: 32px;">
-            <a href="${setupUrl}" style="display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            <a href="${setupUrl}" style="display: inline-block; background: #18181b; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
               Set Up Your Account
             </a>
           </div>
@@ -82,17 +68,25 @@ export async function sendInvitationEmail({
     </html>
   `;
 
-  const mailOptions = {
-    from: process.env.SMTP_FROM || '"Reelsend" <noreply@reelsend.com>',
-    to,
-    subject: `${inviterName} has invited you to join Reelsend`,
-    html,
-  };
-
   try {
-    console.log("[EMAIL_SEND] From:", mailOptions.from, "To:", mailOptions.to);
-    await transporter.sendMail(mailOptions);
-    return { success: true };
+    const fromEmail = process.env.RESEND_FROM || "onboarding@resend.dev";
+    const formattedFrom = fromEmail.includes("<") ? fromEmail : `Reelsend <${fromEmail}>`;
+    console.log("[EMAIL_SEND] From:", formattedFrom, "To:", to);
+
+    const { data, error } = await resend.emails.send({
+      from: formattedFrom,
+      to: [to],
+      subject: `${inviterName} has invited you to join Reelsend`,
+      html,
+    });
+
+    if (error) {
+      console.error("Failed to send invitation email:", error);
+      return { success: false, error };
+    }
+
+    console.log("[EMAIL_SENT] Success, ID:", data?.id);
+    return { success: true, id: data?.id };
   } catch (error) {
     console.error("Failed to send invitation email:", error);
     return { success: false, error };
