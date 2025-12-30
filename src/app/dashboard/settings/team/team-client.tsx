@@ -28,7 +28,6 @@ import {
     Users,
     Mail,
     Shield,
-    Loader2,
     Plus,
     UserPlus,
     Trash2,
@@ -47,6 +46,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
+import { Spinner } from "@/components/ui/spinner";
 
 interface Role {
     id: string;
@@ -309,7 +309,7 @@ export function TeamClient({ initialUsers, roles, currentUserId }: TeamClientPro
                                 <Button type="submit" disabled={loading}>
                                     {loading ? (
                                         <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            <Spinner className="mr-2" />
                                             Sending...
                                         </>
                                     ) : (
@@ -352,7 +352,7 @@ export function TeamClient({ initialUsers, roles, currentUserId }: TeamClientPro
                                 <Button variant="outline">Cancel</Button>
                             </DialogClose>
                             <Button onClick={handleUpdateRole} disabled={loading}>
-                                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update Role"}
+                                {loading ? <Spinner /> : "Update Role"}
                             </Button>
                         </DialogFooter>
                     </DialogContent>
@@ -373,7 +373,7 @@ export function TeamClient({ initialUsers, roles, currentUserId }: TeamClientPro
                                 <Button variant="outline">Cancel</Button>
                             </DialogClose>
                             <Button variant="destructive" onClick={handleDelete} disabled={loading}>
-                                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Remove Member"}
+                                {loading ? <Spinner /> : "Remove Member"}
                             </Button>
                         </DialogFooter>
                     </DialogContent>

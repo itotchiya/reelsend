@@ -43,6 +43,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
     Breadcrumb,
@@ -276,13 +277,15 @@ function HeaderUserDropdown() {
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-2 rounded-lg bg-background px-3 py-2 hover:bg-background/80 transition-colors outline-none border border-border/50">
-                <Avatar className="h-7 w-7">
-                    <AvatarImage src={session?.user?.image || ""} />
-                    <AvatarFallback className="text-xs font-medium bg-primary text-primary-foreground">{initials}</AvatarFallback>
-                </Avatar>
-                <span className="hidden sm:block text-sm font-medium truncate max-w-[120px]">{userName}</span>
-                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground hidden sm:block" />
+            <DropdownMenuTrigger asChild>
+                <Button variant="secondary" className="flex items-center gap-2 rounded-lg px-3 py-2 outline-none border border-border/50">
+                    <Avatar className="h-7 w-7">
+                        <AvatarImage src={session?.user?.image || ""} />
+                        <AvatarFallback className="text-xs font-medium bg-primary text-primary-foreground">{initials}</AvatarFallback>
+                    </Avatar>
+                    <span className="hidden sm:block text-sm font-medium truncate max-w-[120px]">{userName}</span>
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground hidden sm:block" />
+                </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
                 <div className="px-2 py-2">
@@ -323,7 +326,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         <header className="sticky top-0 z-10 flex h-16 items-center gap-4 bg-dashboard-bg px-4">
                             {/* Left side: sidebar toggle + breadcrumbs */}
                             <div className="flex items-center gap-3">
-                                <SidebarTrigger className="h-9 w-9 shrink-0 bg-interactive hover:bg-interactive-hover transition-colors rounded-lg" />
+                                <SidebarTrigger className="h-9 w-9" />
                                 <Separator orientation="vertical" className="h-5" />
                                 <DashboardBreadcrumb />
                             </div>

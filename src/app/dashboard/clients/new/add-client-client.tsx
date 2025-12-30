@@ -14,12 +14,12 @@ import {
     ArrowRight,
     ArrowLeft,
     Check,
-    Loader2,
     Globe,
     Shield
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
+import { Spinner } from "@/components/ui/spinner";
 
 const STEPS = [
     { id: "general", title: "General Info", icon: Building2 },
@@ -120,7 +120,7 @@ export function AddClientClient() {
                     </Button>
                     {currentStep === STEPS.length - 1 ? (
                         <Button onClick={handleSubmit} disabled={loading} className="gap-2">
-                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                            {loading ? <Spinner /> : <Check className="h-4 w-4" />}
                             Create Client
                         </Button>
                     ) : (
@@ -378,9 +378,9 @@ export function AddClientClient() {
                                     <Button
                                         onClick={handleSubmit}
                                         disabled={loading || !formData.name || !formData.slug}
-                                        className="gap-2 px-8 bg-indigo-600 hover:bg-indigo-700"
+                                        className="gap-2 px-8"
                                     >
-                                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                                        {loading ? <Spinner /> : <Check className="h-4 w-4" />}
                                         Create Client
                                     </Button>
                                 )}

@@ -45,7 +45,7 @@ export function PortalClient({ client }: PortalClientProps) {
             <div className="relative z-10 w-full max-w-2xl">
                 <div className="flex flex-col items-center text-center space-y-8">
                     {/* Logo Adaptation Container */}
-                    <div className="h-24 w-24 md:h-32 md:w-32 rounded-3xl bg-background p-3 shadow-2xl flex items-center justify-center overflow-hidden border border-white/10">
+                    <div className="h-24 w-24 md:h-32 md:w-32 rounded-3xl bg-background p-3 flex items-center justify-center overflow-hidden border border-white/10">
                         {client.logo ? (
                             <img
                                 src={client.logo}

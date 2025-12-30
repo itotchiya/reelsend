@@ -20,12 +20,12 @@ import {
     Shield,
     ShieldCheck,
     Users,
-    Loader2,
     KeyRound,
     Lock,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
+import { Spinner } from "@/components/ui/spinner";
 
 interface Role {
     id: string;
@@ -256,7 +256,7 @@ export function RolesClient({ initialRoles, permissionsByCategory }: RolesClient
                             <Button onClick={handleSaveRole} disabled={saving}>
                                 {saving ? (
                                     <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        <Spinner className="mr-2" />
                                         {t.common.loading}
                                     </>
                                 ) : (

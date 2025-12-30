@@ -15,7 +15,6 @@ import {
     Link as LinkIcon,
     Lock,
     Unlock,
-    Loader2,
     Calendar
 } from "lucide-react";
 import { useState } from "react";
@@ -25,6 +24,8 @@ import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 import { cn } from "@/lib/utils";
 import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
 import { useEffect } from "react";
+import { ButtonGroup } from "@/components/ui/button-group";
+import { Spinner } from "@/components/ui/spinner";
 
 interface Audience {
     id: string;
@@ -122,9 +123,9 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
     return (
         <>
             <PageHeader title={client.name} showBack>
-                <div className="flex items-center gap-2">
+                <ButtonGroup>
                     <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         className="gap-2 text-foreground/80 hover:text-foreground"
                         onClick={copyPortalUrl}
@@ -134,16 +135,16 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                         {t.clients?.copyPortalLink || "Copy Portal Link"}
                     </Button>
                     <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         className={cn("gap-2", isPublic ? "text-green-500 hover:text-green-600 font-medium" : "text-red-500 hover:text-red-600 font-medium")}
                         onClick={togglePrivacy}
                         disabled={updating}
                     >
-                        {updating ? <Loader2 className="h-4 w-4 animate-spin" /> : isPublic ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                        {updating ? <Spinner /> : isPublic ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
                         {isPublic ? (t.clients?.public || "Public") : (t.clients?.private || "Private")}
                     </Button>
-                </div>
+                </ButtonGroup>
             </PageHeader>
             <PageContent>
                 <div className="space-y-8">
@@ -204,12 +205,12 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                                 {/* Primary Action Row */}
                                 <div className="flex items-center gap-3 md:mb-2">
                                     <Link href={`/dashboard/clients/${client.slug}/settings`}>
-                                        <Button variant="outline" className="rounded-full px-6 gap-2">
+                                        <Button variant="outline" size="lg" className="rounded-full px-6 gap-2">
                                             <Settings className="h-4 w-4" />
                                             {t.common.settings}
                                         </Button>
                                     </Link>
-                                    <Button className="rounded-full px-8 bg-foreground text-background hover:bg-foreground/90 font-bold transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+                                    <Button size="lg" className="rounded-full px-8 font-bold">
                                         Client Details
                                     </Button>
                                 </div>

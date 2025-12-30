@@ -26,7 +26,6 @@ import Link from "next/link";
 import {
     Building2,
     Plus,
-    Loader2,
     MoreVertical,
     Pencil,
     Trash2,
@@ -37,6 +36,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
+import { Spinner } from "@/components/ui/spinner";
 
 interface Client {
     id: string;
@@ -317,7 +317,7 @@ export function ClientsClient({
                                     <Button variant="outline" type="button">{t.common.cancel}</Button>
                                 </DialogClose>
                                 <Button type="submit" disabled={loading}>
-                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t.common.save}
+                                    {loading ? <Spinner /> : t.common.save}
                                 </Button>
                             </DialogFooter>
                         </form>
@@ -342,7 +342,7 @@ export function ClientsClient({
                                 <Button variant="outline">{t.common.cancel}</Button>
                             </DialogClose>
                             <Button variant="destructive" onClick={handleDeleteClient} disabled={loading}>
-                                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t.common.delete}
+                                {loading ? <Spinner /> : t.common.delete}
                             </Button>
                         </DialogFooter>
                     </DialogContent>

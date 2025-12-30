@@ -21,12 +21,11 @@ export function PageHeader({ title, children, onBack, showBack }: PageHeaderProp
                 <div className="flex items-center gap-4">
                     {showBack && (
                         <Button
-                            variant="ghost"
+                            variant="secondary"
                             size="icon"
-                            className="h-9 w-9 bg-interactive hover:bg-interactive-hover transition-colors rounded-lg shrink-0"
                             onClick={handleBack}
                         >
-                            <ChevronLeft className="h-5 w-5" />
+                            <ChevronLeft />
                         </Button>
                     )}
                     <span className="text-lg font-normal text-muted-foreground">
