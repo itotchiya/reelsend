@@ -76,7 +76,7 @@ export function TemplatesClient({ initialTemplates }: TemplatesClientProps) {
                                 </CardHeader>
                                 <CardContent>
                                     <Button variant="outline" size="sm" asChild className="w-full">
-                                        <Link href={`/dashboard/templates/${template.id}/editor`}>
+                                        <Link href={`/editor/${template.id}`}>
                                             Open Editor
                                         </Link>
                                     </Button>
