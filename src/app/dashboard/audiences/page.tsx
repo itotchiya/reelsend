@@ -9,6 +9,7 @@ export default async function AudiencesPage() {
                     id: true,
                     name: true,
                     slug: true,
+                    logo: true,
                 }
             },
             _count: {

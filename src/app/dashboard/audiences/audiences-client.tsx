@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Plus, Users } from "lucide-react";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 import { CreateAudienceDialog } from "@/components/dashboard/create-audience-dialog";
@@ -20,6 +19,7 @@ interface Audience {
         id: string;
         name: string;
         slug: string;
+        logo: string | null;
     };
     _count: {
         contacts: number;
@@ -30,6 +30,15 @@ interface Audience {
 
 interface AudiencesClientProps {
     initialAudiences: Audience[];
+}
+
+function getInitials(name: string): string {
+    return name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
 }
 
 export function AudiencesClient({ initialAudiences }: AudiencesClientProps) {
@@ -63,62 +72,39 @@ export function AudiencesClient({ initialAudiences }: AudiencesClientProps) {
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {initialAudiences.map((audience) => (
                             <InteractiveCard
                                 key={audience.id}
-                                className="h-full border-none"
                                 onClick={() => router.push(`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}`)}
                             >
-                                <div className="space-y-4">
-                                    <div className="space-y-1">
-                                        <div className="flex items-start justify-between">
-                                            <h3 className="text-xl font-bold tracking-tight">{audience.name}</h3>
-                                            <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider border-muted-foreground/20">
-                                                {audience.client.name}
-                                            </Badge>
-                                        </div>
-                                        <p className="text-sm text-muted-foreground line-clamp-2 h-10">
+                                <div className="flex items-start gap-4">
+                                    {/* Client Logo */}
+                                    <Avatar className="h-12 w-12 rounded-lg shrink-0 border">
+                                        <AvatarImage src={audience.client.logo || ""} className="object-cover" />
+                                        <AvatarFallback className="rounded-lg bg-muted text-xs font-bold">
+                                            {getInitials(audience.client.name)}
+                                        </AvatarFallback>
+                                    </Avatar>
+
+                                    {/* Content */}
+                                    <div className="flex-1 min-w-0 space-y-1">
+                                        <h3 className="font-semibold text-base truncate">
+                                            {audience.name}
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground truncate">
+                                            {audience.client.name}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground line-clamp-1">
                                             {audience.description || t.audiences.noDescription}
                                         </p>
                                     </div>
+                                </div>
 
-                                    <div className="flex items-center gap-6 text-sm text-muted-foreground/80">
-                                        <div className="flex items-center gap-2">
-                                            <Users className="h-4 w-4" />
-                                            <span className="font-medium">{audience._count.contacts.toLocaleString()} {t.audiences.contacts}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Badge variant="secondary" className="text-[10px] font-bold bg-muted/50">
-                                                {audience._count.segments} {t.audiences.segments}
-                                            </Badge>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-3 pt-2">
-                                        <Button
-                                            variant="default"
-                                            size="sm"
-                                            asChild
-                                            className="flex-1 font-bold shadow-sm"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <Link href={`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}`}>
-                                                {t.audiences.manage}
-                                            </Link>
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            asChild
-                                            className="flex-1 font-bold bg-background/50"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <Link href={`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}?tab=contacts`}>
-                                                {t.audiences.import}
-                                            </Link>
-                                        </Button>
-                                    </div>
+                                {/* Stats - no divider */}
+                                <div className="flex items-center gap-1.5 mt-4 text-sm text-muted-foreground">
+                                    <Users className="h-3.5 w-3.5" />
+                                    <span>{audience._count.contacts.toLocaleString()} {t.audiences.contacts}</span>
                                 </div>
                             </InteractiveCard>
                         ))}
@@ -136,3 +122,4 @@ export function AudiencesClient({ initialAudiences }: AudiencesClientProps) {
         </>
     );
 }
+

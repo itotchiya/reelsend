@@ -22,7 +22,10 @@
         "loading": "Chargement...",
         "error": "Erreur",
         "success": "Succès",
-        "share": "Partager"
+        "share": "Partager",
+        "name": "Nom",
+        "description": "Description",
+        "createdAt": "Créé le"
     },
     "nav": {
         "emailMarketing": "Marketing Email",

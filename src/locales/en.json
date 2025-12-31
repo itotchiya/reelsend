@@ -22,7 +22,10 @@
         "loading": "Loading...",
         "error": "Error",
         "success": "Success",
-        "share": "Share"
+        "share": "Share",
+        "name": "Name",
+        "description": "Description",
+        "createdAt": "Created At"
     },
     "nav": {
         "emailMarketing": "Email Marketing",

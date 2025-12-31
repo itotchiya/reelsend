@@ -178,6 +178,7 @@ model Client {
   portalUsers    ClientPortalUser[]
   shareableLinks ShareableLink[]
   smtpTestLogs   SmtpTestLog[]
+  savedBlocks    SavedBlock[]
 }
 
 model Domain {
@@ -420,3 +421,23 @@ model SmtpTestLog {
   @@index([clientId, testedAt])
 }
 
+// ============================================
+// SAVED EMAIL BLOCKS
+// ============================================
+
+model SavedBlock {
+  id          String   @id @default(cuid())
+  clientId    String?  // null = global block available to all clients
+  name        String
+  description String?
+  category    String?  // "headers", "footers", "cta", "content"
+  jsonContent Json     // Block structure for EmailBuilder
+  thumbnail   String?  // Preview image URL (R2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  client      Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  @@index([clientId])
+  @@index([category])
+}
