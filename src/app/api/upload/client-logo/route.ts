@@ -50,7 +50,7 @@ export async function POST(req: Request) {
                 quality: 85,
                 format: "webp",
             });
-            finalBuffer = compressed.buffer;
+            finalBuffer = Buffer.from(compressed.buffer);
             contentType = compressed.contentType;
             extension = compressed.extension;
         }

@@ -37,7 +37,6 @@
     "@react-email/components": "^1.0.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/nodemailer": "^7.0.4",
-    "@usewaypoint/email-builder": "^0.0.8",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
