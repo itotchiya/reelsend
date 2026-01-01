@@ -505,7 +505,7 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                                                 <TableRow
                                                     key={template.id}
                                                     className="group cursor-pointer hover:bg-muted/50 transition-colors border-dashed"
-                                                    onClick={() => router.push(`/editor/clients/${client.slug}/templates/${template.id}`)}
+                                                    onClick={() => router.push(`/clients/${client.slug}/${template.id}`)}
                                                 >
                                                     <TableCell className="font-bold py-4">{template.name}</TableCell>
                                                     <TableCell className="text-muted-foreground py-4 line-clamp-1 h-auto max-w-[500px]">

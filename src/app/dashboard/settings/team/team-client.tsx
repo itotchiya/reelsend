@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 import { Spinner } from "@/components/ui/spinner";
+import { useI18n } from "@/lib/i18n";
 
 interface Role {
     id: string;
@@ -71,6 +72,7 @@ interface TeamClientProps {
 }
 
 export function TeamClient({ initialUsers, roles, currentUserId }: TeamClientProps) {
+    const { t } = useI18n();
     const router = useRouter();
     const [users, setUsers] = useState<User[]>(initialUsers);
     const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -168,10 +170,10 @@ export function TeamClient({ initialUsers, roles, currentUserId }: TeamClientPro
 
     return (
         <>
-            <PageHeader title="Team">
+            <PageHeader title={t.team.title}>
                 <Button onClick={() => setIsInviteOpen(true)} className="gap-2">
                     <UserPlus className="h-4 w-4" />
-                    Invite Member
+                    {t.team.inviteMember}
                 </Button>
             </PageHeader>
             <PageContent>
@@ -203,14 +205,14 @@ export function TeamClient({ initialUsers, roles, currentUserId }: TeamClientPro
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem onClick={() => openEdit(user)}>
                                                         <UserCog className="mr-2 h-4 w-4" />
-                                                        Change Role
+                                                        {t.team.changeRole}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
                                                         onClick={() => openDelete(user)}
                                                         className="text-destructive focus:text-destructive"
                                                     >
                                                         <Trash2 className="mr-2 h-4 w-4" />
-                                                        Remove Member
+                                                        {t.team.removeMember}
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -226,15 +228,15 @@ export function TeamClient({ initialUsers, roles, currentUserId }: TeamClientPro
                                             </AvatarFallback>
                                         </Avatar>
                                         {user.status === "ACTIVE" ? (
-                                            <div className="absolute bottom-0 right-0 h-5 w-5 bg-green-500 border-2 border-background rounded-full" title="Active" />
+                                            <div className="absolute bottom-0 right-0 h-5 w-5 bg-green-500 border-2 border-background rounded-full" title={t.team.statusActive} />
                                         ) : user.status === "INVITED" ? (
-                                            <div className="absolute bottom-0 right-0 h-5 w-5 bg-amber-500 border-2 border-background rounded-full" title="Invited" />
+                                            <div className="absolute bottom-0 right-0 h-5 w-5 bg-amber-500 border-2 border-background rounded-full" title={t.team.statusInvited} />
                                         ) : null}
                                     </div>
 
                                     {/* Info */}
                                     <h3 className="text-xl font-bold truncate w-full px-2">
-                                        {user.name || "Unnamed User"} {isSelf && "(You)"}
+                                        {user.name || t.team.unnamedUser} {isSelf && t.team.you}
                                     </h3>
                                     <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
                                         <Mail className="h-3.5 w-3.5" />
@@ -245,12 +247,12 @@ export function TeamClient({ initialUsers, roles, currentUserId }: TeamClientPro
                                     <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
                                         <Badge variant="secondary" className="gap-1.5 px-3 py-1">
                                             <Shield className="h-3.5 w-3.5 text-indigo-500" />
-                                            {user.role?.name || "No Role"}
+                                            {(t.roles.names as any)?.[user.role?.name || ""] || user.role?.name || t.team.noRole}
                                         </Badge>
                                         {user.status === "INVITED" && (
                                             <Badge variant="outline" className="gap-1.5 px-3 py-1 border-amber-500/50 text-amber-600 bg-amber-50 dark:bg-amber-500/10">
                                                 <Clock className="h-3.5 w-3.5" />
-                                                Pending
+                                                {t.team.pending}
                                             </Badge>
                                         )}
                                     </div>
@@ -258,7 +260,7 @@ export function TeamClient({ initialUsers, roles, currentUserId }: TeamClientPro
                                     {/* Dates */}
                                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-auto">
                                         <Calendar className="h-3 w-3" />
-                                        Joined {format(new Date(user.createdAt), "MMM d, yyyy")}
+                                        {t.team.joined} {format(new Date(user.createdAt), "MMM d, yyyy")}
                                     </div>
                                 </div>
                             </InteractiveCard>
@@ -270,33 +272,33 @@ export function TeamClient({ initialUsers, roles, currentUserId }: TeamClientPro
                 <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
                     <DialogContent className="sm:max-w-[425px]">
                         <DialogHeader>
-                            <DialogTitle>Invite Team Member</DialogTitle>
+                            <DialogTitle>{t.team.inviteTitle}</DialogTitle>
                             <DialogDescription>
-                                Send an invitation email to a new team member. They will receive a link to set up their account.
+                                {t.team.inviteDescription}
                             </DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleInvite} className="space-y-4 py-4">
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email Address</Label>
+                                <Label htmlFor="email">{t.team.emailAddress}</Label>
                                 <Input
                                     id="email"
                                     type="email"
-                                    placeholder="colleague@example.com"
+                                    placeholder={t.team.invitePlaceholder}
                                     value={inviteEmail}
                                     onChange={(e) => setInviteEmail(e.target.value)}
                                     required
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="role">Role</Label>
+                                <Label htmlFor="role">{t.team.role}</Label>
                                 <Select value={inviteRoleId} onValueChange={setInviteRoleId} required>
                                     <SelectTrigger id="role">
-                                        <SelectValue placeholder="Select a role" />
+                                        <SelectValue placeholder={t.team.selectRole} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {roles.map((role) => (
                                             <SelectItem key={role.id} value={role.id}>
-                                                {role.name}
+                                                {(t.roles.names as any)?.[role.name] || role.name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -304,16 +306,16 @@ export function TeamClient({ initialUsers, roles, currentUserId }: TeamClientPro
                             </div>
                             <DialogFooter className="pt-4">
                                 <DialogClose asChild>
-                                    <Button variant="outline" type="button">Cancel</Button>
+                                    <Button variant="outline" type="button">{t.common.cancel}</Button>
                                 </DialogClose>
                                 <Button type="submit" disabled={loading}>
                                     {loading ? (
                                         <>
                                             <Spinner className="mr-2" />
-                                            Sending...
+                                            {t.team.sending}
                                         </>
                                     ) : (
-                                        "Send Invitation"
+                                        t.team.sendInvitation
                                     )}
                                 </Button>
                             </DialogFooter>
@@ -325,22 +327,22 @@ export function TeamClient({ initialUsers, roles, currentUserId }: TeamClientPro
                 <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                     <DialogContent className="sm:max-w-[425px]">
                         <DialogHeader>
-                            <DialogTitle>Change Role</DialogTitle>
+                            <DialogTitle>{t.team.changeRoleTitle}</DialogTitle>
                             <DialogDescription>
-                                Update the role for <strong>{selectedUser?.name || selectedUser?.email}</strong>.
+                                {t.team.changeRoleDesc} <strong>{selectedUser?.name || selectedUser?.email}</strong>.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
-                                <Label htmlFor="edit-role">Role</Label>
+                                <Label htmlFor="edit-role">{t.team.role}</Label>
                                 <Select value={editRoleId} onValueChange={setEditRoleId}>
                                     <SelectTrigger id="edit-role">
-                                        <SelectValue placeholder="Select a role" />
+                                        <SelectValue placeholder={t.team.selectRole} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {roles.map((role) => (
                                             <SelectItem key={role.id} value={role.id}>
-                                                {role.name}
+                                                {(t.roles.names as any)?.[role.name] || role.name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -349,10 +351,10 @@ export function TeamClient({ initialUsers, roles, currentUserId }: TeamClientPro
                         </div>
                         <DialogFooter>
                             <DialogClose asChild>
-                                <Button variant="outline">Cancel</Button>
+                                <Button variant="outline">{t.common.cancel}</Button>
                             </DialogClose>
                             <Button onClick={handleUpdateRole} disabled={loading}>
-                                {loading ? <Spinner /> : "Update Role"}
+                                {loading ? <Spinner /> : t.team.updateRole}
                             </Button>
                         </DialogFooter>
                     </DialogContent>
@@ -362,18 +364,18 @@ export function TeamClient({ initialUsers, roles, currentUserId }: TeamClientPro
                 <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                     <DialogContent className="sm:max-w-[425px]">
                         <DialogHeader>
-                            <DialogTitle className="text-destructive">Remove Team Member</DialogTitle>
+                            <DialogTitle className="text-destructive">{t.team.removeMemberTitle}</DialogTitle>
                             <DialogDescription>
-                                Are you sure you want to remove <strong>{selectedUser?.name || selectedUser?.email}</strong>?
-                                This action cannot be undone and they will lose all access.
+                                {t.team.removeMemberDesc} <strong>{selectedUser?.name || selectedUser?.email}</strong>?
+                                {t.team.removeMemberWarning}
                             </DialogDescription>
                         </DialogHeader>
                         <DialogFooter className="pt-4">
                             <DialogClose asChild>
-                                <Button variant="outline">Cancel</Button>
+                                <Button variant="outline">{t.common.cancel}</Button>
                             </DialogClose>
                             <Button variant="destructive" onClick={handleDelete} disabled={loading}>
-                                {loading ? <Spinner /> : "Remove Member"}
+                                {loading ? <Spinner /> : t.team.remove}
                             </Button>
                         </DialogFooter>
                     </DialogContent>

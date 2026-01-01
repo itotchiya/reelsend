@@ -106,7 +106,8 @@ export function CreateTemplateDialog({
                 const template = await res.json();
                 toast.success(t.common.success);
                 onOpenChange(false);
-                router.push(`/editor/templates/${template.id}`);
+                router.refresh(); // Refresh to ensure Templates list is updated when navigating back
+                router.push(`/templates/${template.id}`);
             } else {
                 const error = await res.text();
                 toast.error(error || t.common.error);

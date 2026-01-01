@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { MonitorOutlined, PhoneIphoneOutlined } from '@mui/icons-material';
-import { Box, Stack, SxProps, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
+import { MonitorOutlined, PhoneIphoneOutlined, Undo, Redo } from '@mui/icons-material';
+import { Box, Stack, SxProps, ToggleButton, ToggleButtonGroup, Tooltip, IconButton } from '@mui/material';
 import { Reader } from '@usewaypoint/email-builder';
 
 import EditorBlock from '../../documents/editor/EditorBlock';
@@ -10,7 +10,13 @@ import {
   useDocument,
   useSelectedMainTab,
   useSelectedScreenSize,
+  useCanUndo,
+  useCanRedo,
+  undo,
+  redo,
+  useHasUnsavedChanges,
 } from '../../documents/editor/EditorContext';
+import { useEditorKeyboardShortcuts } from '../../documents/editor/useEditorKeyboardShortcuts';
 import ToggleInspectorPanelButton from '../InspectorDrawer/ToggleInspectorPanelButton';
 import ToggleSamplesPanelButton from '../SamplesDrawer/ToggleSamplesPanelButton';
 
@@ -22,7 +28,6 @@ import MainTabsGroup from './MainTabsGroup';
 import ShareButton from './ShareButton';
 import SaveButton from './SaveButton';
 import { ChevronLeft } from '@mui/icons-material';
-import { IconButton } from '@mui/material';
 import { useRouter } from 'next/navigation';
 
 export default function TemplatePanel() {
@@ -30,6 +35,23 @@ export default function TemplatePanel() {
   const document = useDocument();
   const selectedMainTab = useSelectedMainTab();
   const selectedScreenSize = useSelectedScreenSize();
+  const canUndo = useCanUndo();
+  const canRedo = useCanRedo();
+  const hasUnsavedChanges = useHasUnsavedChanges();
+
+  // Enable keyboard shortcuts
+  useEditorKeyboardShortcuts();
+
+  // Handle back button with unsaved changes confirmation
+  const handleBack = () => {
+    if (hasUnsavedChanges) {
+      const confirmed = window.confirm('You have unsaved changes. Are you sure you want to leave without saving?');
+      if (!confirmed) {
+        return;
+      }
+    }
+    router.back();
+  };
 
   let mainBoxSx: SxProps = {
     height: '100%',
@@ -97,9 +119,23 @@ export default function TemplatePanel() {
         <ToggleSamplesPanelButton />
         <Stack px={2} direction="row" gap={2} width="100%" justifyContent="space-between" alignItems="center">
           <Stack direction="row" spacing={2} alignItems="center">
-            <IconButton onClick={() => router.back()} size="small" sx={{ mr: 1 }}>
+            <IconButton onClick={handleBack} size="small" sx={{ mr: 1 }}>
               <ChevronLeft fontSize="small" />
             </IconButton>
+            <Tooltip title="Undo (Ctrl+Z)">
+              <span>
+                <IconButton onClick={undo} size="small" disabled={!canUndo}>
+                  <Undo fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Redo (Ctrl+Shift+Z)">
+              <span>
+                <IconButton onClick={redo} size="small" disabled={!canRedo}>
+                  <Redo fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
             <MainTabsGroup />
           </Stack>
           <Stack direction="row" spacing={2}>

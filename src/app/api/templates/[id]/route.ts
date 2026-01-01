@@ -44,21 +44,75 @@ export async function PATCH(
 
         const { id } = await params;
         const body = await request.json();
-        const { htmlContent, jsonContent, name, description } = body;
+        const { htmlContent, jsonContent, name, description, clientId } = body;
+
+        // Build update data, only including defined fields
+        const updateData: any = {
+            updatedById: session.user.id, // Always track who updated
+        };
+        if (htmlContent !== undefined) updateData.htmlContent = htmlContent;
+        if (jsonContent !== undefined) updateData.jsonContent = jsonContent;
+        if (name !== undefined) updateData.name = name;
+        if (description !== undefined) updateData.description = description;
+        if (clientId !== undefined) updateData.clientId = clientId || null;
 
         const template = await db.template.update({
             where: { id },
+            data: updateData,
+        });
+
+        // Determine what was changed for activity log
+        const isContentUpdate = htmlContent !== undefined || jsonContent !== undefined;
+        const isDetailsUpdate = name !== undefined || description !== undefined || clientId !== undefined;
+
+        // Log the activity
+        await db.templateActivity.create({
             data: {
-                htmlContent,
-                jsonContent,
-                name,
-                description,
+                templateId: id,
+                userId: session.user.id,
+                action: isContentUpdate ? "updated" : "details_updated",
+                description: isContentUpdate
+                    ? "Template content updated"
+                    : "Template details updated",
             },
         });
 
         return NextResponse.json(template);
     } catch (error) {
         console.error("[TEMPLATE_PATCH]", error);
+        return new NextResponse("Internal Server Error", { status: 500 });
+    }
+}
+
+export async function DELETE(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const session = await auth();
+        if (!session?.user) {
+            return new NextResponse("Unauthorized", { status: 401 });
+        }
+
+        const { id } = await params;
+
+        // Check if template exists
+        const template = await db.template.findUnique({
+            where: { id },
+        });
+
+        if (!template) {
+            return new NextResponse("Template not found", { status: 404 });
+        }
+
+        // Delete the template
+        await db.template.delete({
+            where: { id },
+        });
+
+        return new NextResponse(null, { status: 204 });
+    } catch (error) {
+        console.error("[TEMPLATE_DELETE]", error);
         return new NextResponse("Internal Server Error", { status: 500 });
     }
 }

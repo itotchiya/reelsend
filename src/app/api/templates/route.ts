@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 
 export async function POST(request: NextRequest) {
     try {
@@ -10,33 +11,54 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { name, description, clientId } = body;
+        const { name, description, clientId, duplicateFromId, htmlContent: providedHtml } = body;
 
-        if (!name || !clientId) {
-            return new NextResponse("Missing required fields", { status: 400 });
+        if (!name) {
+            return new NextResponse("Name is required", { status: 400 });
         }
 
-        // Check if template name already exists for this client
-        const existingTemplate = await db.template.findFirst({
-            where: {
-                clientId,
-                name,
-            },
-        });
+        let htmlContent = providedHtml || "";
+        let jsonContent = {};
 
-        if (existingTemplate) {
-            return new NextResponse("Template name already exists for this client", { status: 409 });
+        // If duplicating from another template, copy its content
+        if (duplicateFromId) {
+            const sourceTemplate = await db.template.findUnique({
+                where: { id: duplicateFromId },
+                select: { htmlContent: true, jsonContent: true },
+            });
+
+            if (sourceTemplate) {
+                htmlContent = sourceTemplate.htmlContent || "";
+                jsonContent = sourceTemplate.jsonContent || {};
+            }
         }
 
         const template = await db.template.create({
             data: {
                 name,
                 description,
-                clientId,
-                htmlContent: "", // Initial empty content
-                jsonContent: {}, // Initial empty JSON for builder
+                clientId: clientId || null,
+                htmlContent,
+                jsonContent,
+                createdById: session.user.id,
+                updatedById: session.user.id,
             },
         });
+
+        // Log the activity
+        await db.templateActivity.create({
+            data: {
+                templateId: template.id,
+                userId: session.user.id,
+                action: duplicateFromId ? "duplicated" : "created",
+                description: duplicateFromId
+                    ? `Duplicated from another template`
+                    : `Template created`,
+            },
+        });
+
+        // Revalidate the templates list page
+        revalidatePath("/dashboard/templates");
 
         return NextResponse.json(template);
     } catch (error) {

@@ -134,29 +134,31 @@ export function RolesClient({ initialRoles, permissionsByCategory }: RolesClient
                                             <ShieldCheck className="h-8 w-8 text-foreground" />
                                         </div>
 
-                                        <h3 className="text-xl font-bold mb-1">{role.name}</h3>
+                                        <h3 className="text-xl font-bold mb-1">
+                                            {(t.roles.names as any)?.[role.name] || role.name}
+                                        </h3>
 
                                         <span className="text-sm text-muted-foreground font-medium mb-3">
-                                            Full Access
+                                            {t.roles.fullAccess}
                                         </span>
 
                                         <p className="text-sm text-muted-foreground mb-4 px-2">
-                                            {role.description || "Has all permissions by default"}
+                                            {(t.roles.descriptions as any)?.[role.name] || role.description || t.roles.superAdminDefaultDesc}
                                         </p>
 
                                         <div className="flex items-center gap-3 mb-4">
                                             <Badge variant="secondary" className="gap-1.5 px-3 py-1">
                                                 <Users className="h-3.5 w-3.5" />
-                                                {role.userCount} users
+                                                {role.userCount} {t.roles.usersCount}
                                             </Badge>
                                             <Badge variant="secondary" className="gap-1.5 px-3 py-1">
                                                 <KeyRound className="h-3.5 w-3.5" />
-                                                All {t.roles.permissions}
+                                                {t.roles.allPermissions} {t.roles.permissions}
                                             </Badge>
                                         </div>
 
                                         <p className="text-xs text-muted-foreground">
-                                            Cannot be modified
+                                            {t.roles.cannotBeModified}
                                         </p>
                                     </div>
                                 </CardContent>
@@ -169,7 +171,9 @@ export function RolesClient({ initialRoles, permissionsByCategory }: RolesClient
                                         <Shield className="h-8 w-8 text-foreground" />
                                     </div>
 
-                                    <h3 className="text-xl font-bold mb-1">{role.name}</h3>
+                                    <h3 className="text-xl font-bold mb-1">
+                                        {(t.roles.names as any)?.[role.name] || role.name}
+                                    </h3>
 
                                     {role.isSystem && (
                                         <span className="text-sm text-muted-foreground font-medium mb-3">
@@ -178,13 +182,13 @@ export function RolesClient({ initialRoles, permissionsByCategory }: RolesClient
                                     )}
 
                                     <p className="text-sm text-muted-foreground mb-4 px-2">
-                                        {role.description || "No description available"}
+                                        {(t.roles.descriptions as any)?.[role.name] || role.description || t.roles.noDescription}
                                     </p>
 
                                     <div className="flex items-center gap-3 mb-4">
                                         <Badge variant="secondary" className="gap-1.5 px-3 py-1">
                                             <Users className="h-3.5 w-3.5" />
-                                            {role.userCount} users
+                                            {role.userCount} {t.roles.usersCount}
                                         </Badge>
                                         <Badge variant="secondary" className="gap-1.5 px-3 py-1">
                                             <KeyRound className="h-3.5 w-3.5" />
@@ -206,9 +210,11 @@ export function RolesClient({ initialRoles, permissionsByCategory }: RolesClient
                     <DialogContent className="sm:max-w-[500px] p-0 gap-0 max-h-[85vh] flex flex-col">
                         {/* Fixed Header */}
                         <DialogHeader className="px-6 py-4 border-b">
-                            <DialogTitle>{t.roles.permissionsFor} {selectedRole?.name}</DialogTitle>
+                            <DialogTitle>
+                                {t.roles.permissionsFor} {(t.roles.names as any)?.[selectedRole?.name || ""] || selectedRole?.name}
+                            </DialogTitle>
                             <DialogDescription>
-                                Select the permissions for this role.
+                                {t.roles.selectPermissionsDesc}
                             </DialogDescription>
                         </DialogHeader>
 
@@ -219,7 +225,7 @@ export function RolesClient({ initialRoles, permissionsByCategory }: RolesClient
                                     {/* Category Header */}
                                     <div className="px-6 py-3 bg-muted/50 border-b">
                                         <h4 className="text-sm font-medium text-muted-foreground">
-                                            {category}
+                                            {(t.roles.categories as any)?.[category] || category}
                                         </h4>
                                     </div>
 
@@ -233,7 +239,9 @@ export function RolesClient({ initialRoles, permissionsByCategory }: RolesClient
                                                         htmlFor={perm.key}
                                                         className="flex items-center justify-between gap-4 px-6 py-3 cursor-pointer hover:bg-muted/30 transition-colors"
                                                     >
-                                                        <span className="text-sm">{perm.name}</span>
+                                                        <span className="text-sm">
+                                                            {(t.roles.permNames as any)?.[perm.key] || perm.name}
+                                                        </span>
                                                         <Checkbox
                                                             id={perm.key}
                                                             checked={isChecked}

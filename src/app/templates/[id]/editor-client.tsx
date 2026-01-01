@@ -7,7 +7,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 
 import THEME from "@/components/email-builder-waypoint/theme";
 import App from "@/components/email-builder-waypoint/App";
-import { editorStateStore, useDocument } from "@/components/email-builder-waypoint/documents/editor/EditorContext";
+import { editorStateStore, initializeHistory, useHasUnsavedChanges } from "@/components/email-builder-waypoint/documents/editor/EditorContext";
 
 interface WaypointEditorClientProps {
     template: {
@@ -25,15 +25,9 @@ interface WaypointEditorClientProps {
 export function WaypointEditorClient({ template, savedBlocks }: WaypointEditorClientProps) {
     const router = useRouter();
     const [initialized, setInitialized] = useState(false);
-    const [initialDocument, setInitialDocument] = useState<string | null>(null);
 
-    // Get current document from store
-    const currentDocument = useDocument();
-
-    // Check if there are unsaved changes
-    const hasUnsavedChanges = initialized && initialDocument
-        ? JSON.stringify(currentDocument) !== initialDocument
-        : false;
+    // Get unsaved changes from Zustand store
+    const hasUnsavedChanges = useHasUnsavedChanges();
 
     useEffect(() => {
         // Always reset the editor state when template changes
@@ -58,28 +52,18 @@ export function WaypointEditorClient({ template, savedBlocks }: WaypointEditorCl
             document: documentContent,
         });
 
-        // Store initial document for comparison
-        setInitialDocument(JSON.stringify(documentContent));
+        // Initialize history for undo/redo (also sets saved snapshot)
+        initializeHistory(documentContent);
         setInitialized(true);
     }, [template.id]);
-
-    // Update initial document when save is successful
-    useEffect(() => {
-        const handleSaveSuccess = () => {
-            setInitialDocument(JSON.stringify(currentDocument));
-        };
-
-        window.addEventListener('template-saved', handleSaveSuccess);
-        return () => window.removeEventListener('template-saved', handleSaveSuccess);
-    }, [currentDocument]);
 
     // Warn user before leaving if there are unsaved changes
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
             if (hasUnsavedChanges) {
                 e.preventDefault();
-                e.returnValue = '';
-                return '';
+                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+                return 'You have unsaved changes. Are you sure you want to leave?';
             }
         };
 

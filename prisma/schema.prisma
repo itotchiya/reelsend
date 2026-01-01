@@ -29,9 +29,12 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
-  role          Role?     @relation(fields: [roleId], references: [id])
-  accounts      Account[]
-  sessions      Session[]
+  role              Role?      @relation(fields: [roleId], references: [id])
+  accounts          Account[]
+  sessions          Session[]
+  templatesCreated  Template[] @relation("TemplatesCreated")
+  templatesUpdated  Template[] @relation("TemplatesUpdated")
+  templateActivities TemplateActivity[] @relation("TemplateActivities")
 }
 
 // ============================================
@@ -293,12 +296,32 @@ model Template {
   previewUrl   String?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+  createdById  String?     // User who created the template
+  updatedById  String?     // User who last updated the template
   
   client       Client?     @relation(fields: [clientId], references: [id], onDelete: Cascade)
   baseLayout   BaseLayout? @relation(fields: [baseLayoutId], references: [id], onDelete: SetNull)
+  createdBy    User?       @relation("TemplatesCreated", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy    User?       @relation("TemplatesUpdated", fields: [updatedById], references: [id], onDelete: SetNull)
   campaigns    Campaign[]
+  activities   TemplateActivity[]
   
   @@unique([clientId, name])
+}
+
+model TemplateActivity {
+  id          String   @id @default(cuid())
+  templateId  String
+  userId      String?
+  action      String   // "created", "updated", "duplicated", "details_updated"
+  description String?  // Optional description of what changed
+  createdAt   DateTime @default(now())
+  
+  template    Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  user        User?    @relation("TemplateActivities", fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@index([templateId])
+  @@index([createdAt])
 }
 
 // ============================================
