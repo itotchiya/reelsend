@@ -283,7 +283,7 @@ model BaseLayout {
 
 model Template {
   id           String      @id @default(cuid())
-  clientId     String
+  clientId     String?
   baseLayoutId String?
   name         String
   description  String?
@@ -294,7 +294,7 @@ model Template {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   
-  client       Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client       Client?     @relation(fields: [clientId], references: [id], onDelete: Cascade)
   baseLayout   BaseLayout? @relation(fields: [baseLayoutId], references: [id], onDelete: SetNull)
   campaigns    Campaign[]
   

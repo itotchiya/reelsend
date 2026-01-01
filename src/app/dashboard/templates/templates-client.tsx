@@ -17,7 +17,7 @@ interface Template {
     client: {
         id: string;
         name: string;
-    };
+    } | null;
     createdAt: Date;
 }
 
@@ -67,7 +67,7 @@ export function TemplatesClient({ initialTemplates }: TemplatesClientProps) {
                                             {template.name}
                                         </CardTitle>
                                         <Badge variant="secondary" className="shrink-0 text-[10px] uppercase font-bold tracking-wider">
-                                            {template.client.name}
+                                            {template.client?.name || "Unassigned"}
                                         </Badge>
                                     </div>
                                     <CardDescription className="line-clamp-2 min-h-[40px]">
@@ -76,7 +76,7 @@ export function TemplatesClient({ initialTemplates }: TemplatesClientProps) {
                                 </CardHeader>
                                 <CardContent>
                                     <Button variant="outline" size="sm" asChild className="w-full">
-                                        <Link href={`/editor/${template.id}`}>
+                                        <Link href={`/editor/templates/${template.id}`}>
                                             Open Editor
                                         </Link>
                                     </Button>
