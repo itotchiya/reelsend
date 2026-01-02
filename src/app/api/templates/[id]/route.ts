@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 
 export async function GET(
     request: NextRequest,
@@ -77,6 +78,9 @@ export async function PATCH(
             },
         });
 
+        // Revalidate the templates list to show updated content
+        revalidatePath("/dashboard/templates");
+
         return NextResponse.json(template);
     } catch (error) {
         console.error("[TEMPLATE_PATCH]", error);
@@ -105,10 +109,12 @@ export async function DELETE(
             return new NextResponse("Template not found", { status: 404 });
         }
 
-        // Delete the template
         await db.template.delete({
             where: { id },
         });
+
+        // Revalidate the templates list
+        revalidatePath("/dashboard/templates");
 
         return new NextResponse(null, { status: 204 });
     } catch (error) {

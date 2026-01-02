@@ -330,7 +330,7 @@ export function ClientsClient({
                                                 : "bg-zinc-500/10 text-zinc-600 border-zinc-500/20"
                                         )}>
                                             {client.isPublic ? <Unlock className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-                                            {client.isPublic ? "Public" : "Private"}
+                                            {client.isPublic ? t.clients.public : t.clients.private}
                                         </div>
 
                                         {/* SMTP Status Badge */}
@@ -343,12 +343,12 @@ export function ClientsClient({
                                             {client.smtpVerified ? (
                                                 <div className="flex items-center gap-1.5">
                                                     <Mail className="h-3 w-3" />
-                                                    <span>SMTP Verified</span>
+                                                    <span>{t.clients.smtpVerified}</span>
                                                 </div>
                                             ) : (
                                                 <div className="flex items-center gap-1.5">
                                                     <AlertCircle className="h-3 w-3" />
-                                                    <span>SMTP Fix Required</span>
+                                                    <span>{t.clients.smtpFixRequired}</span>
                                                 </div>
                                             )}
                                         </div>

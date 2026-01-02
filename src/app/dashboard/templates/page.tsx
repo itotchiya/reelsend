@@ -9,6 +9,7 @@ export default async function TemplatesPage() {
                     id: true,
                     name: true,
                     slug: true,
+                    brandColors: true,
                 },
             },
             campaigns: {

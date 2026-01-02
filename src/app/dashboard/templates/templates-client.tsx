@@ -1,17 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
     Dialog,
     DialogContent,
@@ -40,12 +31,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, MoreHorizontal, Pencil, Trash2, ExternalLink, LayoutTemplate, Mail, Copy, Calendar, Clock, Send, CheckCircle2, History } from "lucide-react";
+import { Plus, LayoutTemplate, History, Search as SearchIcon, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 import { CreateTemplateDialog } from "@/components/dashboard/create-template-dialog";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { useI18n } from "@/lib/i18n";
+import { TemplateCard } from "@/components/ui-kit/template-card";
 import {
     Table,
     TableBody,
@@ -59,6 +51,7 @@ interface Client {
     id: string;
     name: string;
     slug: string;
+    brandColors?: { primary?: string; secondary?: string; cta?: string } | null;
 }
 
 interface Campaign {
@@ -95,10 +88,84 @@ export function TemplatesClient({ initialTemplates }: TemplatesClientProps) {
     const [clients, setClients] = useState<Client[]>([]);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+    // Filter states
+    const [searchQuery, setSearchQuery] = useState("");
+    const [clientFilter, setClientFilter] = useState<string>("all");
+    const [editStatusFilter, setEditStatusFilter] = useState<string>("all");
+    const [usageFilter, setUsageFilter] = useState<string>("all");
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(12);
+
+    // Compute filtered templates
+    const filteredTemplates = useMemo(() => {
+        return templates.filter((template) => {
+            // Search filter
+            const matchesSearch = searchQuery === "" ||
+                template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                template.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+            // Client filter
+            const matchesClient = clientFilter === "all" ||
+                (clientFilter === "unassigned" && !template.client) ||
+                template.client?.id === clientFilter;
+
+            // Edit status filter
+            const matchesEditStatus = editStatusFilter === "all" ||
+                (editStatusFilter === "edited" && template.htmlContent) ||
+                (editStatusFilter === "not-edited" && !template.htmlContent);
+
+            // Usage filter
+            const matchesUsage = usageFilter === "all" ||
+                (usageFilter === "in-use" && template.campaigns.length > 0) ||
+                (usageFilter === "not-used" && template.campaigns.length === 0);
+
+            return matchesSearch && matchesClient && matchesEditStatus && matchesUsage;
+        });
+    }, [templates, searchQuery, clientFilter, editStatusFilter, usageFilter]);
+
+    // Get unique clients for filter dropdown
+    const uniqueClients = useMemo(() => {
+        const clientMap = new Map<string, Client>();
+        templates.forEach((t) => {
+            if (t.client) {
+                clientMap.set(t.client.id, t.client);
+            }
+        });
+        return Array.from(clientMap.values());
+    }, [templates]);
+
+    // Pagination calculations
+    const totalPages = Math.ceil(filteredTemplates.length / pageSize);
+    const paginatedTemplates = useMemo(() => {
+        const startIndex = (currentPage - 1) * pageSize;
+        return filteredTemplates.slice(startIndex, startIndex + pageSize);
+    }, [filteredTemplates, currentPage, pageSize]);
+
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, clientFilter, editStatusFilter, usageFilter, pageSize]);
+
     // Update local state when initialTemplates changes (e.g., after a navigation or router.refresh())
     useEffect(() => {
         setTemplates(initialTemplates);
     }, [initialTemplates]);
+
+    // Refresh data when page becomes visible (e.g., after browser back navigation)
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                router.refresh();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [router]);
 
     // Edit dialog state
     const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
@@ -286,6 +353,78 @@ export function TemplatesClient({ initialTemplates }: TemplatesClientProps) {
                 </Button>
             </PageHeader>
             <PageContent>
+                {/* Filter Bar */}
+                {templates.length > 0 && (
+                    <div className="mb-6 space-y-3">
+                        {/* Search Input - Full width */}
+                        <div className="relative w-full">
+                            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder={t.templates.searchPlaceholder || "Search templates..."}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-9 pr-9 w-full"
+                            />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery("")}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Filter Dropdowns - Grid layout, responsive */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            {/* Client Filter */}
+                            <Select value={clientFilter} onValueChange={setClientFilter}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder={t.templates.filterByClient || "Client"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">{t.templates.allClients || "All Clients"}</SelectItem>
+                                    <SelectItem value="unassigned">{t.templates.unassigned || "Unassigned"}</SelectItem>
+                                    {uniqueClients.map((client) => (
+                                        <SelectItem key={client.id} value={client.id}>
+                                            {client.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            {/* Edit Status Filter */}
+                            <Select value={editStatusFilter} onValueChange={setEditStatusFilter}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder={t.templates.editStatus || "Status"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">{t.templates.allStatus || "All Status"}</SelectItem>
+                                    <SelectItem value="edited">{t.templates.edited || "Edited"}</SelectItem>
+                                    <SelectItem value="not-edited">{t.templates.notEdited || "Not Edited"}</SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            {/* Usage Filter */}
+                            <Select value={usageFilter} onValueChange={setUsageFilter}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder={t.templates.usage || "Usage"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">{t.templates.allUsage || "All"}</SelectItem>
+                                    <SelectItem value="in-use">{t.templates.inUse || "In Use"}</SelectItem>
+                                    <SelectItem value="not-used">{t.templates.notUsed || "Not Used"}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Results count - Below filters */}
+                        <div className="text-sm text-muted-foreground text-right">
+                            {filteredTemplates.length} {t.templates.templatesCount || "templates"}
+                        </div>
+                    </div>
+                )}
+
                 {templates.length === 0 ? (
                     <div className="border border-dashed rounded-lg">
                         <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -302,148 +441,129 @@ export function TemplatesClient({ initialTemplates }: TemplatesClientProps) {
                             </Button>
                         </div>
                     </div>
-                ) : (
-                    <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {templates.map((template) => (
-                            <div
-                                key={template.id}
-                                className="group rounded-lg border border-border bg-card overflow-hidden hover:border-primary/50 transition-colors"
-                            >
-                                {/* Email Preview Area - Fixed height showing top portion of email */}
-                                <div
-                                    className="relative h-64 bg-muted/30 overflow-hidden cursor-pointer"
-                                    onClick={() => handleOpenEditor(template)}
-                                >
-                                    {template.htmlContent ? (
-                                        <div className="absolute inset-0 overflow-hidden">
-                                            <iframe
-                                                srcDoc={template.htmlContent}
-                                                className="w-full h-[500px] border-0 pointer-events-none"
-                                                title={`Preview of ${template.name}`}
-                                                sandbox="allow-same-origin"
-                                                scrolling="no"
-                                                style={{
-                                                    transform: 'scale(0.5)',
-                                                    transformOrigin: 'top left',
-                                                    width: '200%',
-                                                    overflow: 'hidden'
-                                                }}
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                                            <Mail className="h-10 w-10 text-muted-foreground/40" />
-                                            <span className="text-xs text-muted-foreground">{t.templates.noPreview}</span>
-                                        </div>
-                                    )}
-
-                                    {/* Hover overlay with solid white button */}
-                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                        <button
-                                            className="flex items-center gap-2 px-5 py-2.5 rounded-md text-sm font-semibold text-gray-900 bg-white hover:bg-gray-100 transition-colors shadow-lg cursor-pointer"
-                                        >
-                                            <ExternalLink className="h-4 w-4" />
-                                            {t.templates.openEditor}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Card Footer */}
-                                <div className="p-3">
-                                    <div className="flex items-start justify-between gap-2">
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="font-semibold text-sm truncate">
-                                                {template.name}
-                                            </h3>
-                                            <p className="text-xs text-muted-foreground truncate mt-0.5">
-                                                {template.description || "No description"}
-                                            </p>
-                                        </div>
-
-                                        {/* More Options Dropdown */}
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => handleOpenEditor(template)}>
-                                                    <ExternalLink className="h-4 w-4 mr-2" />
-                                                    {t.templates.openEditor}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => openEditDialog(template)}>
-                                                    <Pencil className="h-4 w-4 mr-2" />
-                                                    {t.templates.editDetails}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    onClick={() => handleDuplicate(template)}
-                                                    disabled={isDuplicating}
-                                                >
-                                                    <Copy className="h-4 w-4 mr-2" />
-                                                    {t.templates.duplicate}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => openActivityDialog(template)}>
-                                                    <History className="h-4 w-4 mr-2" />
-                                                    {t.templates.viewActivity}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem
-                                                    onClick={() => setDeletingTemplate(template)}
-                                                    className="text-destructive focus:text-destructive"
-                                                >
-                                                    <Trash2 className="h-4 w-4 mr-2" />
-                                                    {t.templates.delete}
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-
-                                    {/* Metadata Section - Clean list layout */}
-                                    <div className="mt-3 pt-3 border-t border-border space-y-2">
-                                        {/* Client & Status Row */}
-                                        <div className="flex items-center justify-between gap-2">
-                                            <Badge
-                                                variant="outline"
-                                                className="text-[9px] uppercase font-medium tracking-wider"
-                                            >
-                                                {template.client?.name || t.templates.unassigned}
-                                            </Badge>
-                                            {template.campaigns && template.campaigns.length > 0 ? (
-                                                <Badge variant="default" className="text-[9px] bg-green-600 hover:bg-green-600">
-                                                    {t.templates.inUse}
-                                                </Badge>
-                                            ) : (
-                                                <Badge variant="secondary" className="text-[9px]">
-                                                    {t.templates.notUsed}
-                                                </Badge>
-                                            )}
-                                        </div>
-
-                                        {/* Details List */}
-                                        <div className="space-y-1.5 text-xs text-muted-foreground">
-                                            <div className="flex justify-between">
-                                                <span className="text-foreground/60">{t.templates.created}</span>
-                                                <span>{new Date(template.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-foreground/60">{t.templates.createdBy}</span>
-                                                <span>{template.createdBy?.name || "—"}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-foreground/60">{t.templates.lastEdited}</span>
-                                                <span>{new Date(template.updatedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-foreground/60">{t.templates.editedBy}</span>
-                                                <span>{template.updatedBy?.name || "—"}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+                ) : filteredTemplates.length === 0 ? (
+                    <div className="border border-dashed rounded-lg py-12 text-center">
+                        <SearchIcon className="h-10 w-10 text-muted-foreground/40 mx-auto mb-4" />
+                        <h3 className="font-semibold mb-1">{t.templates.noResults || "No templates found"}</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                            {t.templates.noResultsDesc || "Try adjusting your filters or search query"}
+                        </p>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                                setSearchQuery("");
+                                setClientFilter("all");
+                                setEditStatusFilter("all");
+                                setUsageFilter("all");
+                            }}
+                        >
+                            {t.templates.clearFilters || "Clear Filters"}
+                        </Button>
                     </div>
+                ) : (
+                    <>
+                        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            {paginatedTemplates.map((template) => (
+                                <TemplateCard
+                                    key={template.id}
+                                    template={{
+                                        ...template,
+                                        client: template.client ? {
+                                            id: template.client.id,
+                                            name: template.client.name,
+                                            slug: template.client.slug,
+                                            primaryColor: template.client.brandColors?.primary,
+                                        } : null,
+                                    }}
+                                    onOpen={handleOpenEditor}
+                                    onEdit={openEditDialog}
+                                    onDuplicate={handleDuplicate}
+                                    onDelete={setDeletingTemplate}
+                                    onViewActivity={openActivityDialog}
+                                    labels={{
+                                        openEditor: t.templates.openEditor,
+                                        editDetails: t.templates.editDetails,
+                                        duplicate: t.templates.duplicate,
+                                        viewActivity: t.templates.viewActivity,
+                                        delete: t.templates.delete,
+                                        noPreview: t.templates.noPreview,
+                                        noDescription: t.templates.noDescription,
+                                        notYetEdited: t.templates.notYetEdited,
+                                        unassigned: t.templates.unassigned,
+                                        createdBy: t.templates.createdBy,
+                                        editedBy: t.templates.editedBy,
+                                    }}
+                                />
+                            ))}
+                        </div>
+
+                        {/* Pagination Controls - Stacked layout */}
+                        <div className="mt-6 border-t pt-4 space-y-3">
+                            {/* Page Size Selector - Top row */}
+                            <div className="flex items-center justify-center gap-2">
+                                <span className="text-sm text-muted-foreground">
+                                    {t.templates.showPerPage || "Show"}
+                                </span>
+                                <Select
+                                    value={String(pageSize)}
+                                    onValueChange={(val) => setPageSize(Number(val))}
+                                >
+                                    <SelectTrigger className="w-[80px] h-8">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="8">8</SelectItem>
+                                        <SelectItem value="12">12</SelectItem>
+                                        <SelectItem value="24">24</SelectItem>
+                                        <SelectItem value="48">48</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <span className="text-sm text-muted-foreground">
+                                    {t.templates.perPage || "per page"}
+                                </span>
+                            </div>
+
+                            {/* Page Navigation - Bottom row, centered */}
+                            <div className="flex items-center justify-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage <= 1}
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                </Button>
+                                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                                    <span>{t.templates.page || "Page"}</span>
+                                    <Input
+                                        type="number"
+                                        min={1}
+                                        max={Math.max(1, totalPages)}
+                                        value={currentPage}
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value);
+                                            if (!isNaN(val) && val >= 1 && val <= totalPages) {
+                                                setCurrentPage(val);
+                                            }
+                                        }}
+                                        className="w-14 h-8 text-center px-1"
+                                    />
+                                    <span>/ {Math.max(1, totalPages)}</span>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage >= totalPages || totalPages <= 1}
+                                >
+                                    <ChevronRight className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    </>
                 )}
             </PageContent>
 
@@ -451,48 +571,53 @@ export function TemplatesClient({ initialTemplates }: TemplatesClientProps) {
             <CreateTemplateDialog
                 open={isCreateOpen}
                 onOpenChange={setIsCreateOpen}
+                onTemplateCreated={(template) => {
+                    // Find client info and add to local state for instant display
+                    const client = clients.find(c => c.id === template.clientId) || null;
+                    setTemplates(prev => [{ ...template, client, campaigns: [], createdBy: null, updatedBy: null }, ...prev]);
+                }}
             />
 
             {/* Edit Template Dialog */}
             <Dialog open={!!editingTemplate} onOpenChange={(open) => !open && setEditingTemplate(null)}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Edit Template Details</DialogTitle>
+                        <DialogTitle>{t.templates.editTitle}</DialogTitle>
                         <DialogDescription>
-                            Update the name, description, and client assignment.
+                            {t.templates.editDescription}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="edit-name">Template Name</Label>
+                            <Label htmlFor="edit-name">{t.templates.name}</Label>
                             <Input
                                 id="edit-name"
                                 value={editForm.name}
                                 onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                                placeholder="Enter template name"
+                                placeholder={t.templates.createDialog.namePlaceholder}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="edit-description">Description</Label>
+                            <Label htmlFor="edit-description">{t.templates.description}</Label>
                             <Textarea
                                 id="edit-description"
                                 value={editForm.description}
                                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                                placeholder="Enter template description"
+                                placeholder={t.templates.createDialog.descPlaceholder}
                                 rows={3}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Client</Label>
+                            <Label>{t.templates.client}</Label>
                             <Select
                                 value={editForm.clientId || "unassigned"}
                                 onValueChange={(value) => setEditForm({ ...editForm, clientId: value === "unassigned" ? "" : value })}
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select a client" />
+                                    <SelectValue placeholder={t.templates.selectClient} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                                    <SelectItem value="unassigned">{t.templates.unassigned}</SelectItem>
                                     {clients.map((client) => (
                                         <SelectItem key={client.id} value={client.id}>
                                             {client.name}
@@ -504,11 +629,11 @@ export function TemplatesClient({ initialTemplates }: TemplatesClientProps) {
                     </div>
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setEditingTemplate(null)} disabled={isEditing}>
-                            Cancel
+                            {t.common.cancel}
                         </Button>
                         <Button onClick={handleEditSubmit} disabled={isEditing || !editForm.name}>
                             {isEditing && <Spinner className="h-4 w-4 mr-2" />}
-                            Save Changes
+                            {t.templates.saveChanges}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -518,20 +643,20 @@ export function TemplatesClient({ initialTemplates }: TemplatesClientProps) {
             <AlertDialog open={!!deletingTemplate} onOpenChange={(open) => !open && setDeletingTemplate(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Template</AlertDialogTitle>
+                        <AlertDialogTitle>{t.templates.deleteTitle}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete "{deletingTemplate?.name}"? This action cannot be undone.
+                            {t.templates.deleteConfirm} "{deletingTemplate?.name}"? {t.templates.deleteWarning}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel disabled={isDeleting}>{t.common.cancel}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDelete}
                             disabled={isDeleting}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                             {isDeleting && <Spinner className="h-4 w-4 mr-2" />}
-                            Delete
+                            {t.templates.delete}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -539,63 +664,66 @@ export function TemplatesClient({ initialTemplates }: TemplatesClientProps) {
 
             {/* Activities History Dialog */}
             <Dialog open={!!activityTemplate} onOpenChange={(open) => !open && setActivityTemplate(null)}>
-                <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+                <DialogContent className="max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>{t.templates.activitiesHistory}</DialogTitle>
                         <DialogDescription>
-                            {t.templates.activitiesHistoryDesc} "{activityTemplate?.name}"
+                            {t.templates.activitiesHistoryDesc} {activityTemplate?.name}
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="flex-1 overflow-auto">
+                    <div className="py-4 h-[400px]">
                         {isLoadingActivities ? (
-                            <div className="flex items-center justify-center py-8">
-                                <Spinner className="h-6 w-6" />
+                            <div className="flex flex-col items-center justify-center h-full gap-4">
+                                <Spinner className="h-8 w-8" />
+                                <p className="text-sm text-muted-foreground">{t.common.loading}</p>
                             </div>
                         ) : activities.length === 0 ? (
-                            <div className="text-center py-8 text-muted-foreground">
-                                {t.templates.noActivity}
+                            <div className="flex flex-col items-center justify-center h-full text-center p-8 gap-4 border border-dashed rounded-xl">
+                                <History className="h-12 w-12 text-muted-foreground/30" />
+                                <p className="text-muted-foreground">{t.templates.noActivity}</p>
                             </div>
                         ) : (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[150px]">{t.templates.action}</TableHead>
-                                        <TableHead className="w-[180px]">{t.templates.user}</TableHead>
-                                        <TableHead className="w-[150px]">{t.templates.date}</TableHead>
-                                        <TableHead>{t.templates.description}</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {activities.map((activity) => (
-                                        <TableRow key={activity.id}>
-                                            <TableCell>
-                                                <Badge variant="outline" className="text-xs whitespace-nowrap">
-                                                    {getActionLabel(activity.action)}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="font-medium">
-                                                {activity.user?.name || activity.user?.email || "—"}
-                                            </TableCell>
-                                            <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
-                                                {new Date(activity.createdAt).toLocaleString([], {
-                                                    dateStyle: 'short',
-                                                    timeStyle: 'short'
-                                                })}
-                                            </TableCell>
-                                            <TableCell className="text-muted-foreground text-sm">
-                                                {activity.description || "—"}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                            <div className="h-full overflow-y-auto pr-4 space-y-4">
+                                {activities.map((activity) => (
+                                    <div key={activity.id} className="relative pl-6 pb-6 border-l last:pb-0">
+                                        <div className="absolute left-[-5px] top-1 h-2.5 w-2.5 rounded-full bg-primary border-4 border-background" />
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="font-bold text-sm">
+                                                    {activity.action === "CREATED" ? t.templates.actionCreated :
+                                                        activity.action === "CONTENT_UPDATED" ? t.templates.actionContentUpdated :
+                                                            activity.action === "DETAILS_UPDATED" ? t.templates.actionDetailsUpdated :
+                                                                activity.action === "DUPLICATED" ? t.templates.actionDuplicated :
+                                                                    activity.action}
+                                                </span>
+                                                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider bg-muted px-1.5 py-0.5 rounded">
+                                                    {new Date(activity.createdAt).toLocaleString('fr-FR', {
+                                                        day: '2-digit', month: '2-digit', year: '2-digit',
+                                                        hour: '2-digit', minute: '2-digit'
+                                                    })}
+                                                </span>
+                                            </div>
+                                            {activity.description && (
+                                                <p className="text-xs text-muted-foreground leading-relaxed italic border-l-2 pl-2 mt-1">
+                                                    {activity.description}
+                                                </p>
+                                            )}
+                                            {activity.user && (
+                                                <div className="flex items-center gap-1.5 mt-2 opacity-70">
+                                                    <div className="h-4 w-4 bg-muted border rounded-full flex items-center justify-center overflow-hidden">
+                                                        <span className="text-[8px] font-bold">{(activity.user.name || activity.user.email)[0].toUpperCase()}</span>
+                                                    </div>
+                                                    <span className="text-[10px] font-medium text-muted-foreground">
+                                                        {activity.user.name || activity.user.email}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         )}
                     </div>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setActivityTemplate(null)}>
-                            {t.templates.close}
-                        </Button>
-                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </>

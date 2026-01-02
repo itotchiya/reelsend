@@ -39,6 +39,8 @@ export function WaypointEditorClient({ template, savedBlocks }: WaypointEditorCl
     }, [template]);
 
     const handleBack = () => {
+        // Refresh to ensure the templates list shows updated data
+        router.refresh();
         if (template.client?.slug) {
             router.push(`/dashboard/clients/${template.client.slug}`);
         } else {

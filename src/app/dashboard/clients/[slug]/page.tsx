@@ -45,6 +45,14 @@ export default async function ClientDetailPage({ params }: PageProps) {
             templates: {
                 take: 5,
                 orderBy: { createdAt: "desc" },
+                select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    htmlContent: true,
+                    createdAt: true,
+                    updatedAt: true,
+                },
             },
             smtpTestLogs: {
                 take: 10,

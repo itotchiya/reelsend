@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Mail, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { db } from "@/lib/db";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
+import { CreateCampaignDialog } from "./create-campaign-dialog";
 
 const statusConfig = {
     DRAFT: { label: "Draft", variant: "secondary" as const, icon: Clock },
@@ -16,27 +17,29 @@ const statusConfig = {
 };
 
 export default async function CampaignsPage() {
-    const campaigns = await db.campaign.findMany({
-        include: {
-            client: true,
-            template: true,
-            audience: true,
-            analytics: true,
-        },
-        orderBy: {
-            createdAt: "desc",
-        },
-    });
+    const [campaigns, clients] = await Promise.all([
+        db.campaign.findMany({
+            include: {
+                client: true,
+                template: true,
+                audience: true,
+                analytics: true,
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+        }),
+        db.client.findMany({
+            where: { active: true },
+            select: { id: true, name: true },
+            orderBy: { name: "asc" },
+        }),
+    ]);
 
     return (
         <>
             <PageHeader title="Campaigns">
-                <Button asChild>
-                    <Link href="/dashboard/campaigns/new">
-                        <Plus className="mr-2 h-4 w-4" />
-                        New Campaign
-                    </Link>
-                </Button>
+                <CreateCampaignDialog clients={clients} />
             </PageHeader>
             <PageContent>
                 {campaigns.length === 0 ? (
@@ -47,12 +50,15 @@ export default async function CampaignsPage() {
                             <p className="text-muted-foreground text-center mb-4">
                                 Create your first campaign to start sending emails.
                             </p>
-                            <Button asChild>
-                                <Link href="/dashboard/campaigns/new">
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Create Your First Campaign
-                                </Link>
-                            </Button>
+                            <CreateCampaignDialog
+                                clients={clients}
+                                trigger={
+                                    <Button>
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Create Your First Campaign
+                                    </Button>
+                                }
+                            />
                         </CardContent>
                     </Card>
                 ) : (
@@ -73,7 +79,7 @@ export default async function CampaignsPage() {
                                                 </Badge>
                                             </div>
                                             <CardDescription className="mt-1">
-                                                {campaign.client.name} • {campaign.subject}
+                                                {campaign.client.name} • {campaign.subject || "No subject"}
                                             </CardDescription>
                                         </div>
                                         <Button variant="outline" size="sm" asChild>

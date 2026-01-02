@@ -34,12 +34,14 @@ interface CreateTemplateDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     clientId?: string;
+    onTemplateCreated?: (template: any) => void;
 }
 
 export function CreateTemplateDialog({
     open,
     onOpenChange,
-    clientId: initialClientId
+    clientId: initialClientId,
+    onTemplateCreated
 }: CreateTemplateDialogProps) {
     const { t } = useI18n();
     const router = useRouter();
@@ -86,11 +88,11 @@ export function CreateTemplateDialog({
         e.preventDefault();
 
         if (!formData.name) {
-            toast.error("Name is required");
+            toast.error(t.templates.createDialog.nameRequired);
             return;
         }
         if (!formData.clientId) {
-            toast.error("Please select a client");
+            toast.error(t.templates.createDialog.clientRequired);
             return;
         }
 
@@ -106,8 +108,12 @@ export function CreateTemplateDialog({
                 const template = await res.json();
                 toast.success(t.common.success);
                 onOpenChange(false);
-                router.refresh(); // Refresh to ensure Templates list is updated when navigating back
-                router.push(`/templates/${template.id}`);
+                // Add the new template to the list immediately
+                if (onTemplateCreated) {
+                    onTemplateCreated(template);
+                }
+                router.refresh();
+                // Stay on templates list - don't navigate to editor
             } else {
                 const error = await res.text();
                 toast.error(error || t.common.error);
@@ -123,22 +129,22 @@ export function CreateTemplateDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Create Email Template</DialogTitle>
+                    <DialogTitle>{t.templates.createDialog.title}</DialogTitle>
                     <DialogDescription>
-                        Set up the basic details for your new email template.
+                        {t.templates.createDialog.description}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 py-4">
                     {!initialClientId && (
                         <div className="space-y-2">
-                            <Label htmlFor="clientId">Client *</Label>
+                            <Label htmlFor="clientId">{t.templates.createDialog.clientLabel} *</Label>
                             <Select
                                 value={formData.clientId}
                                 onValueChange={(value) => setFormData({ ...formData, clientId: value })}
                                 disabled={fetchingClients}
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder={fetchingClients ? t.common.loading : "Select a client"} />
+                                    <SelectValue placeholder={fetchingClients ? t.common.loading : t.templates.createDialog.selectClient} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {clients.map((client) => (
@@ -152,10 +158,10 @@ export function CreateTemplateDialog({
                     )}
 
                     <div className="space-y-2">
-                        <Label htmlFor="name">Template Name *</Label>
+                        <Label htmlFor="name">{t.templates.createDialog.nameLabel} *</Label>
                         <Input
                             id="name"
-                            placeholder="e.g., Welcome Email"
+                            placeholder={t.templates.createDialog.namePlaceholder}
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             required
@@ -163,10 +169,10 @@ export function CreateTemplateDialog({
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
+                        <Label htmlFor="description">{t.templates.createDialog.descLabel}</Label>
                         <Textarea
                             id="description"
-                            placeholder="Briefly describe what this template is for..."
+                            placeholder={t.templates.createDialog.descPlaceholder}
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             className="resize-none"
@@ -185,7 +191,7 @@ export function CreateTemplateDialog({
                         </Button>
                         <Button type="submit" disabled={loading || (fetchingClients && !initialClientId)} className="gap-2">
                             {loading && <Spinner className="h-4 w-4" />}
-                            Create Template
+                            {t.templates.createDialog.create}
                         </Button>
                     </DialogFooter>
                 </form>
@@ -193,3 +199,4 @@ export function CreateTemplateDialog({
         </Dialog>
     );
 }
+
