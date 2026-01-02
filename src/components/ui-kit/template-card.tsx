@@ -2,15 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2, ExternalLink, Mail, Copy, History, AlertCircle } from "lucide-react";
+import { ExternalLink, Mail, AlertCircle } from "lucide-react";
+import { CardActions, type CardAction } from "./card-actions";
+import { ClientBadgeSolid, CampaignBadge, NotUsedBadge, CardBadge } from "./card-badge";
 
 /**
  * TemplateCard Component
@@ -91,22 +85,7 @@ const defaultLabels = {
     editedBy: "Edited by",
 };
 
-// Helper function to get contrasting text color based on background
-function getContrastColor(hexColor: string): string {
-    // Remove # if present
-    const hex = hexColor.replace('#', '');
 
-    // Parse RGB values
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-
-    // Calculate relative luminance
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-    // Return black or white based on luminance
-    return luminance > 0.5 ? '#000000' : '#ffffff';
-}
 
 export function TemplateCard({
     template,
@@ -197,39 +176,38 @@ export function TemplateCard({
                     </div>
 
                     {/* More Options Dropdown */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => onOpen?.(template)}>
-                                <ExternalLink className="h-4 w-4 mr-2" />
-                                {labels.openEditor}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onEdit?.(template)}>
-                                <Pencil className="h-4 w-4 mr-2" />
-                                {labels.editDetails}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleDuplicate} disabled={isDuplicating}>
-                                <Copy className="h-4 w-4 mr-2" />
-                                {labels.duplicate}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onViewActivity?.(template)}>
-                                <History className="h-4 w-4 mr-2" />
-                                {labels.viewActivity}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                                onClick={() => onDelete?.(template)}
-                                className="text-destructive focus:text-destructive"
-                            >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                {labels.delete}
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <CardActions
+                        actions={[
+                            {
+                                type: "openEditor",
+                                label: labels.openEditor,
+                                onClick: () => onOpen?.(template),
+                            },
+                            {
+                                type: "edit",
+                                label: labels.editDetails,
+                                onClick: () => onEdit?.(template),
+                            },
+                            {
+                                type: "duplicate",
+                                label: labels.duplicate,
+                                onClick: handleDuplicate,
+                                disabled: isDuplicating,
+                            },
+                            {
+                                type: "viewActivity",
+                                label: labels.viewActivity,
+                                onClick: () => onViewActivity?.(template),
+                            },
+                            {
+                                type: "delete",
+                                label: labels.delete,
+                                onClick: () => onDelete?.(template),
+                                danger: true,
+                                separatorBefore: true,
+                            },
+                        ] as CardAction[]}
+                    />
                 </div>
 
                 {/* Badges Section - Responsive wrap, show ALL badges */}
@@ -237,36 +215,32 @@ export function TemplateCard({
                     {/* Client Badge - Filled with primary color */}
                     {template.client ? (
                         <Link href={`/dashboard/clients/${template.client.slug}`}>
-                            <span
-                                className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium transition-opacity hover:opacity-80 cursor-pointer"
-                                style={{
-                                    backgroundColor: template.client.primaryColor || '#6366f1',
-                                    color: getContrastColor(template.client.primaryColor || '#6366f1'),
-                                }}
-                            >
-                                {template.client.name}
-                            </span>
+                            <ClientBadgeSolid
+                                clientName={template.client.name}
+                                primaryColor={template.client.primaryColor}
+                                className="hover:opacity-80 transition-opacity cursor-pointer"
+                            />
                         </Link>
                     ) : (
-                        <span className="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 ring-1 ring-inset ring-gray-400/20">
+                        <CardBadge variant="border" color="gray">
                             {labels.unassigned}
-                        </span>
+                        </CardBadge>
                     )}
 
                     {/* Not Edited Badge - Only show if no content */}
                     {!template.htmlContent && (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-amber-400/10 px-2 py-1 text-xs font-medium text-amber-600 dark:text-amber-400 ring-1 ring-inset ring-amber-400/20">
-                            <AlertCircle className="h-3 w-3" />
-                            {labels.notYetEdited}
-                        </span>
+                        <NotUsedBadge
+                            label={labels.notYetEdited}
+                            badgeIcon={<AlertCircle className="h-3 w-3" />}
+                        />
                     )}
 
                     {/* ALL Campaign Badges - Clickable */}
                     {template.campaigns.map((campaign) => (
                         <Link key={campaign.id} href={`/dashboard/campaigns/${campaign.id}`}>
-                            <span className="inline-flex items-center rounded-md bg-green-400/10 px-2 py-1 text-xs font-medium text-green-600 dark:text-green-400 ring-1 ring-inset ring-green-400/20 hover:bg-green-400/20 transition-colors cursor-pointer">
-                                {campaign.name}
-                            </span>
+                            <CampaignBadge
+                                campaignName={campaign.name}
+                            />
                         </Link>
                     ))}
                 </div>

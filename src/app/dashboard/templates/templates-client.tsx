@@ -498,69 +498,71 @@ export function TemplatesClient({ initialTemplates }: TemplatesClientProps) {
                             ))}
                         </div>
 
-                        {/* Pagination Controls - Stacked layout */}
-                        <div className="mt-6 border-t pt-4 space-y-3">
-                            {/* Page Size Selector - Top row */}
-                            <div className="flex items-center justify-center gap-2">
-                                <span className="text-sm text-muted-foreground">
-                                    {t.templates.showPerPage || "Show"}
-                                </span>
-                                <Select
-                                    value={String(pageSize)}
-                                    onValueChange={(val) => setPageSize(Number(val))}
-                                >
-                                    <SelectTrigger className="w-[80px] h-8">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="8">8</SelectItem>
-                                        <SelectItem value="12">12</SelectItem>
-                                        <SelectItem value="24">24</SelectItem>
-                                        <SelectItem value="48">48</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <span className="text-sm text-muted-foreground">
-                                    {t.templates.perPage || "per page"}
-                                </span>
-                            </div>
-
-                            {/* Page Navigation - Bottom row, centered */}
-                            <div className="flex items-center justify-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                    disabled={currentPage <= 1}
-                                >
-                                    <ChevronLeft className="h-4 w-4" />
-                                </Button>
-                                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                                    <span>{t.templates.page || "Page"}</span>
-                                    <Input
-                                        type="number"
-                                        min={1}
-                                        max={Math.max(1, totalPages)}
-                                        value={currentPage}
-                                        onChange={(e) => {
-                                            const val = parseInt(e.target.value);
-                                            if (!isNaN(val) && val >= 1 && val <= totalPages) {
-                                                setCurrentPage(val);
-                                            }
-                                        }}
-                                        className="w-14 h-8 text-center px-1"
-                                    />
-                                    <span>/ {Math.max(1, totalPages)}</span>
+                        {/* Pagination Controls - Horizontal on desktop, stacked on mobile */}
+                        <div className="mt-6 border-t pt-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                {/* Page Size Selector - Left on desktop */}
+                                <div className="flex items-center justify-center sm:justify-start gap-2">
+                                    <span className="text-sm text-muted-foreground">
+                                        {t.templates.showPerPage || "Show"}
+                                    </span>
+                                    <Select
+                                        value={String(pageSize)}
+                                        onValueChange={(val) => setPageSize(Number(val))}
+                                    >
+                                        <SelectTrigger className="w-[80px] h-8">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="8">8</SelectItem>
+                                            <SelectItem value="12">12</SelectItem>
+                                            <SelectItem value="24">24</SelectItem>
+                                            <SelectItem value="48">48</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <span className="text-sm text-muted-foreground">
+                                        {t.templates.perPage || "per page"}
+                                    </span>
                                 </div>
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                    disabled={currentPage >= totalPages || totalPages <= 1}
-                                >
-                                    <ChevronRight className="h-4 w-4" />
-                                </Button>
+
+                                {/* Page Navigation - Right on desktop */}
+                                <div className="flex items-center justify-center sm:justify-end gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                        disabled={currentPage <= 1}
+                                    >
+                                        <ChevronLeft className="h-4 w-4" />
+                                    </Button>
+                                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                                        <span>{t.templates.page || "Page"}</span>
+                                        <Input
+                                            type="number"
+                                            min={1}
+                                            max={Math.max(1, totalPages)}
+                                            value={currentPage}
+                                            onChange={(e) => {
+                                                const val = parseInt(e.target.value);
+                                                if (!isNaN(val) && val >= 1 && val <= totalPages) {
+                                                    setCurrentPage(val);
+                                                }
+                                            }}
+                                            className="w-14 h-8 text-center px-1"
+                                        />
+                                        <span>/ {Math.max(1, totalPages)}</span>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                        disabled={currentPage >= totalPages || totalPages <= 1}
+                                    >
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </>

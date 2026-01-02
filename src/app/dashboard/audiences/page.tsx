@@ -10,7 +10,15 @@ export default async function AudiencesPage() {
                     name: true,
                     slug: true,
                     logo: true,
+                    brandColors: true,
                 }
+            },
+            campaigns: {
+                select: {
+                    id: true,
+                    name: true,
+                },
+                take: 3,
             },
             _count: {
                 select: {
