@@ -13,8 +13,18 @@ export async function POST(req: NextRequest) {
     try {
         const user = await getCurrentUser();
 
-        if (!user) {
+        if (!user || !user.id) {
             return new NextResponse("Unauthorized", { status: 401 });
+        }
+
+        // DOUBLE CHECK: Verify user exists in DB to prevent foreign key errors (stale session)
+        const dbUser = await db.user.findUnique({
+            where: { id: user.id },
+            select: { id: true }
+        });
+
+        if (!dbUser) {
+            return new NextResponse("Session expired or user not found. Please log out and back in.", { status: 403 });
         }
 
         const json = await req.json();
@@ -41,15 +51,24 @@ export async function POST(req: NextRequest) {
                 description,
                 clientId,
                 status: "DRAFT",
+                createdById: user.id,
+                updatedById: user.id,
             },
         });
 
         return NextResponse.json(campaign);
-    } catch (error) {
+    } catch (error: any) {
+        console.error("[CAMPAIGN_POST_ERROR]", error);
+
+        // Handle unique constraint or foreign key errors from Prisma
+        if (error.code === 'P2003') {
+            return new NextResponse("Database constraint error. Your session might be stale - please try logging out and back in.", { status: 500 });
+        }
+
         if (error instanceof z.ZodError) {
             return new NextResponse(JSON.stringify(error.issues), { status: 422 });
         }
 
-        return new NextResponse(null, { status: 500 });
+        return new NextResponse(error.message || "Internal Server Error", { status: 500 });
     }
 }

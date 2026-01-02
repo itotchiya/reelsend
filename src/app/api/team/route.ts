@@ -99,7 +99,7 @@ export async function POST(req: Request) {
             // We still keep the user record, but notify about the email failure
             return NextResponse.json({
                 user: newUser,
-                warning: "User created but invitation email failed to send. Please check SMTP settings."
+                warning: "User created but invitation email failed to send. Please check your Resend API Key and verified domain."
             });
         }
 
