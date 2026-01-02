@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { TemplatesClient } from "./templates-client";
+import { TemplatesClient, type Template } from "./templates-client";
 
 export default async function TemplatesPage() {
     const templates = await db.template.findMany({
@@ -36,5 +36,6 @@ export default async function TemplatesPage() {
         },
     });
 
-    return <TemplatesClient initialTemplates={templates} />;
+    // Cast to expected type (brandColors from Prisma is JsonValue, we know it matches our shape)
+    return <TemplatesClient initialTemplates={templates as unknown as Template[]} />;
 }

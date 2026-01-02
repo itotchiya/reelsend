@@ -77,7 +77,7 @@ interface Audience {
 interface Campaign {
     id: string;
     name: string;
-    subject: string;
+    subject: string | null;
     status: string;
     createdAt: string;
 }

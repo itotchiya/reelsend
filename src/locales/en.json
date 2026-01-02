@@ -372,7 +372,8 @@
             "descLabel": "Description",
             "descPlaceholder": "Briefly describe what this template is for...",
             "create": "Create Template",
-            "nameRequired": "Name is required"
+            "nameRequired": "Name is required",
+            "clientRequired": "Please select a client"
         },
         "notYetEdited": "Not yet edited",
         "noDescription": "No description",

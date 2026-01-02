@@ -64,7 +64,7 @@ interface User {
     name: string | null;
 }
 
-interface Template {
+export interface Template {
     id: string;
     name: string;
     description: string | null;
@@ -73,8 +73,8 @@ interface Template {
     campaigns: Campaign[];
     createdBy: User | null;
     updatedBy: User | null;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt: Date | string;
+    updatedAt: Date | string;
 }
 
 interface TemplatesClientProps {
