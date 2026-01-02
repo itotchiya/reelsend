@@ -33,11 +33,12 @@ export default async function ClientsPage() {
         },
     });
 
-    // Serialize dates
+    // Serialize dates and ensure types match
     const serializedClients = clients.map((client) => ({
         ...client,
         createdAt: client.createdAt.toISOString(),
         updatedAt: client.updatedAt.toISOString(),
+        brandColors: client.brandColors as { primary?: string; secondary?: string } | null,
     }));
 
     // Check user permissions for actions

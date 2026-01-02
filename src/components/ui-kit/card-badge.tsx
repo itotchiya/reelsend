@@ -96,7 +96,7 @@ const dotColors = {
 };
 
 export interface CardBadgeProps
-    extends React.HTMLAttributes<HTMLSpanElement>,
+    extends Omit<React.HTMLAttributes<HTMLSpanElement>, "color">,
     VariantProps<typeof badgeVariants> {
     icon?: React.ReactNode;
     showDot?: boolean;
