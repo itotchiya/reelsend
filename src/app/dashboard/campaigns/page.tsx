@@ -1,62 +1,65 @@
 import { db } from "@/lib/db";
+import { Suspense } from "react";
 import { CampaignsClient } from "./campaigns-client";
 
 export default async function CampaignsPage() {
     const [campaigns, clients] = await Promise.all([
         db.campaign.findMany({
             include: {
-                client: true,
+                client: {
+                    select: {
+                        id: true,
+                        name: true,
+                        slug: true,
+                        logo: true,
+                        brandColors: true,
+                        smtpVerified: true,
+                    },
+                },
                 template: {
                     select: {
                         id: true,
                         name: true,
-                    }
+                    },
                 },
                 audience: {
                     select: {
                         id: true,
                         name: true,
-                    }
+                    },
                 },
-                createdBy: {
+                analytics: {
                     select: {
-                        id: true,
-                        name: true,
-                    }
+                        sent: true,
+                        opened: true,
+                        clicked: true,
+                    },
                 },
-                startedBy: {
-                    select: {
-                        id: true,
-                        name: true,
-                    }
-                },
-                analytics: true,
             },
-            orderBy: {
-                createdAt: "desc",
-            },
+            orderBy: { createdAt: "desc" },
         }),
         db.client.findMany({
-            where: { active: true },
-            select: { id: true, name: true },
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+            },
             orderBy: { name: "asc" },
         }),
     ]);
 
-    // Map campaigns to the format expected by the client component
-    const mappedCampaigns = campaigns.map(campaign => ({
+    // Transform campaigns to match CampaignCardData interface
+    const transformedCampaigns = campaigns.map((campaign) => ({
         ...campaign,
         client: {
             ...campaign.client,
-            smtpVerified: campaign.client.smtpVerified || false,
-        }
-    }));
+            brandColors: campaign.client.brandColors as any,
+        },
+    })) as any[];
 
     return (
-        <CampaignsClient
-            initialCampaigns={mappedCampaigns as any}
-            clients={clients}
-        />
+        <Suspense fallback={<div>Loading...</div>}>
+            <CampaignsClient initialCampaigns={transformedCampaigns} clients={clients} />
+        </Suspense>
     );
 }
-

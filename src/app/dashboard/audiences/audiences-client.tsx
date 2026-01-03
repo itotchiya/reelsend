@@ -1,109 +1,104 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import {
-    Plus,
-    Users,
-    Search as SearchIcon,
-    X,
-    ChevronLeft,
-    ChevronRight,
-} from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Plus, Search, X, Users } from "lucide-react";
+import { AudienceCard, AudienceCardData } from "@/components/ui-kit/audience-card";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
-import { CreateAudienceDialog } from "@/components/dashboard/create-audience-dialog";
-import { useI18n } from "@/lib/i18n";
-import { AudienceCard, type AudienceCardData } from "@/components/ui-kit/audience-card";
-
-interface Audience extends AudienceCardData {
-    createdAt: string;
-}
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Pagination } from "@/components/ui-kit/pagination";
+import { CreateAudienceDialog } from "@/components/dashboard/create-entity-dialog";
+import { DeleteConfirmDialog } from "@/components/dashboard/delete-confirm-dialog";
+import { toast } from "sonner";
 
 interface AudiencesClientProps {
-    initialAudiences: Audience[];
+    initialAudiences: AudienceCardData[];
+    clients: { id: string; name: string; slug: string }[];
 }
 
-export function AudiencesClient({ initialAudiences }: AudiencesClientProps) {
+const ITEMS_PER_PAGE = 12;
+
+export function AudiencesClient({ initialAudiences, clients }: AudiencesClientProps) {
     const router = useRouter();
-    const { t } = useI18n();
-    const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [audiences, setAudiences] = useState<Audience[]>(initialAudiences);
+    const searchParams = useSearchParams();
 
-    // Filter states
-    const [searchQuery, setSearchQuery] = useState("");
-    const [clientFilter, setClientFilter] = useState("all");
-    const [usageFilter, setUsageFilter] = useState("all");
-
-    // Pagination states
+    // States
+    const [audiences, setAudiences] = useState(initialAudiences);
+    const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+    const [clientFilter, setClientFilter] = useState<string>(searchParams.get("client") || "all");
+    const [usageFilter, setUsageFilter] = useState<string>(searchParams.get("usage") || "all");
     const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize, setPageSize] = useState(12);
+    const [createDialogOpen, setCreateDialogOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deletingAudience, setDeletingAudience] = useState<AudienceCardData | null>(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
-    // Get unique clients for filter
-    const uniqueClients = useMemo(() => {
-        const clients = new Map<string, { id: string; name: string }>();
-        audiences.forEach((a) => {
-            if (!clients.has(a.client.id)) {
-                clients.set(a.client.id, { id: a.client.id, name: a.client.name });
-            }
+    const [pageSize, setPageSize] = useState(16);
+
+    // Filter audiences
+    const filteredAudiences = useMemo(() => {
+        return audiences.filter((audience) => {
+            const matchesSearch =
+                audience.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (audience.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+            const matchesClient = clientFilter === "all" || audience.client?.id === clientFilter;
+            const matchesUsage =
+                usageFilter === "all" ||
+                (usageFilter === "used" && audience.campaigns && audience.campaigns.length > 0) ||
+                (usageFilter === "unused" && (!audience.campaigns || audience.campaigns.length === 0));
+            return matchesSearch && matchesClient && matchesUsage;
         });
-        return Array.from(clients.values());
-    }, [audiences]);
+    }, [audiences, searchQuery, clientFilter, usageFilter]);
+
+    // Pagination
+    const totalPages = Math.ceil(filteredAudiences.length / pageSize);
+    const paginatedAudiences = filteredAudiences.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize
+    );
 
     // Reset page when filters change
     useEffect(() => {
         setCurrentPage(1);
     }, [searchQuery, clientFilter, usageFilter, pageSize]);
 
-    // Filtered audiences
-    const filteredAudiences = useMemo(() => {
-        return audiences.filter((audience) => {
-            // Search filter
-            const searchMatch =
-                searchQuery === "" ||
-                audience.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                audience.client.name.toLowerCase().includes(searchQuery.toLowerCase());
-
-            // Client filter
-            let clientMatch = true;
-            if (clientFilter !== "all") {
-                clientMatch = audience.client.id === clientFilter;
-            }
-
-            // Usage filter
-            let usageMatch = true;
-            const isUsed = (audience.campaigns?.length || 0) > 0;
-            if (usageFilter === "used") {
-                usageMatch = isUsed;
-            } else if (usageFilter === "notUsed") {
-                usageMatch = !isUsed;
-            }
-
-            return searchMatch && clientMatch && usageMatch;
-        });
-    }, [audiences, searchQuery, clientFilter, usageFilter]);
-
-    // Paginated audiences
-    const totalPages = Math.ceil(filteredAudiences.length / pageSize);
-    const paginatedAudiences = useMemo(() => {
-        const startIndex = (currentPage - 1) * pageSize;
-        return filteredAudiences.slice(startIndex, startIndex + pageSize);
-    }, [filteredAudiences, currentPage, pageSize]);
-
+    // Handlers
     const handleView = (audience: AudienceCardData) => {
-        router.push(`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}`);
+        if (audience.client?.slug) {
+            router.push(`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}`);
+        }
     };
 
-    const hasActiveFilters = searchQuery || clientFilter !== "all" || usageFilter !== "all";
+    const handleCampaignClick = (campaignId: string) => {
+        // Find the campaign's client slug
+        const audience = audiences.find((a) =>
+            a.campaigns?.some((c) => c.id === campaignId)
+        );
+        if (audience?.client?.slug) {
+            router.push(`/dashboard/clients/${audience.client.slug}/campaigns/${campaignId}`);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!deletingAudience) return;
+        setDeleteLoading(true);
+        try {
+            const response = await fetch(`/api/audiences/${deletingAudience.id}`, {
+                method: "DELETE",
+            });
+            if (!response.ok) throw new Error("Failed to delete");
+            setAudiences(audiences.filter((a) => a.id !== deletingAudience.id));
+            toast.success("Audience deleted");
+            setDeleteDialogOpen(false);
+            setDeletingAudience(null);
+        } catch (error) {
+            toast.error("Failed to delete audience");
+        } finally {
+            setDeleteLoading(false);
+        }
+    };
 
     const clearFilters = () => {
         setSearchQuery("");
@@ -111,202 +106,138 @@ export function AudiencesClient({ initialAudiences }: AudiencesClientProps) {
         setUsageFilter("all");
     };
 
+    const hasActiveFilters = searchQuery || clientFilter !== "all" || usageFilter !== "all";
+
     return (
         <>
-            <PageHeader title={t.audiences.title}>
-                <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    {t.audiences.newAudience}
-                </Button>
-            </PageHeader>
-
+            <PageHeader
+                title="Audiences"
+                description="Manage all your contact lists and segments across clients"
+                action={
+                    <Button onClick={() => setCreateDialogOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        New Audience
+                    </Button>
+                }
+            />
             <PageContent>
-                {/* Filter Bar - One row on desktop, stacked on mobile */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
-                    {/* Search Input */}
-                    <div className="relative flex-1">
-                        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder={t.audiences?.searchPlaceholder || "Search audiences..."}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 w-full"
-                        />
-                        {searchQuery && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                                onClick={() => setSearchQuery("")}
-                            >
+                <div className="space-y-6">
+                    {/* Filters */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search audiences..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-9"
+                            />
+                        </div>
+                        <Select value={usageFilter} onValueChange={setUsageFilter}>
+                            <SelectTrigger className="w-[160px]">
+                                <SelectValue placeholder="Usage" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Audiences</SelectItem>
+                                <SelectItem value="used">Used in Campaigns</SelectItem>
+                                <SelectItem value="unused">Not Used</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Select value={clientFilter} onValueChange={setClientFilter}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Client" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Clients</SelectItem>
+                                {clients.map((client) => (
+                                    <SelectItem key={client.id} value={client.id}>
+                                        {client.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {hasActiveFilters && (
+                            <Button variant="ghost" size="icon" onClick={clearFilters}>
                                 <X className="h-4 w-4" />
                             </Button>
                         )}
                     </div>
 
-                    {/* Client Filter */}
-                    <Select value={clientFilter} onValueChange={setClientFilter}>
-                        <SelectTrigger className="w-full sm:w-[180px]">
-                            <SelectValue placeholder={t.audiences?.filterByClient || "Client"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">{t.audiences?.allClients || "All Clients"}</SelectItem>
-                            {uniqueClients.map((client) => (
-                                <SelectItem key={client.id} value={client.id}>
-                                    {client.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
-                    {/* Usage Filter */}
-                    <Select value={usageFilter} onValueChange={setUsageFilter}>
-                        <SelectTrigger className="w-full sm:w-[160px]">
-                            <SelectValue placeholder={t.audiences?.filterByUsage || "Usage"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">{t.audiences?.allUsage || "All Usage"}</SelectItem>
-                            <SelectItem value="used">{t.audiences?.usedInCampaign || "Used in Campaign"}</SelectItem>
-                            <SelectItem value="notUsed">{t.audiences?.notUsedYet || "Not Used Yet"}</SelectItem>
-                        </SelectContent>
-                    </Select>
-
-                    {/* Results Count */}
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">
-                        {filteredAudiences.length} {t.audiences?.audiencesCount || "audiences"}
-                    </span>
-                </div>
-
-                {audiences.length === 0 ? (
-                    <Card className="border-dashed">
-                        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                            <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center mb-6">
-                                <Users className="h-10 w-10 text-muted-foreground" />
-                            </div>
-                            <h3 className="text-xl font-bold mb-2">{t.clients.noAudiences}</h3>
-                            <p className="text-muted-foreground max-w-sm mb-8">
-                                {t.audiences.createFirstAudience}
-                            </p>
-                            <Button onClick={() => setIsCreateOpen(true)} size="lg" className="gap-2">
-                                <Plus className="h-5 w-5" />
-                                {t.audiences.createAudience}
-                            </Button>
-                        </CardContent>
-                    </Card>
-                ) : filteredAudiences.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                        <SearchIcon className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">
-                            {t.audiences?.noResults || "No audiences found"}
-                        </h3>
-                        <p className="text-muted-foreground mb-4">
-                            {t.audiences?.noResultsDesc || "Try adjusting your search or filter criteria."}
-                        </p>
-                        <Button variant="outline" onClick={clearFilters}>
-                            {t.audiences?.clearFilters || "Clear Filters"}
-                        </Button>
+                    {/* Results count */}
+                    <div className="text-sm text-muted-foreground">
+                        {filteredAudiences.length} audience{filteredAudiences.length !== 1 ? "s" : ""} found
                     </div>
-                ) : (
-                    <>
-                        {/* Audience Grid */}
-                        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+
+                    {/* Audience Grid */}
+                    {paginatedAudiences.length > 0 ? (
+                        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                             {paginatedAudiences.map((audience) => (
                                 <AudienceCard
                                     key={audience.id}
                                     audience={audience}
-                                    onView={handleView}
-                                    canEdit={true}
-                                    canDelete={true}
-                                    labels={{
-                                        viewAudience: t.audiences?.viewAudience || "View Audience",
-                                        edit: t.common.edit,
-                                        delete: t.common.delete,
-                                        contacts: t.audiences?.contacts || "Contacts",
-                                        segments: t.audiences?.segments || "Segments",
-                                        notUsed: t.audiences?.notUsedBadge || "Not Used",
-                                        usedIn: t.audiences?.usedIn || "Used in",
+                                    onView={() => handleView(audience)}
+                                    onCampaignClick={handleCampaignClick}
+                                    onDelete={() => {
+                                        setDeletingAudience(audience);
+                                        setDeleteDialogOpen(true);
                                     }}
                                 />
                             ))}
                         </div>
-
-                        {/* Pagination Controls - Horizontal on desktop, stacked on mobile */}
-                        <div className="mt-6 border-t pt-4">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                {/* Page Size Selector - Left on desktop */}
-                                <div className="flex items-center justify-center sm:justify-start gap-2">
-                                    <span className="text-sm text-muted-foreground">
-                                        {t.audiences?.showPerPage || "Show"}
-                                    </span>
-                                    <Select
-                                        value={String(pageSize)}
-                                        onValueChange={(val) => setPageSize(Number(val))}
-                                    >
-                                        <SelectTrigger className="w-[80px] h-8">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="8">8</SelectItem>
-                                            <SelectItem value="12">12</SelectItem>
-                                            <SelectItem value="24">24</SelectItem>
-                                            <SelectItem value="48">48</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <span className="text-sm text-muted-foreground">
-                                        {t.audiences?.perPage || "per page"}
-                                    </span>
-                                </div>
-
-                                {/* Page Navigation - Right on desktop */}
-                                <div className="flex items-center justify-center sm:justify-end gap-2">
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        className="h-8 w-8"
-                                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                                        disabled={currentPage <= 1}
-                                    >
-                                        <ChevronLeft className="h-4 w-4" />
-                                    </Button>
-                                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                                        <span>{t.audiences?.page || "Page"}</span>
-                                        <Input
-                                            type="number"
-                                            min={1}
-                                            max={Math.max(1, totalPages)}
-                                            value={currentPage}
-                                            onChange={(e) => {
-                                                const val = parseInt(e.target.value);
-                                                if (!isNaN(val) && val >= 1 && val <= totalPages) {
-                                                    setCurrentPage(val);
-                                                }
-                                            }}
-                                            className="w-14 h-8 text-center px-1"
-                                        />
-                                        <span>/ {Math.max(1, totalPages)}</span>
-                                    </div>
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        className="h-8 w-8"
-                                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                                        disabled={currentPage >= totalPages || totalPages <= 1}
-                                    >
-                                        <ChevronRight className="h-4 w-4" />
-                                    </Button>
-                                </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-16 text-center">
+                            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                                <Users className="h-8 w-8 text-muted-foreground" />
                             </div>
+                            <h3 className="text-lg font-semibold mb-2">No audiences found</h3>
+                            <p className="text-muted-foreground mb-4">
+                                {hasActiveFilters
+                                    ? "Try adjusting your filters"
+                                    : "Create your first audience to get started"}
+                            </p>
+                            {hasActiveFilters ? (
+                                <Button variant="outline" onClick={clearFilters}>
+                                    Clear Filters
+                                </Button>
+                            ) : (
+                                <Button onClick={() => setCreateDialogOpen(true)}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    New Audience
+                                </Button>
+                            )}
                         </div>
-                    </>
-                )}
+                    )}
+
+                    {/* Pagination */}
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                        pageSize={pageSize}
+                        onPageSizeChange={setPageSize}
+                        pageSizeOptions={[12, 16, 24, 48]}
+                    />
+                </div>
             </PageContent>
 
+            {/* Create Dialog */}
             <CreateAudienceDialog
-                open={isCreateOpen}
-                onOpenChange={setIsCreateOpen}
-                onSuccess={(newAudience) => {
+                open={createDialogOpen}
+                onOpenChange={setCreateDialogOpen}
+                onSuccess={() => {
+                    setCreateDialogOpen(false);
                     router.refresh();
                 }}
+            />
+
+            {/* Delete Dialog */}
+            <DeleteConfirmDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                onConfirm={handleDelete}
+                loading={deleteLoading}
+                title="Delete Audience"
+                description={`Are you sure you want to delete "${deletingAudience?.name}"? This action cannot be undone.`}
             />
         </>
     );

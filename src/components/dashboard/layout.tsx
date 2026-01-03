@@ -351,6 +351,19 @@ function DashboardBreadcrumb() {
 }
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
+    const pathname = usePathname();
+    // Check if we are on a template editor page: /dashboard/clients/[slug]/templates/[id]
+    // We want to match /templates/[id] but NOT /templates (list)
+    const isEditor = /\/templates\/[^/]+$/.test(pathname);
+
+    if (isEditor) {
+        return (
+            <BreadcrumbProvider>
+                {children}
+            </BreadcrumbProvider>
+        );
+    }
+
     return (
         <BreadcrumbProvider>
             <SidebarProvider>

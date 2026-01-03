@@ -213,7 +213,7 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
             <PageHeader
                 title={campaign.name}
                 showBack
-                onBack={() => router.push("/dashboard/campaigns")}
+                onBack={() => router.push(`/dashboard/clients/${campaign.client.slug}/campaigns`)}
             />
             <PageContent>
                 <div className="space-y-8">

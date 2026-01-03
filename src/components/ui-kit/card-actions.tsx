@@ -17,6 +17,7 @@ import {
     Copy,
     History,
     Eye,
+    Send,
     type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -38,7 +39,7 @@ import { cn } from "@/lib/utils";
  */
 
 // Pre-defined action types
-export type CardActionType = "view" | "edit" | "delete" | "duplicate" | "viewActivity" | "openEditor";
+export type CardActionType = "view" | "edit" | "delete" | "duplicate" | "viewActivity" | "openEditor" | "sendTest";
 
 export interface CardAction {
     type: CardActionType | "custom";
@@ -67,6 +68,7 @@ const defaultIcons: Record<CardActionType, LucideIcon> = {
     duplicate: Copy,
     viewActivity: History,
     openEditor: Eye,
+    sendTest: Send,
 };
 
 // Helper to get the icon component
@@ -163,12 +165,14 @@ export interface StandardCardActionsConfig<T> {
     onDuplicate?: (item: T) => void;
     onViewActivity?: (item: T) => void;
     onOpenEditor?: (item: T) => void;
+    onSendTest?: (item: T) => void;
     canView?: boolean;
     canEdit?: boolean;
     canDelete?: boolean;
     canDuplicate?: boolean;
     canViewActivity?: boolean;
     canOpenEditor?: boolean;
+    canSendTest?: boolean;
     labels?: {
         view?: string;
         edit?: string;
@@ -176,6 +180,7 @@ export interface StandardCardActionsConfig<T> {
         duplicate?: string;
         viewActivity?: string;
         openEditor?: string;
+        sendTest?: string;
     };
 }
 
@@ -186,6 +191,7 @@ const defaultActionLabels = {
     duplicate: "Duplicate",
     viewActivity: "View Activity",
     openEditor: "Open Editor",
+    sendTest: "Send Test",
 };
 
 /**
@@ -240,6 +246,15 @@ export function buildCardActions<T>(config: StandardCardActionsConfig<T>): CardA
         });
     }
 
+    // Send Test action
+    if (config.onSendTest && config.canSendTest !== false) {
+        actions.push({
+            type: "sendTest",
+            label: labels.sendTest,
+            onClick: () => config.onSendTest!(config.item),
+        });
+    }
+
     // Delete action (always last with separator)
     if (config.onDelete && config.canDelete !== false) {
         actions.push({
@@ -274,6 +289,8 @@ export function StandardCardActions<T>({
     canDuplicate,
     canViewActivity,
     canOpenEditor,
+    canSendTest,
+    onSendTest,
     labels,
     ...cardActionsProps
 }: StandardCardActionsProps<T>) {
@@ -285,12 +302,14 @@ export function StandardCardActions<T>({
         onDuplicate,
         onViewActivity,
         onOpenEditor,
+        onSendTest,
         canView,
         canEdit,
         canDelete,
         canDuplicate,
         canViewActivity,
         canOpenEditor,
+        canSendTest,
         labels,
     });
 

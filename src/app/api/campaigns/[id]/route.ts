@@ -96,3 +96,35 @@ export async function PATCH(req: NextRequest, { params }: Context) {
         return new NextResponse(null, { status: 500 });
     }
 }
+
+export async function DELETE(req: NextRequest, { params }: Context) {
+    try {
+        const user = await getCurrentUser();
+        if (!user) return new NextResponse("Unauthorized", { status: 401 });
+
+        const { id } = await params;
+
+        // Verify campaign exists
+        const existingCampaign = await db.campaign.findUnique({
+            where: { id },
+        });
+
+        if (!existingCampaign) {
+            return new NextResponse("Campaign not found", { status: 404 });
+        }
+
+        // Don't allow deletion of campaigns that are currently sending
+        if (existingCampaign.status === "SENDING") {
+            return new NextResponse("Cannot delete a campaign that is currently sending", { status: 400 });
+        }
+
+        await db.campaign.delete({
+            where: { id },
+        });
+
+        return new NextResponse(null, { status: 204 });
+    } catch (error) {
+        console.error("Campaign delete error:", error);
+        return new NextResponse(null, { status: 500 });
+    }
+}

@@ -229,7 +229,10 @@
         "viewClient": "Voir le Client",
         "noResults": "Aucun client trouvé",
         "noResultsDesc": "Essayez d'ajuster vos critères de recherche ou de filtre.",
-        "clearFilters": "Effacer les Filtres"
+        "clearFilters": "Effacer les Filtres",
+        "campaignsDescription": "Gérer les campagnes email",
+        "audiencesDescription": "Gérer les contacts et segments",
+        "templatesDescription": "Concevoir les modèles d'email"
     },
     "clientDetails": {
         "title": "Détails du Client",
@@ -280,7 +283,10 @@
     "audiences": {
         "title": "Audiences",
         "description": "Gérez vos groupes de contacts et segments.",
+        "editDesc": "Mettre à jour les détails de votre audience.",
         "newAudience": "Nouvelle Audience",
+        "noAudiences": "Aucune audience trouvée",
+        "deleteAudience": "Supprimer l'Audience",
         "recentAudiences": "Audiences Récentes",
         "createAudience": "Créer une Audience",
         "createFirstAudience": "Créez votre première audience",
@@ -340,17 +346,43 @@
         "success": "Contacts importés avec succès",
         "error": "Échec de l'importation des contacts"
     },
+    "campaigns": {
+        "title": "Campagnes",
+        "description": "Gérez toutes vos campagnes d'e-mail pour tous vos clients",
+        "newCampaign": "Nouvelle Campagne",
+        "createCampaign": "Créer une Campagne",
+        "searchPlaceholder": "Rechercher des campagnes...",
+        "noCampaigns": "Aucune campagne trouvée",
+        "noCampaignsDesc": "Créez votre première campagne pour commencer à envoyer des e-mails.",
+        "deleteCampaign": "Supprimer la Campagne"
+    },
     "tables": {
+        "number": "#",
         "name": "Nom",
         "subject": "Sujet",
         "status": "Statut",
         "description": "Description",
         "contacts": "Contacts",
-        "actions": "Actions"
+        "createdAt": "Créé le",
+        "updatedAt": "Mis à jour le",
+        "template": "Modèle",
+        "audience": "Audience",
+        "segments": "Segments",
+        "campaigns": "Utilisé dans",
+        "actions": ""
+    },
+    "pagination": {
+        "previous": "Précédent",
+        "next": "Suivant",
+        "show": "Afficher",
+        "perPage": "par page",
+        "of": "sur",
+        "page": "Page"
     },
     "templates": {
         "title": "Modèles",
         "newTemplate": "Nouveau Modèle",
+        "createTemplate": "Créer un Modèle",
         "noTemplates": "Aucun modèle pour le moment",
         "noTemplatesDesc": "Créez votre premier modèle d'email pour commencer à concevoir de belles campagnes.",
         "createFirst": "Créer Votre Premier Modèle",

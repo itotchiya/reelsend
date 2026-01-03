@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ExternalLink, Mail, AlertCircle } from "lucide-react";
 import { CardActions, type CardAction } from "./card-actions";
 import { ClientBadgeSolid, CampaignBadge, NotUsedBadge, CardBadge } from "./card-badge";
+import { cn } from "@/lib/utils";
 
 /**
  * TemplateCard Component
@@ -122,15 +123,20 @@ export function TemplateCard({
 
     return (
         <div
-            className={`group rounded-xl border bg-card overflow-hidden transition-colors ${!template.htmlContent
-                ? 'border-dashed border-amber-500'
-                : 'border-border hover:border-primary/50'
-                }`}
+            className={cn(
+                "group rounded-xl border bg-card overflow-hidden transition-all duration-200",
+                !template.htmlContent
+                    ? "border-dashed border-orange-500/60 hover:border-solid hover:border-orange-500"
+                    : "border-border hover:border-primary/50"
+            )}
         >
             {/* Email Preview Area */}
             <div
                 className="relative h-56 bg-muted/30 overflow-hidden cursor-pointer"
-                onClick={() => onOpen?.(template)}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onOpen?.(template);
+                }}
             >
                 {template.htmlContent ? (
                     <div className="absolute inset-0 overflow-hidden">
@@ -214,7 +220,10 @@ export function TemplateCard({
                 <div className="flex flex-wrap gap-1.5 mb-3">
                     {/* Client Badge - Filled with primary color */}
                     {template.client ? (
-                        <Link href={`/dashboard/clients/${template.client.slug}`}>
+                        <Link
+                            href={`/dashboard/clients/${template.client.slug}`}
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <ClientBadgeSolid
                                 clientName={template.client.name}
                                 primaryColor={template.client.primaryColor}
@@ -237,7 +246,11 @@ export function TemplateCard({
 
                     {/* ALL Campaign Badges - Clickable */}
                     {template.campaigns.map((campaign) => (
-                        <Link key={campaign.id} href={`/dashboard/campaigns/${campaign.id}`}>
+                        <Link
+                            key={campaign.id}
+                            href={`/dashboard/campaigns/${campaign.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <CampaignBadge
                                 campaignName={campaign.name}
                             />

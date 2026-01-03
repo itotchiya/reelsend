@@ -33,6 +33,7 @@ import { useI18n } from "@/lib/i18n";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import { HexColorPicker } from "react-colorful";
+import { getContrastColor } from "@/lib/colors";
 
 const STEPS = [
     { id: "general", title: "General Info", icon: Building2 },
@@ -471,14 +472,20 @@ export function AddClientClient() {
                                         </div>
                                         <div className="flex gap-3">
                                             <button
-                                                className="px-4 py-2 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90"
-                                                style={{ backgroundColor: formData.primaryColor }}
+                                                className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-90"
+                                                style={{
+                                                    backgroundColor: formData.primaryColor,
+                                                    color: getContrastColor(formData.primaryColor)
+                                                }}
                                             >
                                                 Primary Action
                                             </button>
                                             <button
-                                                className="px-4 py-2 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90"
-                                                style={{ backgroundColor: formData.secondaryColor }}
+                                                className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-90"
+                                                style={{
+                                                    backgroundColor: formData.secondaryColor,
+                                                    color: getContrastColor(formData.secondaryColor)
+                                                }}
                                             >
                                                 Secondary Action
                                             </button>

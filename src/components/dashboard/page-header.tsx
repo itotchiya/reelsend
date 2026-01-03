@@ -6,12 +6,14 @@ import { useRouter } from "next/navigation";
 
 interface PageHeaderProps {
     title: string;
-    children?: React.ReactNode; // Actions slot (right side)
+    description?: string;
+    action?: React.ReactNode;
+    children?: React.ReactNode; // Backward compatibility
     onBack?: () => void;
     showBack?: boolean;
 }
 
-export function PageHeader({ title, children, onBack, showBack }: PageHeaderProps) {
+export function PageHeader({ title, description, action, children, onBack, showBack }: PageHeaderProps) {
     const router = useRouter();
     const handleBack = onBack || (() => router.back());
 
@@ -28,13 +30,20 @@ export function PageHeader({ title, children, onBack, showBack }: PageHeaderProp
                             <ChevronLeft />
                         </Button>
                     )}
-                    <span className="text-lg font-normal text-muted-foreground">
-                        {title}
-                    </span>
+                    <div className="flex flex-col">
+                        <span className="text-lg font-semibold text-foreground">
+                            {title}
+                        </span>
+                        {description && (
+                            <span className="text-sm text-muted-foreground">
+                                {description}
+                            </span>
+                        )}
+                    </div>
                 </div>
-                {children && (
+                {(action || children) && (
                     <div className="flex items-center gap-2 shrink-0">
-                        {children}
+                        {action || children}
                     </div>
                 )}
             </div>

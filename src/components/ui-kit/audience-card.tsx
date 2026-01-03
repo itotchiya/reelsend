@@ -1,10 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { ClientBadge, ClientBadgeSolid, CampaignBadge, NotUsedBadge, CountBadge } from "./card-badge";
 import { StandardCardActions } from "./card-actions";
+import { getContrastColor } from "@/lib/colors";
 
 /**
  * AudienceCard Component
@@ -111,9 +113,9 @@ export function AudienceCard({
     return (
         <div
             className={cn(
-                "group rounded-xl border bg-card p-4 transition-colors cursor-pointer h-full flex flex-col",
+                "group rounded-xl border bg-card p-4 transition-all duration-200 cursor-pointer h-full flex flex-col",
                 hasWarningBorder
-                    ? "border-dashed border-red-500 hover:border-solid hover:border-primary/50"
+                    ? "border-dashed border-orange-500/60 hover:border-solid hover:border-orange-500"
                     : "border-border hover:border-primary/50"
             )}
             onClick={() => onView?.(audience)}
@@ -127,7 +129,9 @@ export function AudienceCard({
                         className="rounded-xl text-sm font-bold"
                         style={{
                             backgroundColor: audience.client.brandColors?.primary || '#e4e4e7',
-                            color: audience.client.brandColors?.primary ? '#ffffff' : '#71717a'
+                            color: audience.client.brandColors?.primary
+                                ? getContrastColor(audience.client.brandColors.primary)
+                                : '#71717a'
                         }}
                     >
                         {getInitials(audience.client.name)}
@@ -165,11 +169,16 @@ export function AudienceCard({
             {/* Badges Section - grows to push stats to bottom */}
             <div className="flex flex-wrap gap-1.5 mt-3 flex-1 content-start">
                 {/* Client Badge */}
-                <ClientBadgeSolid
-                    clientName={audience.client.name}
-                    primaryColor={audience.client.brandColors?.primary}
-                    className="hover:opacity-80 transition-opacity cursor-pointer"
-                />
+                <Link
+                    href={`/dashboard/clients/${audience.client.slug}`}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <ClientBadgeSolid
+                        clientName={audience.client.name}
+                        primaryColor={audience.client.brandColors?.primary}
+                        className="hover:opacity-80 transition-opacity cursor-pointer"
+                    />
+                </Link>
 
                 {/* Campaign Usage Badge */}
                 {isUsedInCampaign ? (
@@ -203,7 +212,7 @@ export function AudienceCard({
                             {labels.contacts}
                         </span>
                     </div>
-                    <div className="flex flex-col items-center">
+                    <div className="flex flex-col items-center border-l border-dashed">
                         <span className="font-semibold text-foreground text-base">
                             {audience._count.segments}
                         </span>

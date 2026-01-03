@@ -4,6 +4,7 @@ import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
+import { getContrastColor } from "@/lib/colors";
 
 /**
  * CardBadge Component
@@ -119,6 +120,12 @@ export function CardBadge({
     return (
         <span
             className={cn(badgeVariants({ variant, color: color as any, size }), className)}
+            onClick={(e) => {
+                if (props.onClick) {
+                    e.stopPropagation();
+                    props.onClick(e);
+                }
+            }}
             {...props}
         >
             {showDot && (
@@ -169,9 +176,16 @@ export function CardBadgeButton({
             )}
             role="button"
             tabIndex={0}
+            onClick={(e) => {
+                if (props.onClick) {
+                    e.stopPropagation();
+                    props.onClick(e);
+                }
+            }}
             onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
+                    e.stopPropagation();
                     (props.onClick as any)?.(e);
                 }
             }}
@@ -187,32 +201,9 @@ export function CardBadgeButton({
 }
 
 // Helper function to get contrasting text color based on background
-function getContrastColor(hexColor: string): string {
-    // Remove # if present
-    const hex = hexColor.replace('#', '');
-
-    // Handle short hex (#RGB)
-    if (hex.length === 3) {
-        const r1 = hex.substring(0, 1);
-        const g1 = hex.substring(1, 2);
-        const b1 = hex.substring(2, 3);
-        const r = parseInt(r1 + r1, 16);
-        const g = parseInt(g1 + g1, 16);
-        const b = parseInt(b1 + b1, 16);
-        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-        return luminance > 0.5 ? '#000000' : '#ffffff';
-    }
-
-    // Parse RGB values
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-
-    // Calculate relative luminance
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-    // Return black or white based on luminance
-    return luminance > 0.5 ? '#000000' : '#ffffff';
+// Kept for backward compatibility but using centralized logic
+function getContrastTextColor(hexColor: string): string {
+    return getContrastColor(hexColor);
 }
 
 // Pre-configured badge types for common use cases

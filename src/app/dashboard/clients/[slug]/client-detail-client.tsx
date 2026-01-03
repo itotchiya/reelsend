@@ -37,7 +37,8 @@ import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
 import { useEffect } from "react";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Spinner } from "@/components/ui/spinner";
-import { CreateAudienceDialog } from "@/components/dashboard/create-audience-dialog";
+import { CreateAudienceDialog } from "@/components/dashboard/create-entity-dialog";
+import { NavigationCard } from "@/components/ui-kit/navigation-card";
 import {
     Table,
     TableBody,
@@ -436,262 +437,33 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                     </div>
 
 
-                    {/* Tabs for related data */}
-                    <Tabs
-                        defaultValue={activeTab}
-                        value={activeTab}
-                        onValueChange={(value) => {
-                            const params = new URLSearchParams(searchParams?.toString());
-                            params.set("tab", value);
-                            router.replace(`?${params.toString()}`, { scroll: false });
-                        }}
-                    >
-                        <TabsList className="bg-muted/30 p-1">
-                            <TabsTrigger value="campaigns" className="gap-2">
-                                {t.common.campaigns}
-                                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-bold bg-muted-foreground/10 text-muted-foreground border-none">
-                                    {client._count.campaigns}
-                                </Badge>
-                            </TabsTrigger>
-                            <TabsTrigger value="audiences" className="gap-2">
-                                {t.common.audiences}
-                                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-bold bg-muted-foreground/10 text-muted-foreground border-none">
-                                    {client._count.audiences}
-                                </Badge>
-                            </TabsTrigger>
-                            <TabsTrigger value="templates" className="gap-2">
-                                {t.common.templates}
-                                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-bold bg-muted-foreground/10 text-muted-foreground border-none">
-                                    {client._count.templates}
-                                </Badge>
-                            </TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="campaigns" className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold">{t.clients.recentCampaigns}</h3>
-                                <Button size="sm" className="gap-2">
-                                    <Plus className="h-4 w-4" />
-                                    {t.clients.createCampaign}
-                                </Button>
-                            </div>
-                            {client.campaigns.length === 0 ? (
-                                <Card className="border-dashed">
-                                    <CardContent className="flex flex-col items-center justify-center py-12">
-                                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
-                                            <Mail className="h-6 w-6 text-muted-foreground" />
-                                        </div>
-                                        <p className="text-muted-foreground font-medium">
-                                            {t.clients.noCampaigns}
-                                        </p>
-                                    </CardContent>
-                                </Card>
-                            ) : (
-                                <div className="rounded-xl border border-dashed overflow-hidden bg-card/30">
-                                    <Table>
-                                        <TableHeader className="bg-muted/30">
-                                            <TableRow className="hover:bg-transparent border-dashed">
-                                                <TableHead className="w-[300px] uppercase text-[10px] font-bold tracking-wider py-4">{t.tables.name}</TableHead>
-                                                <TableHead className="uppercase text-[10px] font-bold tracking-wider py-4">{t.tables.subject}</TableHead>
-                                                <TableHead className="uppercase text-[10px] font-bold tracking-wider py-4">{t.tables.status}</TableHead>
-                                                <TableHead className="text-right uppercase text-[10px] font-bold tracking-wider py-4"></TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {client.campaigns.map((campaign) => (
-                                                <TableRow
-                                                    key={campaign.id}
-                                                    className="group cursor-pointer hover:bg-muted/50 transition-colors border-dashed"
-                                                    onClick={() => router.push(`/dashboard/clients/${client.slug}/campaigns/${campaign.id}`)}
-                                                >
-                                                    <TableCell className="font-bold py-4">{campaign.name}</TableCell>
-                                                    <TableCell className="text-muted-foreground py-4">{campaign.subject}</TableCell>
-                                                    <TableCell className="py-4">
-                                                        <Badge
-                                                            variant={
-                                                                campaign.status === "SENT" ? "default" :
-                                                                    campaign.status === "DRAFT" ? "secondary" : "outline"
-                                                            }
-                                                            className="font-bold text-[10px] uppercase tracking-wider"
-                                                        >
-                                                            {campaign.status}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="text-right py-4">
-                                                        <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors ml-auto" />
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                            )}
-                        </TabsContent>
-
-                        <TabsContent value="audiences" className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold">{t.audiences.recentAudiences}</h3>
-                                <Button
-                                    size="sm"
-                                    className="gap-2"
-                                    onClick={() => setIsCreateAudienceOpen(true)}
-                                >
-                                    <Plus className="h-4 w-4" />
-                                    {t.audiences.createAudience}
-                                </Button>
-                            </div>
-                            {client.audiences.length === 0 ? (
-                                <Card className="border-dashed">
-                                    <CardContent className="flex flex-col items-center justify-center py-12">
-                                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
-                                            <Users className="h-6 w-6 text-muted-foreground" />
-                                        </div>
-                                        <p className="text-muted-foreground font-medium">
-                                            {t.clients.noAudiences}
-                                        </p>
-                                    </CardContent>
-                                </Card>
-                            ) : (
-                                <div className="rounded-xl border border-dashed overflow-hidden bg-card/30">
-                                    <Table>
-                                        <TableHeader className="bg-muted/30">
-                                            <TableRow className="hover:bg-transparent border-dashed">
-                                                <TableHead className="w-[300px] uppercase text-[10px] font-bold tracking-wider py-4">{t.tables.name}</TableHead>
-                                                <TableHead className="uppercase text-[10px] font-bold tracking-wider py-4">{t.tables.description}</TableHead>
-                                                <TableHead className="uppercase text-[10px] font-bold tracking-wider py-4">{t.tables.contacts}</TableHead>
-                                                <TableHead className="text-right uppercase text-[10px] font-bold tracking-wider py-4"></TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {client.audiences.map((audience) => (
-                                                <TableRow
-                                                    key={audience.id}
-                                                    className="group cursor-pointer hover:bg-muted/50 transition-colors border-dashed"
-                                                    onClick={() => router.push(`/dashboard/clients/${client.slug}/audiences/${audience.id}`)}
-                                                >
-                                                    <TableCell className="font-bold py-4">{audience.name}</TableCell>
-                                                    <TableCell className="text-muted-foreground py-4 line-clamp-1 h-auto max-w-[400px]">
-                                                        {audience.description || "—"}
-                                                    </TableCell>
-                                                    <TableCell className="py-4">
-                                                        <Badge variant="secondary" className="font-bold text-[10px] uppercase tracking-wider bg-muted/50">
-                                                            {audience.contactCount} {t.audiences.contacts}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="text-right py-4">
-                                                        <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors ml-auto" />
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                            )}
-                        </TabsContent>
-
-                        <TabsContent value="templates" className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold">{t.clients.recentTemplates}</h3>
-                                <Button size="sm" className="gap-2">
-                                    <Plus className="h-4 w-4" />
-                                    {t.clients.createTemplate}
-                                </Button>
-                            </div>
-                            {client.templates.length === 0 ? (
-                                <Card className="border-dashed">
-                                    <CardContent className="flex flex-col items-center justify-center py-12">
-                                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
-                                            <FileText className="h-6 w-6 text-muted-foreground" />
-                                        </div>
-                                        <p className="text-muted-foreground font-medium">
-                                            {t.clients.noTemplates}
-                                        </p>
-                                    </CardContent>
-                                </Card>
-                            ) : (
-                                <div className="rounded-xl border border-dashed overflow-hidden bg-card/30">
-                                    <Table>
-                                        <TableHeader className="bg-muted/30">
-                                            <TableRow className="hover:bg-transparent border-dashed">
-                                                <TableHead className="w-[200px] uppercase text-[10px] font-bold tracking-wider py-4">{t.tables.name}</TableHead>
-                                                <TableHead className="uppercase text-[10px] font-bold tracking-wider py-4">{t.templates.status}</TableHead>
-                                                <TableHead className="uppercase text-[10px] font-bold tracking-wider py-4">{t.templates.created}</TableHead>
-                                                <TableHead className="uppercase text-[10px] font-bold tracking-wider py-4">{t.templates.lastEdited}</TableHead>
-                                                <TableHead className="text-right uppercase text-[10px] font-bold tracking-wider py-4">{t.templates.actionsLabel}</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {client.templates.map((template) => (
-                                                <TableRow
-                                                    key={template.id}
-                                                    className="group hover:bg-muted/50 transition-colors border-dashed"
-                                                >
-                                                    <TableCell className="font-bold py-4">
-                                                        <div className="flex flex-col">
-                                                            <span>{template.name}</span>
-                                                            {template.description && (
-                                                                <span className="text-xs text-muted-foreground line-clamp-1">{template.description}</span>
-                                                            )}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="py-4">
-                                                        {template.htmlContent ? (
-                                                            <Badge variant="default" className="text-[10px] bg-green-600 hover:bg-green-600">{t.templates.ready || "Ready"}</Badge>
-                                                        ) : (
-                                                            <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/30">{t.templates.notYetEdited}</Badge>
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell className="text-muted-foreground text-sm py-4">
-                                                        {new Date(template.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                                                    </TableCell>
-                                                    <TableCell className="text-muted-foreground text-sm py-4">
-                                                        {new Date(template.updatedAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                                                    </TableCell>
-                                                    <TableCell className="text-right py-4">
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                                    <MoreHorizontal className="h-4 w-4" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem onClick={() => router.push(`/dashboard/templates/${template.id}/editor`)}>
-                                                                    <ExternalLink className="h-4 w-4 mr-2" />
-                                                                    {t.templates.openEditor}
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => {
-                                                                    setEditingTemplate(template);
-                                                                    setEditForm({ name: template.name, description: template.description || "" });
-                                                                }}>
-                                                                    <Pencil className="h-4 w-4 mr-2" />
-                                                                    {t.templates.editDetails}
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => {
-                                                                    setActivityTemplate(template);
-                                                                    fetchActivities(template.id);
-                                                                }}>
-                                                                    <History className="h-4 w-4 mr-2" />
-                                                                    {t.templates.viewActivity}
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuSeparator />
-                                                                <DropdownMenuItem
-                                                                    onClick={() => setDeletingTemplate(template)}
-                                                                    className="text-destructive focus:text-destructive"
-                                                                >
-                                                                    <Trash2 className="h-4 w-4 mr-2" />
-                                                                    {t.templates.delete}
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                            )}
-                        </TabsContent>
-                    </Tabs>
+                    {/* Navigation Cards to Sub-Pages */}
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <NavigationCard
+                            href={`/dashboard/clients/${client.slug}/campaigns`}
+                            icon={Mail}
+                            title={t.common.campaigns}
+                            description={t.clients?.campaignsDescription || "Manage email campaigns"}
+                            count={client._count.campaigns}
+                            color="blue"
+                        />
+                        <NavigationCard
+                            href={`/dashboard/clients/${client.slug}/audiences`}
+                            icon={Users}
+                            title={t.common.audiences}
+                            description={t.clients?.audiencesDescription || "Manage contacts and segments"}
+                            count={client._count.audiences}
+                            color="purple"
+                        />
+                        <NavigationCard
+                            href={`/dashboard/clients/${client.slug}/templates`}
+                            icon={FileText}
+                            title={t.common.templates}
+                            description={t.clients?.templatesDescription || "Design email templates"}
+                            count={client._count.templates}
+                            color="green"
+                        />
+                    </div>
                 </div>
             </PageContent>
 

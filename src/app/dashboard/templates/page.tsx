@@ -1,41 +1,51 @@
 import { db } from "@/lib/db";
-import { TemplatesClient, type Template } from "./templates-client";
+import { Suspense } from "react";
+import { TemplatesClient } from "./templates-client";
 
 export default async function TemplatesPage() {
-    const templates = await db.template.findMany({
-        include: {
-            client: {
-                select: {
-                    id: true,
-                    name: true,
-                    slug: true,
-                    brandColors: true,
+    const [templates, clients] = await Promise.all([
+        db.template.findMany({
+            include: {
+                client: {
+                    select: {
+                        id: true,
+                        name: true,
+                        slug: true,
+                    },
+                },
+                campaigns: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
                 },
             },
-            campaigns: {
-                select: {
-                    id: true,
-                    name: true,
-                },
+            orderBy: { createdAt: "desc" },
+        }),
+        db.client.findMany({
+            select: {
+                id: true,
+                name: true,
+                slug: true,
             },
-            createdBy: {
-                select: {
-                    id: true,
-                    name: true,
-                },
-            },
-            updatedBy: {
-                select: {
-                    id: true,
-                    name: true,
-                },
-            },
-        },
-        orderBy: {
-            createdAt: "desc",
-        },
-    });
+            orderBy: { name: "asc" },
+        }),
+    ]);
 
-    // Cast to expected type (brandColors from Prisma is JsonValue, we know it matches our shape)
-    return <TemplatesClient initialTemplates={templates as unknown as Template[]} />;
+    // Transform templates to match TemplateCardData interface
+    const transformedTemplates = templates.map((template) => ({
+        ...template,
+        client: template.client
+            ? {
+                ...template.client,
+                primaryColor: null,
+            }
+            : null,
+    })) as any[];
+
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <TemplatesClient initialTemplates={transformedTemplates} clients={clients} />
+        </Suspense>
+    );
 }

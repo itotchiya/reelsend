@@ -4,16 +4,26 @@ import { WaypointEditorClient } from "./editor-client";
 import { auth } from "@/lib/auth";
 
 interface Props {
-    params: Promise<{ id: string }>;
+    params: Promise<{ slug: string; id: string }>;
 }
 
-export default async function TemplateEditorPage({ params }: Props) {
+export default async function ClientTemplateEditorPage({ params }: Props) {
     const session = await auth();
     if (!session?.user) {
         redirect("/login");
     }
 
-    const { id } = await params;
+    const { slug, id } = await params;
+
+    // Verify the client exists and the template belongs to it
+    const client = await db.client.findUnique({
+        where: { slug },
+        select: { id: true },
+    });
+
+    if (!client) {
+        notFound();
+    }
 
     const template = await db.template.findUnique({
         where: { id },
@@ -31,11 +41,10 @@ export default async function TemplateEditorPage({ params }: Props) {
         },
     });
 
-    if (!template) {
+    if (!template || (template.clientId && template.clientId !== client.id)) {
         notFound();
     }
 
-    // Get saved blocks for this client (and global blocks)
     const savedBlocks = await db.savedBlock.findMany({
         where: {
             OR: [

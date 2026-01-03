@@ -29,6 +29,7 @@ import { useI18n } from "@/lib/i18n";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import { HexColorPicker } from "react-colorful";
+import { getContrastColor } from "@/lib/colors";
 import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
 
 type ClientStatus = "active" | "suspended" | "deactivated";
@@ -282,19 +283,7 @@ export function EditClientClient({ client }: EditClientClientProps) {
 
     // Calculate contrast text color (white or dark) based on background color
     const getContrastTextColor = (hexColor: string): string => {
-        // Remove # if present
-        const hex = hexColor.replace('#', '');
-
-        // Parse RGB values
-        const r = parseInt(hex.substring(0, 2), 16);
-        const g = parseInt(hex.substring(2, 4), 16);
-        const b = parseInt(hex.substring(4, 6), 16);
-
-        // Calculate relative luminance using WCAG formula
-        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-        // Return white for dark backgrounds, dark for light backgrounds
-        return luminance > 0.5 ? '#1a1a1a' : '#ffffff';
+        return getContrastColor(hexColor);
     };
 
     return (

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import { MonitorOutlined, PhoneIphoneOutlined, Undo, Redo } from '@mui/icons-material';
 import { Box, Stack, SxProps, ToggleButton, ToggleButtonGroup, Tooltip, IconButton } from '@mui/material';
@@ -38,19 +38,68 @@ export default function TemplatePanel() {
   const canUndo = useCanUndo();
   const canRedo = useCanRedo();
   const hasUnsavedChanges = useHasUnsavedChanges();
+  const historyPushedRef = useRef(false);
 
   // Enable keyboard shortcuts
   useEditorKeyboardShortcuts();
 
-  // Handle back button with unsaved changes confirmation
-  const handleBack = () => {
-    if (hasUnsavedChanges) {
-      const confirmed = window.confirm('You have unsaved changes. Are you sure you want to leave without saving?');
-      if (!confirmed) {
-        return;
+  // Handle browser back/refresh
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
       }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  // Handle browser back button (SPA navigation)
+  useEffect(() => {
+    if (hasUnsavedChanges) {
+      // Push a dummy state so 'Back' doesn't leave the page immediately
+      // Push dummy state to "trap" the back button
+      window.history.pushState(null, document.title, window.location.href);
+      historyPushedRef.current = true;
+
+      const handlePopState = () => {
+        // When this fires, the dummy state was JUST popped by the browser.
+        // So visually we are back at the "real" state.
+
+        if (window.confirm('the files is not saved you may lost your template are you sure')) {
+          // User wants to leave.
+          window.removeEventListener('popstate', handlePopState);
+          // We don't need to cleanup history manually here because the user *already* popped it by clicking Back.
+          historyPushedRef.current = false;
+          window.history.back(); // Go back for real (to the previous page)
+        } else {
+          // User stays. Restore the trap.
+          window.history.pushState(null, document.title, window.location.href);
+          historyPushedRef.current = true;
+        }
+      };
+
+      window.addEventListener('popstate', handlePopState);
+
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+        // CRITICAL FIX:
+        // If we are unmounting or changing state (e.g. Saved), and we still think we have a pushed state,
+        // we must pop it to clean up the stack.
+        if (historyPushedRef.current) {
+          window.history.back();
+          historyPushedRef.current = false;
+        }
+      };
     }
-    router.back();
+  }, [hasUnsavedChanges]);
+
+  // Handle back button
+  // We rely on the popstate listener (useEffect above) to handle unsaved changes confirmation
+  const handleBack = () => {
+    window.history.back();
   };
 
   let mainBoxSx: SxProps = {

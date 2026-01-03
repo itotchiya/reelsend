@@ -227,7 +227,10 @@
         "viewClient": "View Client",
         "noResults": "No clients found",
         "noResultsDesc": "Try adjusting your search or filter criteria.",
-        "clearFilters": "Clear Filters"
+        "clearFilters": "Clear Filters",
+        "campaignsDescription": "Manage email campaigns",
+        "audiencesDescription": "Manage contacts and segments",
+        "templatesDescription": "Design email templates"
     },
     "clientDetails": {
         "title": "Client Details",
@@ -278,7 +281,10 @@
     "audiences": {
         "title": "Audiences",
         "description": "Manage your contact groups and segments.",
+        "editDesc": "Update your audience details.",
         "newAudience": "New Audience",
+        "noAudiences": "No audiences found",
+        "deleteAudience": "Delete Audience",
         "createAudience": "Create Audience",
         "createFirstAudience": "Create Your First Audience",
         "audienceName": "Audience Name",
@@ -338,17 +344,43 @@
         "success": "Contacts imported successfully",
         "error": "Failed to import contacts"
     },
+    "campaigns": {
+        "title": "Campaigns",
+        "description": "Manage all your email campaigns across clients",
+        "newCampaign": "New Campaign",
+        "createCampaign": "Create Campaign",
+        "searchPlaceholder": "Search campaigns...",
+        "noCampaigns": "No campaigns found",
+        "noCampaignsDesc": "Create your first campaign to start sending emails.",
+        "deleteCampaign": "Delete Campaign"
+    },
     "tables": {
+        "number": "#",
         "name": "Name",
         "subject": "Subject",
         "status": "Status",
         "description": "Description",
         "contacts": "Contacts",
-        "actions": "Actions"
+        "createdAt": "Created",
+        "updatedAt": "Last Updated",
+        "template": "Template",
+        "audience": "Audience",
+        "segments": "Segments",
+        "campaigns": "Used In",
+        "actions": ""
+    },
+    "pagination": {
+        "previous": "Previous",
+        "next": "Next",
+        "show": "Show",
+        "perPage": "per page",
+        "of": "of",
+        "page": "Page"
     },
     "templates": {
         "title": "Templates",
         "newTemplate": "New Template",
+        "createTemplate": "Create Template",
         "noTemplates": "No templates yet",
         "noTemplatesDesc": "Create your first email template to start designing beautiful campaigns.",
         "createFirst": "Create Your First Template",

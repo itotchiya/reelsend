@@ -144,7 +144,7 @@ export function CampaignCard({
             className={cn(
                 "group rounded-xl border bg-card overflow-hidden transition-all duration-200 flex flex-col",
                 isDraft
-                    ? "border-dashed border-amber-500/60 hover:border-solid hover:border-amber-500"
+                    ? "border-dashed border-orange-500/60 hover:border-solid hover:border-orange-500"
                     : "border-border hover:border-primary/50"
             )}
         >
@@ -204,7 +204,10 @@ export function CampaignCard({
                 {/* Badges Section */}
                 <div className="flex flex-wrap gap-1.5 mb-4">
                     {/* Client Badge */}
-                    <Link href={`/dashboard/clients/${campaign.client.slug}`}>
+                    <Link
+                        href={`/dashboard/clients/${campaign.client.slug}`}
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <ClientBadgeSolid
                             clientName={campaign.client.name}
                             primaryColor={campaign.client.brandColors?.primary}
@@ -220,7 +223,10 @@ export function CampaignCard({
 
                     {/* Template Badge */}
                     {campaign.template ? (
-                        <Link href={`/dashboard/templates/${campaign.template.id}/editor`}>
+                        <Link
+                            href={`/dashboard/clients/${campaign.client.slug}/templates/${campaign.template.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <TemplateBadge
                                 templateName={campaign.template.name}
                                 className="hover:opacity-80 transition-opacity cursor-pointer text-blue-600 dark:text-blue-400"
@@ -234,7 +240,10 @@ export function CampaignCard({
 
                     {/* Audience Badge */}
                     {campaign.audience ? (
-                        <Link href={`/dashboard/audiences/${campaign.audience.id}`}>
+                        <Link
+                            href={`/dashboard/clients/${campaign.client.slug}/audiences/${campaign.audience.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <AudienceBadge
                                 audienceName={campaign.audience.name}
                                 className="hover:opacity-80 transition-opacity cursor-pointer text-purple-600 dark:text-purple-400"
