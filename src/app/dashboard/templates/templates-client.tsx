@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Pagination } from "@/components/ui-kit/pagination";
 import { CreateTemplateDialog } from "@/components/dashboard/create-entity-dialog";
 import { DeleteConfirmDialog } from "@/components/dashboard/delete-confirm-dialog";
+import { ActivityHistoryDialog } from "@/components/dashboard/activity-history-dialog";
 import { toast } from "sonner";
 import { LayoutTemplate } from "lucide-react";
 
@@ -36,6 +37,10 @@ export function TemplatesClient({ initialTemplates, clients }: TemplatesClientPr
     const [deletingTemplate, setDeletingTemplate] = useState<TemplateCardData | null>(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
+    // Activity Dialog State
+    const [activityDialogOpen, setActivityDialogOpen] = useState(false);
+    const [activityTemplate, setActivityTemplate] = useState<TemplateCardData | null>(null);
+
     const [pageSize, setPageSize] = useState(16);
 
     // Filter templates
@@ -59,6 +64,11 @@ export function TemplatesClient({ initialTemplates, clients }: TemplatesClientPr
         (currentPage - 1) * pageSize,
         currentPage * pageSize
     );
+
+    // Sync state with props when router refreshes
+    useEffect(() => {
+        setTemplates(initialTemplates);
+    }, [initialTemplates]);
 
     // Reset page when filters change
     useEffect(() => {
@@ -175,6 +185,10 @@ export function TemplatesClient({ initialTemplates, clients }: TemplatesClientPr
                                     key={template.id}
                                     template={template}
                                     onOpen={() => handleOpen(template)}
+                                    onViewActivity={() => {
+                                        setActivityTemplate(template);
+                                        setActivityDialogOpen(true);
+                                    }}
                                     onDelete={() => {
                                         setDeletingTemplate(template);
                                         setDeleteDialogOpen(true);
@@ -237,6 +251,16 @@ export function TemplatesClient({ initialTemplates, clients }: TemplatesClientPr
                 title="Delete Template"
                 description={`Are you sure you want to delete "${deletingTemplate?.name}"? This action cannot be undone.`}
             />
+
+            {/* Activity History Dialog */}
+            {activityTemplate && (
+                <ActivityHistoryDialog
+                    open={activityDialogOpen}
+                    onOpenChange={setActivityDialogOpen}
+                    templateId={typeof activityTemplate.id === 'object' ? (activityTemplate.id as any)?.id || String(activityTemplate.id) : activityTemplate.id}
+                    templateName={activityTemplate.name}
+                />
+            )}
         </>
     );
 }

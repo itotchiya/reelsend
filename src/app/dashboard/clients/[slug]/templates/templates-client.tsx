@@ -13,6 +13,7 @@ import { useI18n } from "@/lib/i18n";
 import { CreateTemplateDialog } from "@/components/dashboard/create-entity-dialog";
 import { DeleteConfirmDialog } from "@/components/dashboard/delete-confirm-dialog";
 import { TableRowActions, buildTemplateActions } from "@/components/ui-kit/table-row-actions";
+import { ActivityHistoryDialog } from "@/components/dashboard/activity-history-dialog";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -52,6 +53,16 @@ export function TemplatesClient({
     const [deletingTemplate, setDeletingTemplate] = useState<Template | null>(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
+    // Edit Details State
+    const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+
+    // Duplicate State
+    const [isDuplicating, setIsDuplicating] = useState(false);
+
+    // Activity Dialog State
+    const [activityDialogOpen, setActivityDialogOpen] = useState(false);
+    const [activityTemplate, setActivityTemplate] = useState<Template | null>(null);
+
     useEffect(() => {
         setOverride(client.slug, client.name);
         return () => removeOverride(client.slug);
@@ -84,6 +95,55 @@ export function TemplatesClient({
 
     const handleClearFilters = () => {
         router.push(pathname);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deletingTemplate) return;
+        setDeleteLoading(true);
+        try {
+            const res = await fetch(`/api/templates/${deletingTemplate.id}`, { method: "DELETE" });
+            if (res.ok) {
+                toast.success("Template deleted successfully");
+                setDeleteDialogOpen(false);
+                setDeletingTemplate(null);
+                router.refresh();
+            } else {
+                const error = await res.text();
+                toast.error(error || "Failed to delete template");
+            }
+        } catch (error) {
+            toast.error("Failed to delete template");
+        } finally {
+            setDeleteLoading(false);
+        }
+    };
+
+    const handleDuplicate = async (template: Template) => {
+        setIsDuplicating(true);
+        try {
+            const res = await fetch("/api/templates", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: `${template.name} (Copy)`,
+                    description: template.description,
+                    clientId: client.id,
+                    duplicateFromId: template.id,
+                    htmlContent: template.htmlContent,
+                }),
+            });
+
+            if (res.ok) {
+                toast.success("Template duplicated");
+                router.refresh();
+            } else {
+                toast.error("Failed to duplicate template");
+            }
+        } catch (error) {
+            toast.error("Failed to duplicate template");
+        } finally {
+            setIsDuplicating(false);
+        }
     };
 
     const columns: Column<Template>[] = [
@@ -168,9 +228,19 @@ export function TemplatesClient({
             header: "",
             render: (template) => (
                 <TableRowActions
+                    disabled={isDuplicating}
                     actions={buildTemplateActions({
                         template,
-                        onOpenEditor: () => router.push(`/dashboard/clients/${client.slug}/templates/${template.id}/editor`),
+                        onOpenEditor: () => router.push(`/dashboard/clients/${client.slug}/templates/${template.id}`),
+                        onEdit: () => {
+                            setEditingTemplate(template);
+                            setIsCreateDialogOpen(true);
+                        },
+                        onDuplicate: () => handleDuplicate(template),
+                        onViewActivity: () => {
+                            setActivityTemplate(template);
+                            setActivityDialogOpen(true);
+                        },
                         onDelete: () => {
                             setDeletingTemplate(template);
                             setDeleteDialogOpen(true);
@@ -180,27 +250,6 @@ export function TemplatesClient({
             ),
         },
     ];
-
-    const handleConfirmDelete = async () => {
-        if (!deletingTemplate) return;
-        setDeleteLoading(true);
-        try {
-            const res = await fetch(`/api/templates/${deletingTemplate.id}`, { method: "DELETE" });
-            if (res.ok) {
-                toast.success("Template deleted successfully");
-                setDeleteDialogOpen(false);
-                setDeletingTemplate(null);
-                router.refresh();
-            } else {
-                const error = await res.text();
-                toast.error(error || "Failed to delete template");
-            }
-        } catch (error) {
-            toast.error("Failed to delete template");
-        } finally {
-            setDeleteLoading(false);
-        }
-    };
 
     return (
         <>
@@ -237,9 +286,21 @@ export function TemplatesClient({
 
             <CreateTemplateDialog
                 open={isCreateDialogOpen}
-                onOpenChange={setIsCreateDialogOpen}
+                onOpenChange={(open) => {
+                    setIsCreateDialogOpen(open);
+                    if (!open) setEditingTemplate(null);
+                }}
                 clientId={client.id}
-                onTemplateCreated={() => router.refresh()}
+                initialData={editingTemplate ? {
+                    id: editingTemplate.id,
+                    name: editingTemplate.name,
+                    description: editingTemplate.description,
+                    client: { id: client.id }
+                } : null}
+                onTemplateCreated={() => {
+                    setEditingTemplate(null);
+                    router.refresh();
+                }}
             />
 
             <DeleteConfirmDialog
@@ -250,6 +311,16 @@ export function TemplatesClient({
                 description="This action cannot be undone. This will permanently delete the template."
                 loading={deleteLoading}
             />
+
+            {/* Activity History Dialog */}
+            {activityTemplate && (
+                <ActivityHistoryDialog
+                    open={activityDialogOpen}
+                    onOpenChange={setActivityDialogOpen}
+                    templateId={activityTemplate.id}
+                    templateName={activityTemplate.name}
+                />
+            )}
         </>
     );
 }

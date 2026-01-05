@@ -209,6 +209,7 @@ interface TemplateActionsConfig {
     onOpenEditor?: () => void;
     onEdit?: () => void;
     onDuplicate?: () => void;
+    onViewActivity?: () => void;
     onDelete?: () => void;
     canDelete?: boolean;
 }
@@ -237,6 +238,14 @@ export function buildTemplateActions(config: TemplateActionsConfig): RowAction[]
             type: "duplicate",
             label: "Duplicate",
             onClick: config.onDuplicate,
+        });
+    }
+
+    if (config.onViewActivity) {
+        actions.push({
+            type: "viewActivity",
+            label: "View Activity",
+            onClick: config.onViewActivity,
         });
     }
 

@@ -61,8 +61,14 @@ export async function POST(request: NextRequest) {
         revalidatePath("/dashboard/templates");
 
         return NextResponse.json(template);
-    } catch (error) {
+    } catch (error: any) {
         console.error("[TEMPLATES_POST]", error);
+
+        // Check for Prisma unique constraint violation
+        if (error.code === "P2002") {
+            return new NextResponse("A template with this name already exists for this client.", { status: 409 });
+        }
+
         return new NextResponse("Internal Server Error", { status: 500 });
     }
 }

@@ -19,6 +19,18 @@ export default async function TemplatesPage() {
                         name: true,
                     },
                 },
+                createdBy: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
+                updatedBy: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
             },
             orderBy: { createdAt: "desc" },
         }),

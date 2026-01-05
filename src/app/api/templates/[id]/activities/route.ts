@@ -1,27 +1,29 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 
 export async function GET(
-    request: NextRequest,
+    request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const session = await auth();
-        if (!session?.user) {
+        if (!session?.user?.id) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
         const { id } = await params;
 
         const activities = await db.templateActivity.findMany({
-            where: { templateId: id },
+            where: {
+                templateId: id,
+            },
             include: {
                 user: {
                     select: {
                         id: true,
                         name: true,
-                        email: true,
+                        image: true,
                     },
                 },
             },
@@ -33,6 +35,6 @@ export async function GET(
         return NextResponse.json(activities);
     } catch (error) {
         console.error("[TEMPLATE_ACTIVITIES_GET]", error);
-        return new NextResponse("Internal Server Error", { status: 500 });
+        return new NextResponse("Internal Error", { status: 500 });
     }
 }
