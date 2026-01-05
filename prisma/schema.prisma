@@ -38,6 +38,8 @@ model User {
   campaignsUpdated  Campaign[] @relation("CampaignsUpdated")
   campaignsStarted  Campaign[] @relation("CampaignsStarted")
   templateActivities TemplateActivity[] @relation("TemplateActivities")
+  segmentsCreated   Segment[] @relation("SegmentsCreated")
+  audiencesCreated  Audience[] @relation("AudiencesCreated")
 }
 
 // ============================================
@@ -220,8 +222,10 @@ model Audience {
   contactCount Int       @default(0)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  createdById  String?
   
   client       Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdBy    User?     @relation("AudiencesCreated", fields: [createdById], references: [id], onDelete: SetNull)
   contacts     Contact[]
   segments     Segment[]
   campaigns    Campaign[]
@@ -230,22 +234,33 @@ model Audience {
 }
 
 model Contact {
-  id         String        @id @default(cuid())
-  audienceId String
-  email      String
-  firstName  String?
-  lastName   String?
-  metadata   Json?
-  status     ContactStatus @default(ACTIVE)
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  id            String         @id @default(cuid())
+  audienceId    String
+  email         String
+  firstName     String?
+  lastName      String?
+  phone         String?
+  country       String?
+  city          String?
+  street        String?
+  birthday      DateTime?
+  gender        Gender?
+  maritalStatus MaritalStatus?
+  metadata      Json?
+  status        ContactStatus  @default(ACTIVE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   
-  audience   Audience      @relation(fields: [audienceId], references: [id], onDelete: Cascade)
-  events     CampaignEvent[]
+  audience      Audience       @relation(fields: [audienceId], references: [id], onDelete: Cascade)
+  events        CampaignEvent[]
+  segments      SegmentContact[]
   
   @@unique([audienceId, email])
   @@index([email])
   @@index([status])
+  @@index([country])
+  @@index([gender])
+  @@index([maritalStatus])
 }
 
 enum ContactStatus {
@@ -255,19 +270,48 @@ enum ContactStatus {
   BLACKLISTED
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+  SEPARATED
+  OTHER
+}
+
 model Segment {
   id          String     @id @default(cuid())
   audienceId  String
   name        String
   description String?
-  rules       Json       // Filter rules for the segment
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+  createdById String?
   
   audience    Audience   @relation(fields: [audienceId], references: [id], onDelete: Cascade)
+  createdBy   User?      @relation("SegmentsCreated", fields: [createdById], references: [id], onDelete: SetNull)
+  contacts    SegmentContact[]
   campaigns   Campaign[]
   
   @@unique([audienceId, name])
+}
+
+model SegmentContact {
+  segmentId String
+  contactId String
+  addedAt   DateTime @default(now())
+  
+  segment   Segment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  
+  @@id([segmentId, contactId])
 }
 
 // ============================================

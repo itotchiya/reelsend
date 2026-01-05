@@ -9,7 +9,14 @@ interface RouteParams {
     }>;
 }
 
-// POST /api/audiences/[id]/import - Bulk import contacts from CSV
+// Standard fields that can be mapped
+const STANDARD_FIELDS = [
+    "email", "firstName", "lastName", "phone",
+    "country", "city", "street", "birthday",
+    "gender", "maritalStatus"
+];
+
+// POST /api/audiences/[id]/import - Bulk import contacts from CSV with column mapping
 export async function POST(req: Request, { params }: RouteParams) {
     const session = await auth();
     const { id: audienceId } = await params;
@@ -21,9 +28,20 @@ export async function POST(req: Request, { params }: RouteParams) {
     try {
         const formData = await req.formData();
         const file = formData.get("file") as File;
+        const mappingStr = formData.get("mapping") as string;
 
         if (!file) {
             return new NextResponse("No file uploaded", { status: 400 });
+        }
+
+        // Parse mapping (if provided by new UI)
+        let columnMapping: Record<string, string> = {};
+        if (mappingStr) {
+            try {
+                columnMapping = JSON.parse(mappingStr);
+            } catch {
+                // Ignore invalid mapping, will use auto-detection
+            }
         }
 
         const text = await file.text();
@@ -34,66 +52,117 @@ export async function POST(req: Request, { params }: RouteParams) {
             skipEmptyLines: true,
         });
 
-        if (parseResult.errors.length > 0) {
-            console.error("[CSV_PARSE_ERRORS]", parseResult.errors);
-            // We can still proceed if some lines parsed, but let's notify if it's a mess
-            if (parseResult.data.length === 0) {
-                return new NextResponse("Invalid CSV format", { status: 400 });
-            }
+        if (parseResult.errors.length > 0 && parseResult.data.length === 0) {
+            return new NextResponse("Invalid CSV format", { status: 400 });
         }
 
         const rawData = parseResult.data as any[];
+        const headers = parseResult.meta.fields || [];
 
-        // Map common headers to our fields
+        // If no mapping provided, auto-detect email column
+        if (Object.keys(columnMapping).length === 0) {
+            headers.forEach(header => {
+                const normalized = header.toLowerCase().replace(/[_\s-]/g, "");
+                if (normalized === "email") columnMapping[header] = "email";
+                else if (["firstname", "first"].includes(normalized)) columnMapping[header] = "firstName";
+                else if (["lastname", "last"].includes(normalized)) columnMapping[header] = "lastName";
+                else if (["phone", "telephone", "mobile"].includes(normalized)) columnMapping[header] = "phone";
+                else if (normalized === "country") columnMapping[header] = "country";
+                else if (normalized === "city") columnMapping[header] = "city";
+                else if (["street", "address"].includes(normalized)) columnMapping[header] = "street";
+                else if (["birthday", "birthdate", "dob", "dateofbirth"].includes(normalized)) columnMapping[header] = "birthday";
+                else if (normalized === "gender") columnMapping[header] = "gender";
+                else if (["maritalstatus", "relationship", "status"].includes(normalized)) columnMapping[header] = "maritalStatus";
+            });
+        }
+
+        // Find email column
+        const emailHeader = Object.keys(columnMapping).find(k => columnMapping[k] === "email");
+        if (!emailHeader) {
+            return new NextResponse("Email column not found or not mapped", { status: 400 });
+        }
+
+        // Build contacts data
         const contactsToCreate = rawData
             .map((row) => {
-                // Find email (case insensitive search for variations)
-                const emailKey = Object.keys(row).find(k => k.toLowerCase() === "email");
-                const email = emailKey ? row[emailKey]?.trim() : null;
-
+                const email = row[emailHeader]?.trim();
                 if (!email || !email.includes("@")) return null;
 
-                // Find names
-                const firstKey = Object.keys(row).find(k => ["firstname", "first name", "name", "first"].includes(k.toLowerCase()));
-                const lastKey = Object.keys(row).find(k => ["lastname", "last name", "last"].includes(k.toLowerCase()));
-
-                return {
+                const contact: any = {
                     audienceId,
                     email,
-                    firstName: firstKey ? row[firstKey]?.trim() : null,
-                    lastName: lastKey ? row[lastKey]?.trim() : null,
-                    status: "ACTIVE" as const,
+                    status: "ACTIVE",
                 };
+
+                // Map standard fields
+                headers.forEach(header => {
+                    const mappedField = columnMapping[header];
+                    const value = row[header]?.trim();
+
+                    if (mappedField && STANDARD_FIELDS.includes(mappedField) && value) {
+                        if (mappedField === "birthday") {
+                            // Try to parse date
+                            const date = new Date(value);
+                            if (!isNaN(date.getTime())) {
+                                contact[mappedField] = date.toISOString();
+                            }
+                        } else if (mappedField === "gender") {
+                            // Normalize gender values
+                            const normalized = value.toUpperCase();
+                            if (["MALE", "M", "HOMME"].includes(normalized)) contact[mappedField] = "MALE";
+                            else if (["FEMALE", "F", "FEMME"].includes(normalized)) contact[mappedField] = "FEMALE";
+                            else if (["OTHER", "AUTRE"].includes(normalized)) contact[mappedField] = "OTHER";
+                        } else if (mappedField === "maritalStatus") {
+                            // Normalize marital status
+                            const normalized = value.toUpperCase();
+                            if (["SINGLE", "CELIBATAIRE"].includes(normalized)) contact[mappedField] = "SINGLE";
+                            else if (["MARRIED", "MARIE", "MARIEE"].includes(normalized)) contact[mappedField] = "MARRIED";
+                            else if (["DIVORCED", "DIVORCE", "DIVORCEE"].includes(normalized)) contact[mappedField] = "DIVORCED";
+                            else if (["WIDOWED", "VEUF", "VEUVE"].includes(normalized)) contact[mappedField] = "WIDOWED";
+                            else if (["SEPARATED", "SEPARE", "SEPAREE"].includes(normalized)) contact[mappedField] = "SEPARATED";
+                        } else {
+                            contact[mappedField] = value;
+                        }
+                    }
+                });
+
+                // Store unmapped columns as metadata
+                const metadata: Record<string, string> = {};
+                headers.forEach(header => {
+                    if (!columnMapping[header] && row[header]?.trim()) {
+                        metadata[header] = row[header].trim();
+                    }
+                });
+                if (Object.keys(metadata).length > 0) {
+                    contact.metadata = metadata;
+                }
+
+                return contact;
             })
-            .filter(c => c !== null);
+            .filter((c): c is NonNullable<typeof c> => c !== null);
 
         if (contactsToCreate.length === 0) {
             return new NextResponse("No valid contacts found in CSV", { status: 400 });
         }
 
-        // Bulk insert (using createMany if available, or transaction)
-        // Note: createMany with skipDuplicates: true is helpful here
+        // Bulk insert
         const result = await db.contact.createMany({
-            data: contactsToCreate as any,
+            data: contactsToCreate,
             skipDuplicates: true,
         });
 
         // Update audience contact count
-        // Note: result.count might not be accurate if we skipped duplicates 
-        // but it's the number of *inserted* records.
-        // We should ideally recount or increment by result.count.
         await db.audience.update({
             where: { id: audienceId },
             data: {
-                contactCount: {
-                    increment: result.count
-                }
+                contactCount: { increment: result.count }
             }
         });
 
         return NextResponse.json({
             success: true,
-            count: result.count,
+            imported: result.count,
+            total: contactsToCreate.length,
             message: `Successfully imported ${result.count} contacts.`
         });
 

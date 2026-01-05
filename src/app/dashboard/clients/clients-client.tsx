@@ -86,6 +86,11 @@ export function ClientsClient({
         setCurrentPage(1);
     }, [searchQuery, statusFilter, smtpFilter, pageSize]);
 
+    // Sync local state when initialClients changes (after router.refresh())
+    useEffect(() => {
+        setClients(initialClients);
+    }, [initialClients]);
+
     // Filtered clients
     const filteredClients = useMemo(() => {
         return clients.filter((client) => {

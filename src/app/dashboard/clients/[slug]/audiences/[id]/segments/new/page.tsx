@@ -1,16 +1,16 @@
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { AudienceClient } from "./audience-client";
+import { CreateSegmentClient } from "./create-segment-client";
 
-interface AudiencePageProps {
+interface CreateSegmentPageProps {
     params: Promise<{
         slug: string;
         id: string;
     }>;
 }
 
-export default async function AudiencePage({ params }: AudiencePageProps) {
+export default async function CreateSegmentPage({ params }: CreateSegmentPageProps) {
     const session = await auth();
     const { slug, id } = await params;
 
@@ -18,26 +18,27 @@ export default async function AudiencePage({ params }: AudiencePageProps) {
         redirect("/login");
     }
 
-    const audience = (await db.audience.findUnique({
+    const audience = await db.audience.findUnique({
         where: { id },
         include: {
             client: true,
-            createdBy: {
-                select: { id: true, name: true, email: true }
-            },
-            _count: {
-                select: { contacts: true, segments: true }
-            }
         }
-    })) as any;
+    });
 
     if (!audience || audience.client.slug !== slug) {
         redirect(`/dashboard/clients/${slug}`);
     }
 
+    // Fetch all contacts for selection
+    const contacts = await db.contact.findMany({
+        where: { audienceId: id },
+        orderBy: { createdAt: "desc" },
+    });
+
     return (
-        <AudienceClient
+        <CreateSegmentClient
             audience={JSON.parse(JSON.stringify(audience))}
+            contacts={JSON.parse(JSON.stringify(contacts))}
         />
     );
 }

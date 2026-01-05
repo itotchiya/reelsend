@@ -37,6 +37,11 @@ export function AudiencesClient({ initialAudiences, clients }: AudiencesClientPr
 
     const [pageSize, setPageSize] = useState(16);
 
+    // Sync local state when initialAudiences changes (after router.refresh())
+    useEffect(() => {
+        setAudiences(initialAudiences);
+    }, [initialAudiences]);
+
     // Filter audiences
     const filteredAudiences = useMemo(() => {
         return audiences.filter((audience) => {

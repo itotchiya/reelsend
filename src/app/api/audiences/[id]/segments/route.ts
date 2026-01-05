@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -10,10 +11,26 @@ interface RouteParams {
 // GET /api/audiences/[id]/segments - List all segments for an audience
 export async function GET(request: NextRequest, { params }: RouteParams) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return new NextResponse("Unauthorized", { status: 401 });
+        }
+
         const { id: audienceId } = await params;
 
         const segments = await db.segment.findMany({
             where: { audienceId },
+            include: {
+                createdBy: {
+                    select: { id: true, name: true, email: true }
+                },
+                campaigns: {
+                    select: { id: true, name: true }
+                },
+                _count: {
+                    select: { contacts: true }
+                }
+            },
             orderBy: { createdAt: "desc" },
         });
 
@@ -27,12 +44,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 }
 
-// POST /api/audiences/[id]/segments - Create a new segment
+// POST /api/audiences/[id]/segments - Create a new segment (legacy endpoint)
 export async function POST(request: NextRequest, { params }: RouteParams) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return new NextResponse("Unauthorized", { status: 401 });
+        }
+
         const { id: audienceId } = await params;
         const body = await request.json();
-        const { name, description, rules } = body;
+        const { name, description } = body;
 
         if (!name) {
             return NextResponse.json(
@@ -63,7 +85,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
                 audienceId,
                 name,
                 description,
-                rules: rules || {},
+                createdById: session.user.id,
             },
         });
 
