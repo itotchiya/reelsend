@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hasPermission } from "@/lib/permissions";
@@ -86,22 +86,20 @@ export async function POST(req: Request) {
             },
         });
 
-        // Send invitation email
-        const emailResult = await sendInvitationEmail({
-            to: email,
-            inviterName: session.user.name || session.user.email || "A team member",
-            roleName: newUser.role?.name || "Member",
-            inviteToken,
-        });
 
-        if (!emailResult.success) {
-            console.error("[TEAM_INVITE_EMAIL_ERROR]", emailResult.error);
-            // We still keep the user record, but notify about the email failure
-            return NextResponse.json({
-                user: newUser,
-                warning: "User created but invitation email failed to send. Please check your Resend API Key and verified domain."
+        // Send invitation email in background
+        after(async () => {
+            const emailResult = await sendInvitationEmail({
+                to: email,
+                inviterName: session?.user?.name || session?.user?.email || "A team member",
+                roleName: newUser.role?.name || "Member",
+                inviteToken,
             });
-        }
+
+            if (!emailResult.success) {
+                console.error("[TEAM_INVITE_EMAIL_ERROR]", emailResult.error);
+            }
+        });
 
         return NextResponse.json(newUser);
     } catch (error) {
