@@ -50,19 +50,19 @@ export function SegmentCard({ segment, clientSlug, onEdit, onDelete }: SegmentCa
                     <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-sm truncate">{segment.name}</h3>
                         <p className="text-xs text-muted-foreground truncate mt-0.5">
-                            {segment.description || t.audiences?.noDescription || "No description"}
+                            {segment.description || t.cards?.common?.noDescription || "No description"}
                         </p>
                     </div>
                     <CardActions
                         actions={[
                             {
                                 type: "edit",
-                                label: t.common?.edit || "Edit",
+                                label: t.cards?.common?.edit || "Edit",
                                 onClick: onEdit,
                             },
                             {
                                 type: "delete",
-                                label: t.common?.delete || "Delete",
+                                label: t.cards?.common?.delete || "Delete",
                                 onClick: onDelete,
                                 danger: true,
                                 separatorBefore: true,
@@ -76,7 +76,7 @@ export function SegmentCard({ segment, clientSlug, onEdit, onDelete }: SegmentCa
                     <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-500/10 text-blue-600">
                         <Users className="h-3.5 w-3.5" />
                         <span className="text-xs font-semibold">
-                            {segment._count.contacts} {t.common?.contacts || "contacts"}
+                            {segment._count.contacts} {t.cards?.audience?.contacts || "contacts"}
                         </span>
                     </div>
                 </div>
@@ -91,7 +91,7 @@ export function SegmentCard({ segment, clientSlug, onEdit, onDelete }: SegmentCa
                         ))}
                         {segment.campaigns.length > 3 && (
                             <CardBadge variant="border" color="gray" className="text-[10px]">
-                                +{segment.campaigns.length - 3}
+                                +{segment.campaigns.length - 3} {t.common?.more || ""}
                             </CardBadge>
                         )}
                     </div>

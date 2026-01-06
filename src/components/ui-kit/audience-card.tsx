@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { ClientBadge, ClientBadgeSolid, CampaignBadge, NotUsedBadge, CountBadge } from "./card-badge";
 import { StandardCardActions } from "./card-actions";
 import { getContrastColor } from "@/lib/colors";
+import { useI18n } from "@/lib/i18n";
 
 /**
  * AudienceCard Component
@@ -63,16 +64,6 @@ export interface AudienceCardProps {
     };
 }
 
-const defaultLabels = {
-    viewAudience: "View Audience",
-    edit: "Edit",
-    delete: "Delete",
-    contacts: "Contacts",
-    segments: "Segments",
-    notUsed: "Not Used",
-    usedIn: "Used in",
-};
-
 function getInitials(name: string): string {
     return name
         .split(" ")
@@ -92,6 +83,18 @@ export function AudienceCard({
     canDelete = true,
     labels: customLabels,
 }: AudienceCardProps) {
+    const { t } = useI18n();
+
+    const defaultLabels = {
+        viewAudience: t.cards?.common?.view || "View Audience",
+        edit: t.cards?.common?.edit || "Edit",
+        delete: t.cards?.common?.delete || "Delete",
+        contacts: t.cards?.audience?.contacts || "Contacts",
+        segments: t.cards?.audience?.segments || "Segments",
+        notUsed: t.cards?.audience?.notUsed || "Not Used",
+        usedIn: t.cards?.audience?.usedIn || "Used in",
+    };
+
     const labels = { ...defaultLabels, ...customLabels };
     const router = useRouter();
 

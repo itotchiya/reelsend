@@ -45,7 +45,8 @@
         "filtered": "filtered",
         "total": "total",
         "min": "Min",
-        "max": "Max"
+        "max": "Max",
+        "more": "more"
     },
     "nav": {
         "emailMarketing": "Email Marketing",
@@ -573,5 +574,64 @@
         "error": "Failed to generate template",
         "promptRequired": "Please enter a prompt",
         "examplesTitle": "Try these examples:"
+    },
+    "cards": {
+        "common": {
+            "view": "View",
+            "edit": "Edit",
+            "delete": "Delete",
+            "duplicate": "Duplicate",
+            "created": "Created",
+            "createdBy": "By",
+            "updated": "Updated",
+            "updatedBy": "Edited by",
+            "noDescription": "No description"
+        },
+        "campaign": {
+            "sendTest": "Send Test",
+            "noSubject": "No subject",
+            "noTemplate": "No template assigned",
+            "noAudience": "No audience assigned",
+            "started": "Started",
+            "startedBy": "By",
+            "status": {
+                "draft": "Draft",
+                "scheduled": "Scheduled",
+                "sending": "Sending",
+                "completed": "Completed",
+                "failed": "Failed",
+                "cancelled": "Cancelled"
+            },
+            "stats": {
+                "sent": "Sent",
+                "openRate": "Open Rate",
+                "clickRate": "Click Rate"
+            }
+        },
+        "audience": {
+            "contacts": "Contacts",
+            "segments": "Segments",
+            "notUsed": "Not Used",
+            "usedIn": "Used in"
+        },
+        "client": {
+            "active": "Active",
+            "suspended": "Suspended",
+            "deactivated": "Deactivated",
+            "public": "Public",
+            "private": "Private",
+            "smtpVerified": "SMTP Verified",
+            "smtpRequired": "SMTP Required"
+        },
+        "template": {
+            "openEditor": "Open Editor",
+            "editDetails": "Edit Details",
+            "viewActivity": "View Activity",
+            "unassigned": "Unassigned",
+            "notYetEdited": "Not yet edited",
+            "noPreview": "No preview available",
+            "aiGenerated": "AI Generated",
+            "notAssigned": "Not Assigned"
+        }
     }
 }

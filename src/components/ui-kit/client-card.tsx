@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { CardBadge, SmtpBadge } from "./card-badge";
 import { StandardCardActions } from "./card-actions";
 import { getContrastColor } from "@/lib/colors";
+import { useI18n } from "@/lib/i18n";
 
 /**
  * ClientCard Component
@@ -63,22 +64,6 @@ export interface ClientCardProps {
     };
 }
 
-const defaultLabels = {
-    viewClient: "View Client",
-    edit: "Edit",
-    delete: "Delete",
-    active: "Active",
-    suspended: "Suspended",
-    deactivated: "Deactivated",
-    public: "Public",
-    private: "Private",
-    smtpVerified: "SMTP Verified",
-    smtpNotVerified: "SMTP Required",
-    campaigns: "Campaigns",
-    audiences: "Audiences",
-    templates: "Templates",
-};
-
 function getInitials(name: string): string {
     return name
         .split(" ")
@@ -86,37 +71,6 @@ function getInitials(name: string): string {
         .join("")
         .toUpperCase()
         .slice(0, 2);
-}
-
-function getStatusConfig(status: string, active: boolean) {
-    const normalizedStatus = status?.toLowerCase() || (active ? "active" : "deactivated");
-
-    switch (normalizedStatus) {
-        case "active":
-            return {
-                label: "active",
-                bgClass: "bg-blue-500/10",
-                textClass: "text-blue-600",
-                borderClass: "border-blue-500/20",
-                dotClass: "bg-blue-500",
-            };
-        case "suspended":
-            return {
-                label: "suspended",
-                bgClass: "bg-yellow-500/10",
-                textClass: "text-yellow-600",
-                borderClass: "border-yellow-500/20",
-                dotClass: "bg-yellow-500",
-            };
-        default:
-            return {
-                label: "deactivated",
-                bgClass: "bg-red-500/10",
-                textClass: "text-red-600",
-                borderClass: "border-red-500/20",
-                dotClass: "bg-red-500",
-            };
-    }
 }
 
 export function ClientCard({
@@ -128,7 +82,60 @@ export function ClientCard({
     canDelete = true,
     labels: customLabels,
 }: ClientCardProps) {
+    const { t } = useI18n();
+
+    const defaultLabels = {
+        viewClient: t.cards?.common?.view || "View Client",
+        edit: t.cards?.common?.edit || "Edit",
+        delete: t.cards?.common?.delete || "Delete",
+        active: t.cards?.client?.active || "Active",
+        suspended: t.cards?.client?.suspended || "Suspended",
+        deactivated: t.cards?.client?.deactivated || "Deactivated",
+        public: t.cards?.client?.public || "Public",
+        private: t.cards?.client?.private || "Private",
+        smtpVerified: t.cards?.client?.smtpVerified || "SMTP Verified",
+        smtpNotVerified: t.cards?.client?.smtpRequired || "SMTP Required",
+        campaigns: t.common?.campaigns || "Campaigns",
+        audiences: t.common?.audiences || "Audiences",
+        templates: t.common?.templates || "Templates",
+    };
+
     const labels = { ...defaultLabels, ...customLabels };
+
+    const getStatusConfig = (status: string, active: boolean) => {
+        const normalizedStatus = status?.toLowerCase() || (active ? "active" : "deactivated");
+
+        switch (normalizedStatus) {
+            case "active":
+                return {
+                    label: labels.active,
+                    state: "active",
+                    bgClass: "bg-blue-500/10",
+                    textClass: "text-blue-600",
+                    borderClass: "border-blue-500/20",
+                    dotClass: "bg-blue-500",
+                };
+            case "suspended":
+                return {
+                    label: labels.suspended,
+                    state: "suspended",
+                    bgClass: "bg-yellow-500/10",
+                    textClass: "text-yellow-600",
+                    borderClass: "border-yellow-500/20",
+                    dotClass: "bg-yellow-500",
+                };
+            default:
+                return {
+                    label: labels.deactivated,
+                    state: "deactivated",
+                    bgClass: "bg-red-500/10",
+                    textClass: "text-red-600",
+                    borderClass: "border-red-500/20",
+                    dotClass: "bg-red-500",
+                };
+        }
+    };
+
     const statusConfig = getStatusConfig(client.status, client.active);
 
     // Red dashed border only for non-verified SMTP

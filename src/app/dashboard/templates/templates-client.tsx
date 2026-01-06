@@ -77,16 +77,19 @@ export function TemplatesClient({ initialTemplates, clients }: TemplatesClientPr
 
     // Handlers
     const handleOpen = (template: TemplateCardData) => {
+        // Ensure ID is a valid string
+        const templateId = typeof template.id === 'object' ? (template.id as any)?.id || String(template.id) : template.id;
+
+        if (!templateId || templateId === '[object Object]') {
+            toast.error("Error: Invalid template ID");
+            return;
+        }
+
         if (template.client?.slug) {
-            // Ensure ID is a valid string
-            const templateId = typeof template.id === 'object' ? (template.id as any)?.id || String(template.id) : template.id;
-
-            if (!templateId || templateId === '[object Object]') {
-                toast.error("Error: Invalid template ID");
-                return;
-            }
-
             router.push(`/dashboard/clients/${template.client.slug}/templates/${templateId}`);
+        } else {
+            // Navigate to global template editor for unassigned templates
+            router.push(`/dashboard/templates/${templateId}`);
         }
     };
 

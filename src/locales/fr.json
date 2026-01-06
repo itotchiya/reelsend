@@ -45,7 +45,8 @@
         "filtered": "filtré(s)",
         "total": "total",
         "min": "Min",
-        "max": "Max"
+        "max": "Max",
+        "more": "de plus"
     },
     "nav": {
         "emailMarketing": "Marketing Email",
@@ -575,5 +576,64 @@
         "error": "Échec de la génération du modèle",
         "promptRequired": "Veuillez entrer une description",
         "examplesTitle": "Essayez ces exemples :"
+    },
+    "cards": {
+        "common": {
+            "view": "Voir details",
+            "edit": "Modifier",
+            "delete": "Supprimer",
+            "duplicate": "Dupliquer",
+            "created": "Créé le",
+            "createdBy": "Par",
+            "updated": "Mis à jour",
+            "updatedBy": "Modifié par",
+            "noDescription": "Aucune description"
+        },
+        "campaign": {
+            "sendTest": "Envoyer un test",
+            "noSubject": "Aucun sujet",
+            "noTemplate": "Aucun modèle assigné",
+            "noAudience": "Aucune audience assignée",
+            "started": "Lancé le",
+            "startedBy": "Par",
+            "status": {
+                "draft": "Brouillon",
+                "scheduled": "Planifié",
+                "sending": "Envoi en cours",
+                "completed": "Terminé",
+                "failed": "Échoué",
+                "cancelled": "Annulé"
+            },
+            "stats": {
+                "sent": "Envoyé",
+                "openRate": "Taux d'ouverture",
+                "clickRate": "Taux de clic"
+            }
+        },
+        "audience": {
+            "contacts": "Contacts",
+            "segments": "Segments",
+            "notUsed": "Non utilisé",
+            "usedIn": "Utilisé dans"
+        },
+        "client": {
+            "active": "Actif",
+            "suspended": "Suspendu",
+            "deactivated": "Désactivé",
+            "public": "Public",
+            "private": "Privé",
+            "smtpVerified": "SMTP Vérifié",
+            "smtpRequired": "SMTP Requis"
+        },
+        "template": {
+            "openEditor": "Ouvrir l'éditeur",
+            "editDetails": "Modifier les détails",
+            "viewActivity": "Voir l'activité",
+            "unassigned": "Non assigné",
+            "notYetEdited": "Non édité",
+            "noPreview": "Aucun aperçu disponible",
+            "aiGenerated": "Généré par IA",
+            "notAssigned": "Non assigné"
+        }
     }
 }

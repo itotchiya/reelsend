@@ -6,6 +6,7 @@ import { ExternalLink, Mail, AlertCircle } from "lucide-react";
 import { CardActions, type CardAction } from "./card-actions";
 import { ClientBadgeSolid, CampaignBadge, NotUsedBadge, CardBadge, AIGeneratedBadge, UnassignedDashedBadge } from "./card-badge";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 /**
  * TemplateCard Component
@@ -75,24 +76,6 @@ export interface TemplateCardProps {
     };
 }
 
-const defaultLabels = {
-    openEditor: "Open Editor",
-    editDetails: "Edit Details",
-    duplicate: "Duplicate",
-    viewActivity: "View Activity",
-    delete: "Delete",
-    noPreview: "No preview available",
-    noDescription: "No description",
-    notYetEdited: "Not yet edited",
-    unassigned: "Unassigned",
-    createdBy: "Created by",
-    editedBy: "Edited by",
-    aiGenerated: "AI Generated",
-    notAssigned: "Not Assigned",
-};
-
-
-
 export function TemplateCard({
     template,
     onOpen,
@@ -102,6 +85,25 @@ export function TemplateCard({
     onViewActivity,
     labels: customLabels,
 }: TemplateCardProps) {
+    const { t } = useI18n();
+
+    // Default labels using i18n
+    const defaultLabels = {
+        openEditor: t.cards?.template?.openEditor || "Open Editor",
+        editDetails: t.cards?.template?.editDetails || "Edit Details",
+        duplicate: t.cards?.common?.duplicate || "Duplicate",
+        viewActivity: t.cards?.template?.viewActivity || "View Activity",
+        delete: t.cards?.common?.delete || "Delete",
+        noPreview: t.cards?.template?.noPreview || "No preview available",
+        noDescription: t.cards?.common?.noDescription || "No description",
+        notYetEdited: t.cards?.template?.notYetEdited || "Not yet edited",
+        unassigned: t.cards?.template?.unassigned || "Unassigned",
+        createdBy: t.cards?.common?.createdBy || "Created by",
+        editedBy: t.cards?.common?.updatedBy || "Edited by",
+        aiGenerated: t.cards?.template?.aiGenerated || "AI Generated",
+        notAssigned: t.cards?.template?.notAssigned || "Not Assigned",
+    };
+
     const labels = { ...defaultLabels, ...customLabels };
     const [isDuplicating, setIsDuplicating] = useState(false);
 

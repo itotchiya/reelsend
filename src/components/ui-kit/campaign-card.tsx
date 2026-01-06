@@ -12,6 +12,7 @@ import {
     CardBadge
 } from "./card-badge";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 /**
  * CampaignCard Component
@@ -87,21 +88,6 @@ export interface CampaignCardProps {
     };
 }
 
-const defaultLabels = {
-    view: "View",
-    edit: "Edit Details",
-    delete: "Delete",
-    duplicate: "Duplicate",
-    sendTest: "Send Test",
-    noSubject: "No subject",
-    noTemplate: "No template assigned",
-    noAudience: "No audience assigned",
-    created: "Created",
-    createdBy: "By",
-    started: "Started",
-    startedBy: "By",
-};
-
 export function CampaignCard({
     campaign,
     onView,
@@ -111,6 +97,23 @@ export function CampaignCard({
     onSendTest,
     labels: customLabels,
 }: CampaignCardProps) {
+    const { t } = useI18n();
+
+    const defaultLabels = {
+        view: t.cards?.common?.view || "View",
+        edit: t.cards?.common?.edit || "Edit Details",
+        delete: t.cards?.common?.delete || "Delete",
+        duplicate: t.cards?.common?.duplicate || "Duplicate",
+        sendTest: t.cards?.campaign?.sendTest || "Send Test",
+        noSubject: t.cards?.campaign?.noSubject || "No subject",
+        noTemplate: t.cards?.campaign?.noTemplate || "No template assigned",
+        noAudience: t.cards?.campaign?.noAudience || "No audience assigned",
+        created: t.cards?.common?.created || "Created",
+        createdBy: t.cards?.common?.createdBy || "By",
+        started: t.cards?.campaign?.started || "Started",
+        startedBy: t.cards?.campaign?.startedBy || "By",
+    };
+
     const labels = { ...defaultLabels, ...customLabels };
 
     const statusConfig: Record<CampaignStatus, {
@@ -118,12 +121,12 @@ export function CampaignCard({
         color: "orange" | "blue" | "green" | "red" | "gray";
         icon: any;
     }> = {
-        DRAFT: { label: "Draft", color: "orange", icon: Clock },
-        SCHEDULED: { label: "Scheduled", color: "blue", icon: Clock },
-        SENDING: { label: "Sending", color: "blue", icon: Send },
-        COMPLETED: { label: "Completed", color: "green", icon: CheckCircle },
-        FAILED: { label: "Failed", color: "red", icon: AlertCircle },
-        CANCELLED: { label: "Cancelled", color: "gray", icon: Ban },
+        DRAFT: { label: t.cards?.campaign?.status?.draft || "Draft", color: "orange", icon: Clock },
+        SCHEDULED: { label: t.cards?.campaign?.status?.scheduled || "Scheduled", color: "blue", icon: Clock },
+        SENDING: { label: t.cards?.campaign?.status?.sending || "Sending", color: "blue", icon: Send },
+        COMPLETED: { label: t.cards?.campaign?.status?.completed || "Completed", color: "green", icon: CheckCircle },
+        FAILED: { label: t.cards?.campaign?.status?.failed || "Failed", color: "red", icon: AlertCircle },
+        CANCELLED: { label: t.cards?.campaign?.status?.cancelled || "Cancelled", color: "gray", icon: Ban },
     };
 
     const currentStatus = statusConfig[campaign.status];
