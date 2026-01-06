@@ -552,6 +552,26 @@
         "templatesCount": "templates",
         "showPerPage": "Show",
         "perPage": "per page",
-        "page": "Page"
+        "page": "Page",
+        "aiGenerated": "AI Generated",
+        "notAssigned": "Not Assigned"
+    },
+    "promptBuilder": {
+        "title": "Prompt Builder",
+        "subtitle": "AI-powered email generation",
+        "heading": "Describe your email template",
+        "description": "Tell the AI what kind of email you want to create, and it will build it for you.",
+        "styleLabel": "Template Style",
+        "clientLabel": "Client (Optional)",
+        "noClient": "No client (generic template)",
+        "placeholder": "Example: Create a welcome email for a hair salon with a friendly tone and a call-to-action to book an appointment...",
+        "buildButton": "Build Template",
+        "generating": "Generating...",
+        "generatingTitle": "Creating your template...",
+        "generatingDescription": "This may take a few seconds",
+        "success": "Template created successfully!",
+        "error": "Failed to generate template",
+        "promptRequired": "Please enter a prompt",
+        "examplesTitle": "Try these examples:"
     }
 }

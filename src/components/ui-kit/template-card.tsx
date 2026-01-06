@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ExternalLink, Mail, AlertCircle } from "lucide-react";
 import { CardActions, type CardAction } from "./card-actions";
-import { ClientBadgeSolid, CampaignBadge, NotUsedBadge, CardBadge } from "./card-badge";
+import { ClientBadgeSolid, CampaignBadge, NotUsedBadge, CardBadge, AIGeneratedBadge, UnassignedDashedBadge } from "./card-badge";
 import { cn } from "@/lib/utils";
 
 /**
@@ -48,6 +48,7 @@ export interface TemplateCardData {
     updatedBy: TemplateCardUser | null;
     createdAt: Date | string;
     updatedAt: Date | string;
+    isAIGenerated?: boolean;
 }
 
 export interface TemplateCardProps {
@@ -69,6 +70,8 @@ export interface TemplateCardProps {
         unassigned?: string;
         createdBy?: string;
         editedBy?: string;
+        aiGenerated?: string;
+        notAssigned?: string;
     };
 }
 
@@ -84,6 +87,8 @@ const defaultLabels = {
     unassigned: "Unassigned",
     createdBy: "Created by",
     editedBy: "Edited by",
+    aiGenerated: "AI Generated",
+    notAssigned: "Not Assigned",
 };
 
 
@@ -218,7 +223,12 @@ export function TemplateCard({
 
                 {/* Badges Section - Responsive wrap, show ALL badges */}
                 <div className="flex flex-wrap gap-1.5 mb-3">
-                    {/* Client Badge - Filled with primary color */}
+                    {/* AI Generated Badge */}
+                    {template.isAIGenerated && (
+                        <AIGeneratedBadge label={labels.aiGenerated} />
+                    )}
+
+                    {/* Client Badge - Filled with primary color, or Not Assigned */}
                     {template.client ? (
                         <Link
                             href={`/dashboard/clients/${template.client.slug}`}
@@ -231,9 +241,7 @@ export function TemplateCard({
                             />
                         </Link>
                     ) : (
-                        <CardBadge variant="border" color="gray">
-                            {labels.unassigned}
-                        </CardBadge>
+                        <UnassignedDashedBadge label={labels.notAssigned} />
                     )}
 
                     {/* Not Edited Badge - Only show if no content */}

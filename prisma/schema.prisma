@@ -341,6 +341,7 @@ model Template {
   htmlContent  String      @db.Text
   jsonContent  Json?       // Structured content for editor
   previewUrl   String?
+  isAIGenerated Boolean    @default(false) // True if created via Prompt Builder
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   createdById  String?     // User who created the template

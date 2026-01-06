@@ -22,6 +22,7 @@ import {
     Shield,
     UserCog,
     LogOut,
+    Sparkles,
 } from "lucide-react";
 
 import {
@@ -84,6 +85,7 @@ const navigation: NavGroup[] = [
         items: [
             { titleKey: "campaigns", href: "/dashboard/campaigns", icon: Mail, permission: "campaigns:view" },
             { titleKey: "templates", href: "/dashboard/templates", icon: FileText, permission: "templates:view" },
+            { titleKey: "promptBuilder", href: "/dashboard/promptbuilder", icon: Sparkles, permission: "templates:create" },
             { titleKey: "audiences", href: "/dashboard/audiences", icon: Users, permission: "audiences:view" },
         ],
     },
@@ -129,6 +131,7 @@ export function AppSidebar() {
         emailMarketing: t.nav?.emailMarketing || "Email Marketing",
         campaigns: t.common.campaigns,
         templates: t.common.templates,
+        promptBuilder: t.promptBuilder?.title || "Prompt Builder",
         audiences: t.common.audiences,
         management: t.nav?.management || "Management",
         clients: t.common.clients,

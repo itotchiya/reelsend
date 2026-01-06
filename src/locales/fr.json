@@ -554,6 +554,26 @@
         "templatesCount": "modèles",
         "showPerPage": "Afficher",
         "perPage": "par page",
-        "page": "Page"
+        "page": "Page",
+        "aiGenerated": "Généré par IA",
+        "notAssigned": "Non assigné"
+    },
+    "promptBuilder": {
+        "title": "Générateur",
+        "subtitle": "Génération d'emails par IA",
+        "heading": "Décrivez votre modèle d'email",
+        "description": "Dites à l'IA quel type d'email vous souhaitez créer, et elle le construira pour vous.",
+        "styleLabel": "Style du modèle",
+        "clientLabel": "Client (Optionnel)",
+        "noClient": "Aucun client (modèle générique)",
+        "placeholder": "Exemple : Créez un email de bienvenue pour un salon de coiffure avec un ton amical et un bouton d'action pour prendre rendez-vous...",
+        "buildButton": "Générer le modèle",
+        "generating": "Génération en cours...",
+        "generatingTitle": "Création de votre modèle...",
+        "generatingDescription": "Cela peut prendre quelques secondes",
+        "success": "Modèle créé avec succès !",
+        "error": "Échec de la génération du modèle",
+        "promptRequired": "Veuillez entrer une description",
+        "examplesTitle": "Essayez ces exemples :"
     }
 }

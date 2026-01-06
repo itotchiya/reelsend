@@ -6,7 +6,7 @@ import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 import { DataTable, Column } from "@/components/ui-kit/data-table";
 import { FilterBar } from "@/components/ui-kit/filter-bar";
 import { Button } from "@/components/ui/button";
-import { CardBadge } from "@/components/ui-kit/card-badge";
+import { CardBadge, AIGeneratedBadge } from "@/components/ui-kit/card-badge";
 import { Plus, FileText, CheckCircle, AlertCircle } from "lucide-react";
 import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
 import { useI18n } from "@/lib/i18n";
@@ -25,6 +25,7 @@ interface Template {
     createdAt: string;
     updatedAt: string;
     campaigns: { id: string; name: string }[];
+    isAIGenerated?: boolean;
 }
 
 interface TemplatesClientProps {
@@ -178,17 +179,22 @@ export function TemplatesClient({
             key: "status",
             header: t.tables?.status || "Status",
             render: (template) => (
-                template.htmlContent ? (
-                    <CardBadge variant="border" color="green" className="text-[10px]">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Ready
-                    </CardBadge>
-                ) : (
-                    <CardBadge variant="border" color="orange" className="text-[10px]">
-                        <AlertCircle className="h-3 w-3 mr-1" />
-                        Not Edited
-                    </CardBadge>
-                )
+                <div className="flex flex-wrap gap-1">
+                    {template.isAIGenerated && (
+                        <AIGeneratedBadge size="sm" />
+                    )}
+                    {template.htmlContent ? (
+                        <CardBadge variant="border" color="green" className="text-[10px]">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Ready
+                        </CardBadge>
+                    ) : (
+                        <CardBadge variant="border" color="orange" className="text-[10px]">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            Not Edited
+                        </CardBadge>
+                    )}
+                </div>
             ),
         },
         {
