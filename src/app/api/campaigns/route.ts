@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { z } from "zod";
@@ -54,7 +55,14 @@ export async function POST(req: NextRequest) {
                 createdById: user.id,
                 updatedById: user.id,
             },
+            include: {
+                client: { select: { slug: true } }
+            }
         });
+
+        // Revalidate for instant UI update
+        revalidatePath("/dashboard/campaigns");
+        revalidatePath(`/dashboard/clients/${campaign.client.slug}/campaigns`);
 
         return NextResponse.json(campaign);
     } catch (error: any) {

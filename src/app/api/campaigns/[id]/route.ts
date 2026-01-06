@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { z } from "zod";
@@ -88,7 +89,15 @@ export async function PATCH(req: NextRequest, { params }: Context) {
         const campaign = await db.campaign.update({
             where: { id },
             data,
+            include: {
+                client: { select: { slug: true } }
+            }
         });
+
+        // Revalidate for instant UI update
+        revalidatePath("/dashboard/campaigns");
+        revalidatePath(`/dashboard/clients/${campaign.client.slug}/campaigns`);
+        revalidatePath(`/dashboard/clients/${campaign.client.slug}/campaigns/${id}`);
 
         return NextResponse.json(campaign);
     } catch (error) {
@@ -107,6 +116,7 @@ export async function DELETE(req: NextRequest, { params }: Context) {
         // Verify campaign exists
         const existingCampaign = await db.campaign.findUnique({
             where: { id },
+            include: { client: { select: { slug: true } } }
         });
 
         if (!existingCampaign) {
@@ -121,6 +131,12 @@ export async function DELETE(req: NextRequest, { params }: Context) {
         await db.campaign.delete({
             where: { id },
         });
+
+        // Revalidate for instant UI update
+        revalidatePath("/dashboard/campaigns");
+        if (existingCampaign.client?.slug) {
+            revalidatePath(`/dashboard/clients/${existingCampaign.client.slug}/campaigns`);
+        }
 
         return new NextResponse(null, { status: 204 });
     } catch (error) {

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hasPermission } from "@/lib/permissions";
@@ -103,6 +104,9 @@ export async function POST(req: Request) {
                 },
             },
         });
+
+        // Revalidate clients list for instant UI update
+        revalidatePath("/dashboard/clients");
 
         return NextResponse.json(client);
     } catch (error) {

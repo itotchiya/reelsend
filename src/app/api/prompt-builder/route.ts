@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -252,6 +253,12 @@ You must respond with a valid JSON object containing:
             redirectUrl = `/dashboard/clients/${newTemplate.client.slug}/templates/${newTemplate.id}`;
         } else {
             redirectUrl = `/dashboard/templates/${newTemplate.id}`;
+        }
+
+        // Revalidate paths to refresh the lists
+        revalidatePath("/dashboard/templates");
+        if (newTemplate.client?.slug) {
+            revalidatePath(`/dashboard/clients/${newTemplate.client.slug}/templates`);
         }
 
         return NextResponse.json({

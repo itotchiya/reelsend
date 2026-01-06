@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
@@ -52,10 +53,25 @@ export async function PATCH(req: Request, { params }: RouteParams) {
         const body = await req.json();
         const { name, description } = body;
 
+        // Get existing audience for client slug
+        const existing = await db.audience.findUnique({
+            where: { id },
+            include: { client: { select: { slug: true } } }
+        });
+
+        if (!existing) {
+            return new NextResponse("Audience not found", { status: 404 });
+        }
+
         const audience = await db.audience.update({
             where: { id },
             data: { name, description }
         });
+
+        // Revalidate for instant UI update
+        revalidatePath("/dashboard/audiences");
+        revalidatePath(`/dashboard/clients/${existing.client.slug}/audiences`);
+        revalidatePath(`/dashboard/clients/${existing.client.slug}/audiences/${id}`);
 
         return NextResponse.json(audience);
     } catch (error) {
@@ -74,9 +90,23 @@ export async function DELETE(req: Request, { params }: RouteParams) {
     }
 
     try {
+        // Get existing for client slug before deleting
+        const existing = await db.audience.findUnique({
+            where: { id },
+            include: { client: { select: { slug: true } } }
+        });
+
+        if (!existing) {
+            return new NextResponse("Audience not found", { status: 404 });
+        }
+
         await db.audience.delete({
             where: { id }
         });
+
+        // Revalidate for instant UI update
+        revalidatePath("/dashboard/audiences");
+        revalidatePath(`/dashboard/clients/${existing.client.slug}/audiences`);
 
         return new NextResponse(null, { status: 204 });
     } catch (error) {

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
@@ -49,8 +50,15 @@ export async function POST(req: Request) {
                 name,
                 description,
                 clientId
+            },
+            include: {
+                client: { select: { slug: true } }
             }
         });
+
+        // Revalidate for instant UI update
+        revalidatePath("/dashboard/audiences");
+        revalidatePath(`/dashboard/clients/${audience.client.slug}/audiences`);
 
         return NextResponse.json(audience);
     } catch (error) {
