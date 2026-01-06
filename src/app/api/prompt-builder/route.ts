@@ -38,6 +38,18 @@ You can use the following block types in your template:
 7. **Avatar** - For profile images/icons
    - props: { imageUrl?: string, size: number, shape: "circle"|"square" }
    - style: { padding: { top, bottom, left, right } }
+
+8. **Container** - A wrapper block for grouping other blocks
+   - props: { childrenIds: string[] }
+   - style: { backgroundColor?: string, padding: { top, bottom, left, right }, border?: string, borderRadius?: number }
+
+9. **ColumnsContainer** - For multi-column layouts (2 or 3 columns)
+   - props: { 
+       columnsCount: 2 | 3,
+       columnsGap: number,
+       columns: { childrenIds: string[] }[] 
+     }
+   - style: { padding: { top, bottom, left, right }, backgroundColor?: string }
 `;
 
 const JSON_FORMAT_EXAMPLE = `
@@ -52,7 +64,7 @@ The template must be a JSON object with this structure:
       "canvasColor": "#FFFFFF", 
       "textColor": "#262626",
       "fontFamily": "MODERN_SANS",
-      "childrenIds": ["block-1", "block-2", "block-3"]
+      "childrenIds": ["block-1", "block-2", "cols-1"]
     }
   },
   "block-1": {
@@ -62,34 +74,43 @@ The template must be a JSON object with this structure:
       "props": { "text": "Welcome!", "level": "h1" }
     }
   },
-  "block-2": {
-    "type": "Text",
+  "cols-1": {
+    "type": "ColumnsContainer",
     "data": {
-      "style": { "fontWeight": "normal", "padding": { "top": 0, "bottom": 16, "left": 24, "right": 24 } },
-      "props": { "text": "Thank you for joining us..." }
+      "style": { "padding": { "top": 16, "bottom": 16, "left": 24, "right": 24 } },
+      "props": {
+        "columnsCount": 2,
+        "columnsGap": 16,
+        "columns": [
+          { "childrenIds": ["col-1-img", "col-1-txt"] },
+          { "childrenIds": ["col-2-img", "col-2-txt"] }
+        ]
+      }
     }
   },
-  "block-3": {
-    "type": "Button",
+  "col-1-img": {
+    "type": "Image",
     "data": {
-      "style": { "fontSize": 14, "padding": { "top": 16, "bottom": 24, "left": 24, "right": 24 }, "textAlign": "center" },
-      "props": { "buttonBackgroundColor": "#0079cc", "buttonStyle": "rectangle", "text": "Get Started", "url": "#" }
+       "props": { "url": "https://placehold.co/600x400", "alt": "Image 1" }
     }
-  }
+  },
+  "col-1-txt": { "type": "Text", "data": { "props": { "text": "Description 1" } } },
+  "col-2-img": { "type": "Image", "data": { "props": { "url": "https://placehold.co/600x400", "alt": "Image 2" } } },
+  "col-2-txt": { "type": "Text", "data": { "props": { "text": "Description 2" } } }
 }
 
 IMPORTANT RULES:
 - The "root" block must always exist with type "EmailLayout"
-- All child blocks must be listed in the "childrenIds" array
-- Each block ID must be unique (use format "block-1", "block-2", etc.)
-- Use placeholder URLs like "https://placehold.co/600x200" for images
-- Use "#" for button URLs as placeholders
+- All top-level blocks must be in "root.childrenIds"
+- Nested blocks (inside Columns or Containers) must be in their parent's "childrenIds" or "columns[i].childrenIds"
+- DO NOT put nested blocks in "root.childrenIds" if they are already inside a container
+- Each block ID must be unique
 `;
 
 const STYLE_GUIDELINES: Record<string, string> = {
     default: "Clean, professional layout with moderate spacing. Use a white canvas and light gray backdrop.",
-    colored: "Use vibrant, branded colors throughout. Apply the primary color to headings and buttons. Use secondary color for accents.",
-    bento: "Use a structured grid-like layout with containers. Group related content visually. Modern and organized.",
+    colored: "Use vibrant, branded colors throughout. Apply the primary color to all headings and buttons aggressively. Use secondary color for accents and backgrounds.",
+    bento: "Use a structured grid-like layout with ColumnsContainer and Container blocks. Group related content visually with borders and background colors. Modern and organized.",
     simple: "Minimalist design with ample whitespace. Focus on typography and a single accent color for CTAs.",
     minimal: "Ultra-clean design. Very few elements, maximum whitespace, understated styling.",
 };
@@ -125,15 +146,19 @@ export async function POST(request: NextRequest) {
         // Build the system prompt
         const brandInstructions = clientData?.brandColors
             ? `
-## Brand Colors
-Use these colors for the template:
+## Brand Colors - STRICT ENFORCEMENT
+You MUST use these exact colors.
 - Primary Color: ${(clientData.brandColors as any)?.primary || "#0079cc"}
 - Secondary Color: ${(clientData.brandColors as any)?.secondary || "#6B7280"}
-- CTA Color: ${(clientData.brandColors as any)?.cta || "#0079cc"}
+
+RULES FOR COLORS:
+1. ALL Buttons MUST use the Primary Color for "buttonBackgroundColor".
+2. Headings should optionally use the Primary Color.
+3. Links should use the Primary Color.
 `
             : "";
 
-        const systemPrompt = `You are an expert email template designer. Generate a complete email template based on the user's request.
+        const systemPrompt = `You are an expert email template designer. Generate a RICH, DETAILED, and COMPREHENSIVE email template based on the user's request.
 
 ${BLOCK_TYPES_REFERENCE}
 
@@ -144,6 +169,20 @@ ${STYLE_GUIDELINES[style] || STYLE_GUIDELINES.default}
 
 ${brandInstructions}
 
+## Language Detection - CRITICAL
+- Detect the language of the 'User Request'.
+- If the request is in English, generate ALL content (headings, text, buttons) in English.
+- If the request is in French, generate ALL content (headings, text, buttons) in French.
+- Use the detected language for the Template Title and Description as well.
+
+## Content Requirements - CRITICAL
+- Create a LONG, DETAILED email. Do not create short, empty templates.
+- Use at least 8-10 different blocks.
+- Use "ColumnsContainer" to create interesting layouts (e.g. side-by-side image and text).
+- Use "Container" to group related sections, potentially with background colors.
+- Include a Header section (Logo/Brand Name), Introduction, Main Content (using columns), Feature Highlights, and a Footer.
+- Write realistic, engaging copy relevant to the prompt. Do not use Lorem Ipsum.
+
 ## Your Response Format
 You must respond with a valid JSON object containing:
 {
@@ -151,14 +190,6 @@ You must respond with a valid JSON object containing:
   "description": "Brief description (max 16 words)",
   "template": { /* the TEditorConfiguration JSON object */ }
 }
-
-IMPORTANT:
-- The title should be concise and descriptive (maximum 8 words)
-- The description should summarize the email purpose (maximum 16 words)
-- The template must be a valid JSON object following the structure above
-- Only use the block types listed above
-- Make the content relevant to the user's request
-- Include appropriate padding and spacing for good visual appearance
 `;
 
         // Call Gemini API
