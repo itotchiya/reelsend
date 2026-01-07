@@ -344,6 +344,7 @@ model Template {
   jsonContent  Json?       // Structured content for editor
   previewUrl   String?
   isAIGenerated Boolean    @default(false) // True if created via Prompt Builder
+  isRecommended Boolean    @default(false) // Recommended for campaigns
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   createdById  String?     // User who created the template

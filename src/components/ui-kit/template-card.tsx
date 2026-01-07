@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ExternalLink, Mail, AlertCircle } from "lucide-react";
 import { CardActions, type CardAction } from "./card-actions";
-import { ClientBadgeSolid, CampaignBadge, NotUsedBadge, CardBadge, AIGeneratedBadge, UnassignedDashedBadge } from "./card-badge";
+import { ClientBadgeSolid, CampaignBadge, NotUsedBadge, CardBadge, AIGeneratedBadge, UnassignedDashedBadge, RecommendedBadge } from "./card-badge";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 
@@ -50,6 +50,7 @@ export interface TemplateCardData {
     createdAt: Date | string;
     updatedAt: Date | string;
     isAIGenerated?: boolean;
+    isRecommended?: boolean;
 }
 
 export interface TemplateCardProps {
@@ -246,6 +247,11 @@ export function TemplateCard({
 
                 {/* Badges Section - Responsive wrap, show ALL badges */}
                 <div className="flex flex-wrap gap-1.5 mb-3">
+                    {/* Recommended Badge - Shown first for prominence */}
+                    {template.isRecommended && (
+                        <RecommendedBadge />
+                    )}
+
                     {/* AI Generated Badge */}
                     {template.isAIGenerated && (
                         <AIGeneratedBadge label={labels.aiGenerated} />
