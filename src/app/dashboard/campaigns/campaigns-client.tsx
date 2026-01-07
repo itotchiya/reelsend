@@ -56,6 +56,11 @@ export function CampaignsClient({ initialCampaigns, clients }: CampaignsClientPr
         currentPage * pageSize
     );
 
+    // Sync state with props when router refreshes (e.g., after creating a new campaign)
+    useEffect(() => {
+        setCampaigns(initialCampaigns);
+    }, [initialCampaigns]);
+
     // Reset page when filters change
     useEffect(() => {
         setCurrentPage(1);

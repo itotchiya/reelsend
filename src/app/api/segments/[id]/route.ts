@@ -94,11 +94,22 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
         const segment = await db.segment.findUnique({
             where: { id },
-            include: { audience: { include: { client: true } } }
+            include: {
+                audience: { include: { client: true } },
+                _count: { select: { campaigns: true } }
+            }
         });
 
         if (!segment) {
             return new NextResponse("Segment not found", { status: 404 });
+        }
+
+        // Check if segment is being used in any campaigns
+        if (segment._count.campaigns > 0) {
+            return new NextResponse(
+                `This segment cannot be deleted because it is being used in ${segment._count.campaigns} campaign(s). Please remove it from all campaigns first.`,
+                { status: 409 }
+            );
         }
 
         await db.segment.delete({ where: { id } });

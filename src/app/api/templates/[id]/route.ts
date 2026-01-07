@@ -100,13 +100,24 @@ export async function DELETE(
 
         const { id } = await params;
 
-        // Check if template exists
+        // Check if template exists and get campaign count
         const template = await db.template.findUnique({
             where: { id },
+            include: {
+                _count: { select: { campaigns: true } }
+            }
         });
 
         if (!template) {
             return new NextResponse("Template not found", { status: 404 });
+        }
+
+        // Check if template is being used in any campaigns
+        if (template._count.campaigns > 0) {
+            return new NextResponse(
+                `This template cannot be deleted because it is being used in ${template._count.campaigns} campaign(s). Please remove it from all campaigns first.`,
+                { status: 409 }
+            );
         }
 
         await db.template.delete({

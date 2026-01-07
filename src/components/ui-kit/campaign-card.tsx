@@ -142,10 +142,15 @@ export function CampaignCard({
         });
     };
 
+    const handleCardClick = () => {
+        onView?.(campaign);
+    };
+
     return (
         <div
+            onClick={handleCardClick}
             className={cn(
-                "group rounded-xl border bg-card overflow-hidden transition-all duration-200 flex flex-col",
+                "group rounded-xl border bg-card overflow-hidden transition-all duration-200 flex flex-col cursor-pointer",
                 isDraft
                     ? "border-dashed border-orange-500/60 hover:border-solid hover:border-orange-500"
                     : "border-border hover:border-primary/50"

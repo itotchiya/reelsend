@@ -560,22 +560,40 @@
         "notAssigned": "Non assigné"
     },
     "promptBuilder": {
-        "title": "Générateur",
+        "title": "Générateur de Prompts",
         "subtitle": "Génération d'emails par IA",
-        "heading": "Décrivez votre modèle d'email",
-        "description": "Dites à l'IA quel type d'email vous souhaitez créer, et elle le construira pour vous.",
-        "styleLabel": "Style du modèle",
-        "clientLabel": "Client (Optionnel)",
-        "noClient": "Aucun client (modèle générique)",
-        "placeholder": "Exemple : Créez un email de bienvenue pour un salon de coiffure avec un ton amical et un bouton d'action pour prendre rendez-vous...",
-        "buildButton": "Générer le modèle",
-        "generating": "Génération en cours...",
-        "generatingTitle": "Création de votre modèle...",
-        "generatingDescription": "Cela peut prendre quelques secondes",
+        "greeting": {
+            "morning": "Bonjour",
+            "afternoon": "Bon après-midi",
+            "evening": "Bonsoir"
+        },
+        "question": "Quel type de",
+        "emailTemplate": "modèle d'email",
+        "wouldLike": "souhaitez-vous créer ?",
+        "placeholder": "Décrivez le modèle d'email que vous souhaitez créer...",
+        "styles": {
+            "default": "Par défaut",
+            "colored": "Coloré / Personnalisé",
+            "bento": "Style Bento",
+            "simple": "Simple avec Accent",
+            "minimal": "Minimal / Épuré"
+        },
+        "noClient": "Aucun client (générique)",
+        "pressKey": "Appuyez sur",
+        "toGenerate": "pour générer",
+        "examplesTitle": "Commencez avec un exemple",
+        "buildButton": "Créer le Modèle",
+        "generating": {
+            "understanding": "Compréhension de votre demande...",
+            "analyzing": "Analyse des besoins...",
+            "generating": "Génération du contenu...",
+            "building": "Construction des blocs...",
+            "styling": "Application des styles...",
+            "finishing": "Presque terminé..."
+        },
         "success": "Modèle créé avec succès !",
         "error": "Échec de la génération du modèle",
-        "promptRequired": "Veuillez entrer une description",
-        "examplesTitle": "Essayez ces exemples :"
+        "promptRequired": "Veuillez entrer un prompt"
     },
     "cards": {
         "common": {

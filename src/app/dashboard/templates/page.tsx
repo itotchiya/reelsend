@@ -11,6 +11,7 @@ export default async function TemplatesPage() {
                         id: true,
                         name: true,
                         slug: true,
+                        brandColors: true,
                     },
                 },
                 campaigns: {
@@ -50,7 +51,7 @@ export default async function TemplatesPage() {
         client: template.client
             ? {
                 ...template.client,
-                primaryColor: null,
+                primaryColor: (template.client.brandColors as any)?.primary || null,
             }
             : null,
     })) as any[];
@@ -61,3 +62,4 @@ export default async function TemplatesPage() {
         </Suspense>
     );
 }
+

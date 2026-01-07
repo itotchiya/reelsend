@@ -26,6 +26,9 @@ type TValue = {
   // Save status tracking
   savedDocumentSnapshot: string | null;
   hasUnsavedChanges: boolean;
+
+  // Client context for Block Library
+  clientId: string | null;
 };
 
 export const editorStateStore = create<TValue>(() => ({
@@ -46,6 +49,9 @@ export const editorStateStore = create<TValue>(() => ({
   // Save status
   savedDocumentSnapshot: null,
   hasUnsavedChanges: false,
+
+  // Client context
+  clientId: null,
 }));
 
 export function useDocument() {
@@ -78,6 +84,15 @@ export function useInspectorDrawerOpen() {
 
 export function useSamplesDrawerOpen() {
   return editorStateStore((s) => s.samplesDrawerOpen);
+}
+
+// Client context hooks
+export function useClientId() {
+  return editorStateStore((s) => s.clientId);
+}
+
+export function setClientId(clientId: string | null) {
+  return editorStateStore.setState({ clientId });
 }
 
 // History hooks

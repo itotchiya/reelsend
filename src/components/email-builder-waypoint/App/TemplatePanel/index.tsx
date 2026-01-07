@@ -99,7 +99,9 @@ export default function TemplatePanel() {
   // Handle back button
   // We rely on the popstate listener (useEffect above) to handle unsaved changes confirmation
   const handleBack = () => {
-    window.history.back();
+    // Force a full page reload when going back to ensure the list page shows updated data (thumbnails, etc.)
+    const parentUrl = window.location.pathname.split('/').slice(0, -1).join('/');
+    window.location.href = parentUrl;
   };
 
   let mainBoxSx: SxProps = {

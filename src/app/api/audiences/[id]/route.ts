@@ -90,14 +90,25 @@ export async function DELETE(req: Request, { params }: RouteParams) {
     }
 
     try {
-        // Get existing for client slug before deleting
+        // Get existing for client slug and check campaign usage
         const existing = await db.audience.findUnique({
             where: { id },
-            include: { client: { select: { slug: true } } }
+            include: {
+                client: { select: { slug: true } },
+                _count: { select: { campaigns: true } }
+            }
         });
 
         if (!existing) {
             return new NextResponse("Audience not found", { status: 404 });
+        }
+
+        // Check if audience is being used in any campaigns
+        if (existing._count.campaigns > 0) {
+            return new NextResponse(
+                `This audience cannot be deleted because it is being used in ${existing._count.campaigns} campaign(s). Please remove it from all campaigns first.`,
+                { status: 409 }
+            );
         }
 
         await db.audience.delete({

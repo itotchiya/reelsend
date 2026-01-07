@@ -66,8 +66,15 @@ export function TemplatesClient({
 
     useEffect(() => {
         setOverride(client.slug, client.name);
+
+        // Only refresh if we're coming back from the editor (flag set by editor on mount)
+        if (typeof window !== 'undefined' && sessionStorage.getItem('editor-session-active')) {
+            sessionStorage.removeItem('editor-session-active');
+            router.refresh();
+        }
+
         return () => removeOverride(client.slug);
-    }, [client.slug, client.name, setOverride, removeOverride]);
+    }, [client.slug, client.name, setOverride, removeOverride, router]);
 
     const totalPages = Math.ceil(totalCount / pageSize);
 

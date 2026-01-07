@@ -560,20 +560,38 @@
     "promptBuilder": {
         "title": "Prompt Builder",
         "subtitle": "AI-powered email generation",
-        "heading": "Describe your email template",
-        "description": "Tell the AI what kind of email you want to create, and it will build it for you.",
-        "styleLabel": "Template Style",
-        "clientLabel": "Client (Optional)",
-        "noClient": "No client (generic template)",
-        "placeholder": "Example: Create a welcome email for a hair salon with a friendly tone and a call-to-action to book an appointment...",
+        "greeting": {
+            "morning": "Good Morning",
+            "afternoon": "Good Afternoon",
+            "evening": "Good Evening"
+        },
+        "question": "What kind of",
+        "emailTemplate": "email template",
+        "wouldLike": "would you like to create?",
+        "placeholder": "Describe the email template you want to create...",
+        "styles": {
+            "default": "Default",
+            "colored": "Colored / Branded",
+            "bento": "Bento-style",
+            "simple": "Simple with Accent",
+            "minimal": "Minimal / Clean"
+        },
+        "noClient": "No client (generic)",
+        "pressKey": "Press",
+        "toGenerate": "to generate",
+        "examplesTitle": "Get started with an example",
         "buildButton": "Build Template",
-        "generating": "Generating...",
-        "generatingTitle": "Creating your template...",
-        "generatingDescription": "This may take a few seconds",
+        "generating": {
+            "understanding": "Understanding your request...",
+            "analyzing": "Analyzing requirements...",
+            "generating": "Generating content...",
+            "building": "Building blocks...",
+            "styling": "Applying styles...",
+            "finishing": "Almost done..."
+        },
         "success": "Template created successfully!",
         "error": "Failed to generate template",
-        "promptRequired": "Please enter a prompt",
-        "examplesTitle": "Try these examples:"
+        "promptRequired": "Please enter a prompt"
     },
     "cards": {
         "common": {

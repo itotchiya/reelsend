@@ -68,7 +68,13 @@ export function TemplatesClient({ initialTemplates, clients }: TemplatesClientPr
     // Sync state with props when router refreshes
     useEffect(() => {
         setTemplates(initialTemplates);
-    }, [initialTemplates]);
+
+        // Only refresh if we're coming back from the editor (flag set by editor on mount)
+        if (typeof window !== 'undefined' && sessionStorage.getItem('editor-session-active')) {
+            sessionStorage.removeItem('editor-session-active');
+            router.refresh();
+        }
+    }, [initialTemplates, router]);
 
     // Reset page when filters change
     useEffect(() => {

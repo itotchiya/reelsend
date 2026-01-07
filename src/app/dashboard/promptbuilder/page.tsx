@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useI18n } from "@/lib/i18n";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { useSidebar } from "@/components/ui/sidebar";
 import {
     Select,
     SelectContent,
@@ -12,10 +12,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
-import { Sparkles, Send, ArrowLeft, Palette, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AISphere } from "@/components/ui-kit/ai-sphere";
+import { AnimatedGradient } from "@/components/ui-kit/animated-gradient";
+import { GradientInputContainer, PromptInputArea } from "@/components/ui-kit/gradient-input-container";
+import { ExamplePromptCard, EXAMPLE_PROMPTS } from "@/components/ui-kit/example-prompt-card";
+import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 
 interface Client {
     id: string;
@@ -24,24 +27,44 @@ interface Client {
 }
 
 const TEMPLATE_STYLES = [
-    { value: "default", label: "Default", description: "Clean, professional layout" },
-    { value: "colored", label: "Colored / Branded", description: "Vibrant, branded colors" },
-    { value: "bento", label: "Bento-style", description: "Modern grid layout" },
-    { value: "simple", label: "Simple with Accent", description: "Minimalist with accent color" },
-    { value: "minimal", label: "Minimal / Clean", description: "Ultra-clean design" },
+    { value: "default", labelKey: "default" },
+    { value: "colored", labelKey: "colored" },
+    { value: "bento", labelKey: "bento" },
+    { value: "simple", labelKey: "simple" },
+    { value: "minimal", labelKey: "minimal" },
 ];
 
-const EXAMPLE_PROMPTS = [
-    "Create a welcome email for a hair salon with a friendly tone and a call-to-action to book an appointment",
-    "Design a product launch announcement email for a tech startup",
-    "Generate a monthly newsletter template for a fitness center",
-    "Create an order confirmation email for an e-commerce store",
-    "Design a password reset email with security tips",
+// Loading steps for the generation process
+const LOADING_STEPS = [
+    { key: "understanding", duration: 2000 },
+    { key: "analyzing", duration: 2500 },
+    { key: "generating", duration: 3000 },
+    { key: "building", duration: 2500 },
+    { key: "styling", duration: 2000 },
+    { key: "finishing", duration: 1500 },
 ];
+
+function getGreeting(t: any): string {
+    const hour = new Date().getHours();
+    if (hour < 12) return t.promptBuilder?.greeting?.morning || "Good Morning";
+    if (hour < 18) return t.promptBuilder?.greeting?.afternoon || "Good Afternoon";
+    return t.promptBuilder?.greeting?.evening || "Good Evening";
+}
+
+function useIsMac(): boolean {
+    const [isMac, setIsMac] = useState(false);
+    useEffect(() => {
+        setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0);
+    }, []);
+    return isMac;
+}
 
 export default function PromptBuilderPage() {
     const router = useRouter();
+    const { data: session } = useSession();
     const { t } = useI18n();
+    const { setOpen } = useSidebar();
+    const isMac = useIsMac();
 
     const [prompt, setPrompt] = useState("");
     const [style, setStyle] = useState("default");
@@ -49,6 +72,18 @@ export default function PromptBuilderPage() {
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingClients, setLoadingClients] = useState(true);
+    const [loadingStep, setLoadingStep] = useState(0);
+    const loadingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    const userName = session?.user?.name?.split(" ")[0] || "there";
+
+    // Auto-collapse sidebar on mount, restore on unmount
+    useEffect(() => {
+        setOpen(false);
+        return () => {
+            setOpen(true);
+        };
+    }, [setOpen]);
 
     // Fetch available clients
     useEffect(() => {
@@ -68,6 +103,36 @@ export default function PromptBuilderPage() {
         fetchClients();
     }, []);
 
+    // Animate loading steps
+    useEffect(() => {
+        if (loading) {
+            setLoadingStep(0);
+            let currentStep = 0;
+
+            const advanceStep = () => {
+                currentStep++;
+                if (currentStep < LOADING_STEPS.length) {
+                    setLoadingStep(currentStep);
+                    loadingIntervalRef.current = setTimeout(advanceStep, LOADING_STEPS[currentStep].duration);
+                }
+            };
+
+            loadingIntervalRef.current = setTimeout(advanceStep, LOADING_STEPS[0].duration);
+        } else {
+            if (loadingIntervalRef.current) {
+                clearTimeout(loadingIntervalRef.current);
+            }
+        }
+
+        return () => {
+            if (loadingIntervalRef.current) {
+                clearTimeout(loadingIntervalRef.current);
+            }
+        };
+    }, [loading]);
+
+    const [success, setSuccess] = useState(false);
+
     const handleGenerate = async () => {
         if (!prompt.trim()) {
             toast.error(t.promptBuilder?.promptRequired || "Please enter a prompt");
@@ -75,6 +140,7 @@ export default function PromptBuilderPage() {
         }
 
         setLoading(true);
+        setSuccess(false);
         try {
             const res = await fetch("/api/prompt-builder", {
                 method: "POST",
@@ -88,98 +154,131 @@ export default function PromptBuilderPage() {
 
             if (res.ok) {
                 const data = await res.json();
-                toast.success(t.promptBuilder?.success || "Template created successfully!");
+                setSuccess(true);
+                // Don't set loading to false here - keep overlay until navigation completes
                 router.push(data.redirectUrl);
             } else {
                 const error = await res.text();
                 toast.error(error || t.promptBuilder?.error || "Failed to generate template");
+                setLoading(false);
             }
         } catch (error) {
             toast.error(t.common?.error || "An error occurred");
-        } finally {
             setLoading(false);
         }
     };
 
-    const handleExampleClick = (example: string) => {
-        setPrompt(example);
+    const handleExampleClick = (fullText: string) => {
+        setPrompt(fullText);
     };
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex flex-col">
-            {/* Header */}
-            <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
-                <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                            <ArrowLeft className="h-5 w-5" />
-                        </Button>
-                        <div className="flex items-center gap-2">
-                            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                                <Sparkles className="h-5 w-5 text-white" />
-                            </div>
-                            <div>
-                                <h1 className="font-bold text-lg">{t.promptBuilder?.title || "Prompt Builder"}</h1>
-                                <p className="text-xs text-muted-foreground">{t.promptBuilder?.subtitle || "AI-powered email generation"}</p>
-                            </div>
-                        </div>
+    // Get style label from translations
+    const getStyleLabel = (key: string) => {
+        const styles = t.promptBuilder?.styles as any;
+        return styles?.[key] || key.charAt(0).toUpperCase() + key.slice(1);
+    };
+
+    // Get current loading message
+    const getLoadingMessage = () => {
+        const step = LOADING_STEPS[loadingStep];
+        const messages = t.promptBuilder?.generating as any;
+        return messages?.[step.key] || step.key;
+    };
+
+    // Loading overlay with active sphere and progress
+    if (loading) {
+        return (
+            <div className="fixed inset-0 flex flex-col items-center justify-center z-50 gap-8">
+                {/* Subtle gradient background with blur */}
+                <div className="absolute inset-0 bg-background">
+                    <AnimatedGradient
+                        variant="active"
+                        className="opacity-[0.08] blur-3xl"
+                    />
+                </div>
+
+                {/* Content */}
+                <div className="relative z-10 transition-all duration-500">
+                    <AISphere state="active" size="lg" />
+                </div>
+                <div className="relative z-10 text-center space-y-3">
+                    <p className="text-xl font-semibold text-foreground animate-pulse">
+                        {success
+                            ? (t.promptBuilder?.success || "Template created! Redirecting...")
+                            : getLoadingMessage()
+                        }
+                    </p>
+                    {/* Progress dots */}
+                    <div className="flex items-center justify-center gap-1.5">
+                        {LOADING_STEPS.map((_, idx) => (
+                            <div
+                                key={idx}
+                                className={cn(
+                                    "w-2 h-2 rounded-full transition-all duration-300",
+                                    (success || idx <= loadingStep)
+                                        ? "bg-foreground scale-100"
+                                        : "bg-foreground/30 scale-75"
+                                )}
+                            />
+                        ))}
                     </div>
                 </div>
-            </header>
+            </div>
+        );
+    }
 
-            {/* Main Content */}
-            <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full px-6 py-8">
-                {/* Intro */}
-                <div className="text-center mb-8">
-                    <h2 className="text-2xl font-bold mb-2">
-                        {t.promptBuilder?.heading || "Describe your email template"}
-                    </h2>
-                    <p className="text-muted-foreground">
-                        {t.promptBuilder?.description || "Tell the AI what kind of email you want to create, and it will build it for you."}
-                    </p>
-                </div>
+    return (
+        <>
+            <PageHeader
+                title={t.promptBuilder?.title || "Prompt Builder"}
+                showBack
+            />
+            <PageContent>
+                <div className="max-w-3xl mx-auto flex flex-col items-center py-8 px-4">
+                    {/* AI Sphere */}
+                    <div className="mb-6">
+                        <AISphere state="idle" size="md" />
+                    </div>
 
-                {/* Options Row */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                    {/* Style Selector */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium flex items-center gap-2">
-                            <Palette className="h-4 w-4 text-muted-foreground" />
-                            {t.promptBuilder?.styleLabel || "Template Style"}
-                        </label>
+                    {/* Greeting */}
+                    <div className="text-center mb-8">
+                        <h1 className="text-3xl font-bold mb-2">
+                            {getGreeting(t)}, <span className="text-foreground">{userName}</span>
+                        </h1>
+                        <p className="text-lg text-muted-foreground">
+                            {t.promptBuilder?.question || "What kind of"}{" "}
+                            <span className="text-primary font-medium">{t.promptBuilder?.emailTemplate || "email template"}</span>{" "}
+                            {t.promptBuilder?.wouldLike || "would you like to create?"}
+                        </p>
+                    </div>
+
+                    {/* Dropdowns - Full width, responsive grid */}
+                    <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                        {/* Style Selector - Full width on mobile, 50% on desktop */}
                         <Select value={style} onValueChange={setStyle}>
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full h-11 text-sm">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                                 {TEMPLATE_STYLES.map((s) => (
                                     <SelectItem key={s.value} value={s.value}>
-                                        <div className="flex flex-col">
-                                            <span className="font-medium">{s.label}</span>
-                                            <span className="text-xs text-muted-foreground">{s.description}</span>
-                                        </div>
+                                        {getStyleLabel(s.labelKey)}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
-                    </div>
 
-                    {/* Client Selector */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium flex items-center gap-2">
-                            <Building2 className="h-4 w-4 text-muted-foreground" />
-                            {t.promptBuilder?.clientLabel || "Client (Optional)"}
-                        </label>
+                        {/* Client Selector - Full width on mobile, 50% on desktop */}
                         <Select
                             value={clientId || "__none__"}
                             onValueChange={(v) => setClientId(v === "__none__" ? null : v)}
                         >
-                            <SelectTrigger>
-                                <SelectValue placeholder={loadingClients ? "Loading..." : "No client"} />
+                            <SelectTrigger className="w-full h-11 text-sm">
+                                <SelectValue placeholder={loadingClients ? "Loading..." : t.promptBuilder?.noClient || "No client"} />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="__none__">
-                                    <span className="text-muted-foreground">{t.promptBuilder?.noClient || "No client (generic template)"}</span>
+                                    <span className="text-muted-foreground">{t.promptBuilder?.noClient || "No client (generic)"}</span>
                                 </SelectItem>
                                 {clients.map((client) => (
                                     <SelectItem key={client.id} value={client.id}>
@@ -189,83 +288,48 @@ export default function PromptBuilderPage() {
                             </SelectContent>
                         </Select>
                     </div>
-                </div>
 
-                {/* Prompt Input */}
-                <div className="flex-1 flex flex-col">
-                    <div className="relative flex-1 min-h-[200px]">
-                        <Textarea
+                    {/* Gradient Input Container with Input Area */}
+                    <GradientInputContainer className="w-full">
+                        <PromptInputArea
                             value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            placeholder={t.promptBuilder?.placeholder || "Example: Create a welcome email for a hair salon with a friendly tone and a call-to-action to book an appointment..."}
-                            className="w-full h-full min-h-[200px] resize-none text-base p-6 rounded-2xl border-2 focus:border-primary/50 transition-colors"
+                            onChange={setPrompt}
+                            onSubmit={handleGenerate}
+                            placeholder={t.promptBuilder?.placeholder || "Describe the email template you want to create..."}
                             disabled={loading}
+                            buttonLabel={t.promptBuilder?.buildButton || "Generate"}
                         />
-                    </div>
+                    </GradientInputContainer>
 
-                    {/* Generate Button */}
-                    <div className="flex justify-end mt-4">
-                        <Button
-                            size="lg"
-                            onClick={handleGenerate}
-                            disabled={loading || !prompt.trim()}
-                            className="gap-2 px-8 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
-                        >
-                            {loading ? (
-                                <>
-                                    <Spinner className="h-5 w-5" />
-                                    {t.promptBuilder?.generating || "Generating..."}
-                                </>
-                            ) : (
-                                <>
-                                    <Send className="h-5 w-5" />
-                                    {t.promptBuilder?.buildButton || "Build Template"}
-                                </>
-                            )}
-                        </Button>
-                    </div>
-                </div>
-
-                {/* Example Prompts */}
-                <div className="mt-8 pt-8 border-t">
-                    <p className="text-sm font-medium text-muted-foreground mb-4">
-                        {t.promptBuilder?.examplesTitle || "Try these examples:"}
+                    {/* Keyboard shortcut hint */}
+                    <p className="text-xs text-muted-foreground text-center mt-4">
+                        {t.promptBuilder?.pressKey || "Press"}{" "}
+                        <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-[10px]">
+                            {isMac ? "⌘" : "Ctrl"}
+                        </kbd>{" "}
+                        +{" "}
+                        <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-[10px]">Enter</kbd>{" "}
+                        {t.promptBuilder?.toGenerate || "to generate"}
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                        {EXAMPLE_PROMPTS.map((example, idx) => (
-                            <button
-                                key={idx}
-                                onClick={() => handleExampleClick(example)}
-                                className={cn(
-                                    "text-sm px-4 py-2 rounded-full border border-dashed",
-                                    "hover:border-primary hover:text-primary hover:bg-primary/5",
-                                    "transition-colors text-left"
-                                )}
-                                disabled={loading}
-                            >
-                                {example.length > 60 ? example.substring(0, 60) + "..." : example}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            </main>
 
-            {/* Loading Overlay */}
-            {loading && (
-                <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="text-center space-y-4">
-                        <div className="relative">
-                            <div className="h-20 w-20 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 animate-pulse flex items-center justify-center mx-auto">
-                                <Sparkles className="h-10 w-10 text-white animate-bounce" />
-                            </div>
-                        </div>
-                        <div>
-                            <p className="text-lg font-semibold">{t.promptBuilder?.generatingTitle || "Creating your template..."}</p>
-                            <p className="text-sm text-muted-foreground">{t.promptBuilder?.generatingDescription || "This may take a few seconds"}</p>
+                    {/* Example Prompts */}
+                    <div className="w-full mt-12">
+                        <p className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wider">
+                            {t.promptBuilder?.examplesTitle || "Get started with an example"}
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {EXAMPLE_PROMPTS.map((example, idx) => (
+                                <ExamplePromptCard
+                                    key={idx}
+                                    title={example.title}
+                                    icon={example.icon}
+                                    onClick={() => handleExampleClick(example.fullText)}
+                                />
+                            ))}
                         </div>
                     </div>
                 </div>
-            )}
-        </div>
+            </PageContent>
+        </>
     );
 }
