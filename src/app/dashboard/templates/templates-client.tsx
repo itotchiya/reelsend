@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Plus, Search, X } from "lucide-react";
+import { Plus, Search, X, Star } from "lucide-react";
 import { TemplateCard, TemplateCardData } from "@/components/ui-kit/template-card";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ export function TemplatesClient({ initialTemplates, clients }: TemplatesClientPr
     const [activityTemplate, setActivityTemplate] = useState<TemplateCardData | null>(null);
 
     const [pageSize, setPageSize] = useState(16);
+    const [creatingDemo, setCreatingDemo] = useState(false);
 
     // Filter templates
     const filteredTemplates = useMemo(() => {
@@ -126,16 +127,49 @@ export function TemplatesClient({ initialTemplates, clients }: TemplatesClientPr
 
     const hasActiveFilters = searchQuery || clientFilter !== "all" || statusFilter !== "all";
 
+    // Handler for creating demo template
+    const handleCreateDemoTemplate = async () => {
+        setCreatingDemo(true);
+        try {
+            const res = await fetch('/api/templates/seed-demo', { method: 'POST' });
+            const data = await res.json();
+
+            if (data.success) {
+                toast.success('Demo template created successfully!');
+                router.refresh();
+            } else if (data.message?.includes('already exists')) {
+                toast.info('Demo template already exists');
+            } else {
+                toast.error(data.error || 'Failed to create demo template');
+            }
+        } catch (error) {
+            toast.error('Failed to create demo template');
+        } finally {
+            setCreatingDemo(false);
+        }
+    };
+
     return (
         <>
             <PageHeader
                 title="Templates"
                 description="Manage all your email templates across clients"
                 action={
-                    <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        <span className="hidden sm:inline">New Template</span>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            onClick={handleCreateDemoTemplate}
+                            disabled={creatingDemo}
+                            variant="outline"
+                            className="gap-2 bg-amber-400/10 text-amber-600 border-amber-400/30 hover:bg-amber-400/20 hover:text-amber-700 dark:text-amber-400 dark:border-amber-400/20 dark:hover:bg-amber-400/15"
+                        >
+                            <Star className="h-4 w-4" />
+                            <span className="hidden sm:inline">{creatingDemo ? 'Creating...' : 'Demo Template'}</span>
+                        </Button>
+                        <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
+                            <Plus className="h-4 w-4" />
+                            <span className="hidden sm:inline">New Template</span>
+                        </Button>
+                    </div>
                 }
             />
             <PageContent>
