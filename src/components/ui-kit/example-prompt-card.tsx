@@ -30,7 +30,7 @@ export function ExamplePromptCard({
         <button
             onClick={onClick}
             className={cn(
-                "group flex flex-col items-start gap-3 p-4 rounded-xl",
+                "group flex flex-col items-start gap-3 p-4 rounded-xl cursor-pointer",
                 "border border-dashed border-border/60 bg-transparent hover:bg-card/50",
                 "hover:border-primary/40",
                 "transition-all duration-200 text-left w-full",

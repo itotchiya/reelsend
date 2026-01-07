@@ -262,15 +262,15 @@ export function ContactsClient({
                 <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}>
                         <Download className="h-4 w-4" />
-                        {t.audiences?.exportContacts || "Export CSV"}
+                        <span className="hidden sm:inline">{t.audiences?.exportContacts || "Export CSV"}</span>
                     </Button>
                     <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsImportDialogOpen(true)}>
                         <Upload className="h-4 w-4" />
-                        {t.audiences?.details?.importContacts || "Import CSV"}
+                        <span className="hidden sm:inline">{t.audiences?.details?.importContacts || "Import CSV"}</span>
                     </Button>
                     <Button size="sm" className="gap-2" onClick={() => setIsAddDialogOpen(true)}>
                         <Plus className="h-4 w-4" />
-                        {t.audiences?.details?.addContact || "Add Contact"}
+                        <span className="hidden sm:inline">{t.audiences?.details?.addContact || "Add Contact"}</span>
                     </Button>
                 </div>
             </PageHeader>

@@ -23,7 +23,7 @@ export function LanguageToggle() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="secondary" className="h-9 px-3 flex items-center gap-2">
+                <Button variant="secondary" className="h-9 px-3 flex items-center gap-2 cursor-pointer">
                     <img src={currentLang.icon} alt={currentLang.name} className="h-4 w-4 object-contain" />
                     <span className="text-sm font-medium">
                         {currentLang.name}

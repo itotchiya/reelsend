@@ -1,13 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { InteractiveCard } from "@/components/ui/interactive-card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     Dialog,
     DialogClose,
@@ -25,29 +21,14 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import {
-    Users,
-    Mail,
-    Shield,
-    Plus,
     UserPlus,
-    Trash2,
-    Calendar,
-    CheckCircle2,
-    Clock,
-    MoreVertical,
-    UserCog,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 import { Spinner } from "@/components/ui/spinner";
 import { useI18n } from "@/lib/i18n";
+import { TeamMemberCard } from "@/components/ui-kit/team-member-card";
+import { toast } from "sonner";
 
 interface Role {
     id: string;
@@ -62,6 +43,8 @@ interface User {
     status: string;
     roleId: string | null;
     createdAt: string;
+    invitationSentAt: string | null;
+    joinedAt: string | null;
     role: Role | null;
 }
 
@@ -99,18 +82,27 @@ export function TeamClient({ initialUsers, roles, currentUserId }: TeamClientPro
 
             if (res.ok) {
                 const data = await res.json();
-                const newUser = data.user || data; // Handle wrapped response with warning
+                const newUser = data.user || data;
                 setUsers([newUser, ...users]);
                 setIsInviteOpen(false);
                 setInviteEmail("");
                 setInviteRoleId("");
+                toast.success(t.team.invitationSent);
 
                 if (data.warning) {
-                    alert(data.warning);
+                    toast.warning(data.warning);
+                }
+            } else {
+                const errorData = await res.json().catch(() => ({}));
+                if (errorData.error === "EMAIL_EXISTS") {
+                    toast.error((t.team as any).errorEmailExists || "Email already exists");
+                } else {
+                    toast.error((t.team as any).errorGeneric || "An error occurred");
                 }
             }
         } catch (error) {
             console.error(error);
+            toast.error((t.team as any).errorGeneric || "An error occurred");
         } finally {
             setLoading(false);
         }
@@ -173,99 +165,20 @@ export function TeamClient({ initialUsers, roles, currentUserId }: TeamClientPro
             <PageHeader title={t.team.title}>
                 <Button onClick={() => setIsInviteOpen(true)} className="gap-2">
                     <UserPlus className="h-4 w-4" />
-                    {t.team.inviteMember}
+                    <span className="hidden sm:inline">{t.team.inviteMember}</span>
                 </Button>
             </PageHeader>
             <PageContent>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {users.map((user) => {
-                        const initials = user.name
-                            ? user.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")
-                                .toUpperCase()
-                                .slice(0, 2)
-                            : user.email?.slice(0, 2).toUpperCase() || "??";
-
-                        const isSelf = user.id === currentUserId;
-
-                        return (
-                            <InteractiveCard key={user.id} className="h-full">
-                                <div className="flex flex-col items-center text-center relative h-full">
-                                    {/* Actions Dropdown */}
-                                    {!isSelf && (
-                                        <div className="absolute top-0 right-0">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                        <MoreVertical className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => openEdit(user)}>
-                                                        <UserCog className="mr-2 h-4 w-4" />
-                                                        {t.team.changeRole}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() => openDelete(user)}
-                                                        className="text-destructive focus:text-destructive"
-                                                    >
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        {t.team.removeMember}
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
-                                    )}
-
-                                    {/* Avatar */}
-                                    <div className="relative mb-4">
-                                        <Avatar className="h-20 w-20 border-2 border-background shadow-sm">
-                                            <AvatarImage src={user.image || ""} />
-                                            <AvatarFallback className="text-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 text-indigo-500">
-                                                {initials}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        {user.status === "ACTIVE" ? (
-                                            <div className="absolute bottom-0 right-0 h-5 w-5 bg-green-500 border-2 border-background rounded-full" title={t.team.statusActive} />
-                                        ) : user.status === "INVITED" ? (
-                                            <div className="absolute bottom-0 right-0 h-5 w-5 bg-amber-500 border-2 border-background rounded-full" title={t.team.statusInvited} />
-                                        ) : null}
-                                    </div>
-
-                                    {/* Info */}
-                                    <h3 className="text-xl font-bold truncate w-full px-2">
-                                        {user.name || t.team.unnamedUser} {isSelf && t.team.you}
-                                    </h3>
-                                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
-                                        <Mail className="h-3.5 w-3.5" />
-                                        <span className="truncate max-w-[200px]">{user.email}</span>
-                                    </div>
-
-                                    {/* Status Badges */}
-                                    <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
-                                        <Badge variant="secondary" className="gap-1.5 px-3 py-1">
-                                            <Shield className="h-3.5 w-3.5 text-indigo-500" />
-                                            {(t.roles.names as any)?.[user.role?.name || ""] || user.role?.name || t.team.noRole}
-                                        </Badge>
-                                        {user.status === "INVITED" && (
-                                            <Badge variant="outline" className="gap-1.5 px-3 py-1 border-amber-500/50 text-amber-600 bg-amber-50 dark:bg-amber-500/10">
-                                                <Clock className="h-3.5 w-3.5" />
-                                                {t.team.pending}
-                                            </Badge>
-                                        )}
-                                    </div>
-
-                                    {/* Dates */}
-                                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-auto">
-                                        <Calendar className="h-3 w-3" />
-                                        {t.team.joined} {format(new Date(user.createdAt), "MMM d, yyyy")}
-                                    </div>
-                                </div>
-                            </InteractiveCard>
-                        );
-                    })}
+                    {users.map((user) => (
+                        <TeamMemberCard
+                            key={user.id}
+                            user={user}
+                            isSelf={user.id === currentUserId}
+                            onEdit={openEdit}
+                            onDelete={openDelete}
+                        />
+                    ))}
                 </div>
 
                 {/* Invite Dialog */}

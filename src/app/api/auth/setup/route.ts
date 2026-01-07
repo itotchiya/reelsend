@@ -37,6 +37,7 @@ export async function POST(req: Request) {
                 status: "ACTIVE",
                 inviteToken: null,
                 inviteExpires: null,
+                joinedAt: new Date(),
             },
         });
 

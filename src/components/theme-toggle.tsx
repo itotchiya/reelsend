@@ -16,14 +16,14 @@ export function ThemeToggle() {
 
     if (!mounted) {
         return (
-            <Button variant="secondary" size="icon" className="h-9 w-9">
+            <Button variant="secondary" size="icon" className="h-9 w-9 cursor-pointer">
                 <Sun className="h-4 w-4" />
             </Button>
         );
     }
 
     return (
-        <Button variant="secondary" size="icon" className="h-9 w-9" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+        <Button variant="secondary" size="icon" className="h-9 w-9 cursor-pointer" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
             {theme === "dark" ? (
                 <Sun className="h-4 w-4" />
             ) : (

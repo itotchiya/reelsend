@@ -109,7 +109,8 @@
         "removeMemberWarning": "Cette action est irréversible et l'utilisateur perdra tout accès.",
         "statusActive": "Actif",
         "statusInvited": "Invité",
-        "invitePlaceholder": "collegue@exemple.com"
+        "invitePlaceholder": "collegue@exemple.com",
+        "invitationSent": "Invitation Envoyée"
     },
     "roles": {
         "title": "Rôles et Permissions",
@@ -124,6 +125,7 @@
         "usersCount": "utilisateurs",
         "allPermissions": "Toutes",
         "cannotBeModified": "Ne peut pas être modifié",
+        "customRole": "Rôle Personnalisé",
         "selectPermissionsDesc": "Sélectionnez les permissions pour ce rôle.",
         "names": {
             "SUPER_ADMIN": "Super Admin",
@@ -189,6 +191,8 @@
     "setup": {
         "welcome": "Bienvenue sur Reelsend",
         "invitedAs": "Vous avez été invité en tant que",
+        "firstName": "Prénom",
+        "lastName": "Nom",
         "fullName": "Nom Complet",
         "confirmPassword": "Confirmer le Mot de passe",
         "completeSetup": "Finaliser la Configuration",
@@ -652,6 +656,21 @@
             "noPreview": "Aucun aperçu disponible",
             "aiGenerated": "Généré par IA",
             "notAssigned": "Non assigné"
+        },
+        "team": {
+            "joined": "Rejoint",
+            "statusActive": "Actif",
+            "statusInvited": "Invité",
+            "unnamedUser": "Utilisateur sans nom",
+            "noRole": "Aucun rôle",
+            "invitationSent": "Invitation envoyée",
+            "errorEmailExists": "Cet e-mail existe déjà dans l'équipe ou possède une invitation active.",
+            "errorGeneric": "Une erreur est survenue. Veuillez réessayer."
+        },
+        "role": {
+            "users": "utilisateurs",
+            "permissions": "permissions",
+            "editPermissions": "Modifier les Permissions"
         }
     }
 }

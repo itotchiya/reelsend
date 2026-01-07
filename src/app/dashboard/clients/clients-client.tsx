@@ -259,7 +259,7 @@ export function ClientsClient({
                     <Link href="/dashboard/clients/new">
                         <Button className="gap-2">
                             <Plus className="h-4 w-4" />
-                            {t.clients?.addClient || "Add Client"}
+                            <span className="hidden sm:inline">{t.clients?.addClient || "Add Client"}</span>
                         </Button>
                     </Link>
                 )}
@@ -335,7 +335,7 @@ export function ClientsClient({
                                 <Link href="/dashboard/clients/new">
                                     <Button className="gap-2">
                                         <Plus className="h-4 w-4" />
-                                        {t.clients?.addFirstClientBtn || "Add Your First Client"}
+                                        <span className="hidden sm:inline">{t.clients?.addFirstClientBtn || "Add Your First Client"}</span>
                                     </Button>
                                 </Link>
                             )}

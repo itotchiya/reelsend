@@ -83,7 +83,8 @@ export default function PromptBuilderPage() {
         return () => {
             setOpen(true);
         };
-    }, [setOpen]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Fetch available clients
     useEffect(() => {

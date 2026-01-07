@@ -89,9 +89,10 @@ export function PromptInputArea({
                     disabled={!isEnabled}
                     className={cn(
                         "relative px-4 py-2 rounded-full overflow-hidden",
-                        "flex items-center gap-2 text-sm font-medium text-white",
-                        !isEnabled && "bg-muted-foreground/40 cursor-not-allowed",
-                        isEnabled && "shadow-lg shadow-purple-500/25 hover:scale-[1.02] hover:shadow-purple-500/40 transition-transform"
+                        "flex items-center gap-2 text-sm font-medium",
+                        isEnabled
+                            ? "text-white shadow-lg shadow-purple-500/25 hover:scale-[1.02] hover:shadow-purple-500/40 transition-transform cursor-pointer"
+                            : "bg-secondary/50 text-muted-foreground/40 cursor-not-allowed"
                     )}
                 >
                     {/* Animated gradient background for button when enabled */}

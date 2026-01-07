@@ -45,6 +45,8 @@ export default async function TeamPage() {
         inviteExpires: user.inviteExpires?.toISOString() || null,
         emailVerified: user.emailVerified?.toISOString() || null,
         updatedAt: user.updatedAt.toISOString(),
+        invitationSentAt: user.invitationSentAt?.toISOString() || null,
+        joinedAt: user.joinedAt?.toISOString() || null,
     }));
 
     return (

@@ -326,7 +326,7 @@ export function CreateSegmentClient({ audience, contacts }: CreateSegmentClientP
                                     <div className="space-y-2">
                                         <Label className="text-xs">{t.contacts?.country || "Country"}</Label>
                                         <Select value={filterCountry} onValueChange={setFilterCountry}>
-                                            <SelectTrigger className="h-9">
+                                            <SelectTrigger className="w-full h-9">
                                                 <SelectValue placeholder={t.contacts?.allCountries || "All countries"} />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -342,7 +342,7 @@ export function CreateSegmentClient({ audience, contacts }: CreateSegmentClientP
                                     <div className="space-y-2">
                                         <Label className="text-xs">{t.contacts?.gender || "Gender"}</Label>
                                         <Select value={filterGender} onValueChange={setFilterGender}>
-                                            <SelectTrigger className="h-9">
+                                            <SelectTrigger className="w-full h-9">
                                                 <SelectValue placeholder={t.contacts?.allGenders || "All genders"} />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -358,7 +358,7 @@ export function CreateSegmentClient({ audience, contacts }: CreateSegmentClientP
                                     <div className="space-y-2">
                                         <Label className="text-xs">{t.contacts?.maritalStatus || "Marital Status"}</Label>
                                         <Select value={filterMaritalStatus} onValueChange={setFilterMaritalStatus}>
-                                            <SelectTrigger className="h-9">
+                                            <SelectTrigger className="w-full h-9">
                                                 <SelectValue placeholder={t.contacts?.allStatuses || "All statuses"} />
                                             </SelectTrigger>
                                             <SelectContent>

@@ -209,7 +209,7 @@ export function AudiencesClient({
             <PageHeader title={t.audiences?.title || "Audiences"} showBack>
                 <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)}>
                     <Plus className="h-4 w-4" />
-                    {t.audiences?.createAudience || "Create Audience"}
+                    <span className="hidden sm:inline">{t.audiences?.createAudience || "Create Audience"}</span>
                 </Button>
             </PageHeader>
 

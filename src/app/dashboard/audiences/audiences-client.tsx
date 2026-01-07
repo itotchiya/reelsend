@@ -119,9 +119,9 @@ export function AudiencesClient({ initialAudiences, clients }: AudiencesClientPr
                 title="Audiences"
                 description="Manage all your contact lists and segments across clients"
                 action={
-                    <Button onClick={() => setCreateDialogOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        New Audience
+                    <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
+                        <Plus className="h-4 w-4" />
+                        <span className="hidden sm:inline">New Audience</span>
                     </Button>
                 }
             />
@@ -139,7 +139,7 @@ export function AudiencesClient({ initialAudiences, clients }: AudiencesClientPr
                             />
                         </div>
                         <Select value={usageFilter} onValueChange={setUsageFilter}>
-                            <SelectTrigger className="w-[160px]">
+                            <SelectTrigger className="w-full sm:w-[160px]">
                                 <SelectValue placeholder="Usage" />
                             </SelectTrigger>
                             <SelectContent>
@@ -149,7 +149,7 @@ export function AudiencesClient({ initialAudiences, clients }: AudiencesClientPr
                             </SelectContent>
                         </Select>
                         <Select value={clientFilter} onValueChange={setClientFilter}>
-                            <SelectTrigger className="w-[180px]">
+                            <SelectTrigger className="w-full sm:w-[180px]">
                                 <SelectValue placeholder="Client" />
                             </SelectTrigger>
                             <SelectContent>

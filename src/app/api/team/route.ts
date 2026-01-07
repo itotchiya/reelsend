@@ -64,7 +64,7 @@ export async function POST(req: Request) {
         });
 
         if (existingUser) {
-            return new NextResponse("User already exists", { status: 400 });
+            return NextResponse.json({ error: "EMAIL_EXISTS" }, { status: 400 });
         }
 
         // Create invitation token
@@ -80,6 +80,7 @@ export async function POST(req: Request) {
                 inviteToken,
                 inviteExpires,
                 invitedBy: session.user.name || session.user.email || undefined,
+                invitationSentAt: new Date(),
             },
             include: {
                 role: true,
@@ -89,10 +90,11 @@ export async function POST(req: Request) {
 
         // Send invitation email in background
         after(async () => {
+            const roleName = (newUser as any).role?.name || "Member";
             const emailResult = await sendInvitationEmail({
                 to: email,
                 inviterName: session?.user?.name || session?.user?.email || "A team member",
-                roleName: newUser.role?.name || "Member",
+                roleName,
                 inviteToken,
             });
 

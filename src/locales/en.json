@@ -109,7 +109,8 @@
         "removeMemberWarning": "This action cannot be undone and they will lose all access.",
         "statusActive": "Active",
         "statusInvited": "Invited",
-        "invitePlaceholder": "colleague@example.com"
+        "invitePlaceholder": "colleague@example.com",
+        "invitationSent": "Invitation Sent"
     },
     "roles": {
         "title": "Roles & Permissions",
@@ -124,6 +125,7 @@
         "usersCount": "users",
         "allPermissions": "All",
         "cannotBeModified": "Cannot be modified",
+        "customRole": "Custom Role",
         "selectPermissionsDesc": "Select the permissions for this role.",
         "names": {
             "SUPER_ADMIN": "Super Admin",
@@ -189,6 +191,8 @@
     "setup": {
         "welcome": "Welcome to Reelsend",
         "invitedAs": "You've been invited as",
+        "firstName": "First Name",
+        "lastName": "Last Name",
         "fullName": "Full Name",
         "confirmPassword": "Confirm Password",
         "completeSetup": "Complete Setup",
@@ -650,6 +654,21 @@
             "noPreview": "No preview available",
             "aiGenerated": "AI Generated",
             "notAssigned": "Not Assigned"
+        },
+        "team": {
+            "joined": "Joined",
+            "statusActive": "Active",
+            "statusInvited": "Invited",
+            "unnamedUser": "Unnamed User",
+            "noRole": "No Role",
+            "invitationSent": "Invitation sent",
+            "errorEmailExists": "Email already exists in the team or has an active invitation.",
+            "errorGeneric": "Something went wrong. Please try again."
+        },
+        "role": {
+            "users": "users",
+            "permissions": "permissions",
+            "editPermissions": "Edit Permissions"
         }
     }
 }

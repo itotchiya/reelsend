@@ -1,12 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { InteractiveCard } from "@/components/ui/interactive-card";
 import {
     Dialog,
     DialogClose,
@@ -16,16 +13,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import {
-    Shield,
-    ShieldCheck,
-    Users,
-    KeyRound,
-    Lock,
-} from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 import { Spinner } from "@/components/ui/spinner";
+import { RoleCard } from "@/components/ui-kit/role-card";
 
 interface Role {
     id: string;
@@ -110,99 +101,18 @@ export function RolesClient({ initialRoles, permissionsByCategory }: RolesClient
         }
     };
 
-    const isSuperAdmin = (role: Role) => role.name === "SUPER_ADMIN";
-
     return (
         <>
             <PageHeader title={t.common.rolesPermissions} />
             <PageContent>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {sortedRoles.map((role) =>
-                        isSuperAdmin(role) ? (
-                            // SUPER_ADMIN Card - Disabled, non-interactive
-                            <Card
-                                key={role.id}
-                                className="relative opacity-75 cursor-not-allowed"
-                            >
-                                <div className="absolute top-4 right-4">
-                                    <Lock className="h-4 w-4 text-muted-foreground" />
-                                </div>
-
-                                <CardContent className="pt-6">
-                                    <div className="flex flex-col items-center text-center">
-                                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-neutral-500/20 to-neutral-600/20 border border-neutral-500/30 mb-4">
-                                            <ShieldCheck className="h-8 w-8 text-foreground" />
-                                        </div>
-
-                                        <h3 className="text-xl font-bold mb-1">
-                                            {(t.roles.names as any)?.[role.name] || role.name}
-                                        </h3>
-
-                                        <span className="text-sm text-muted-foreground font-medium mb-3">
-                                            {t.roles.fullAccess}
-                                        </span>
-
-                                        <p className="text-sm text-muted-foreground mb-4 px-2">
-                                            {(t.roles.descriptions as any)?.[role.name] || role.description || t.roles.superAdminDefaultDesc}
-                                        </p>
-
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <Badge variant="secondary" className="gap-1.5 px-3 py-1">
-                                                <Users className="h-3.5 w-3.5" />
-                                                {role.userCount} {t.roles.usersCount}
-                                            </Badge>
-                                            <Badge variant="secondary" className="gap-1.5 px-3 py-1">
-                                                <KeyRound className="h-3.5 w-3.5" />
-                                                {t.roles.allPermissions} {t.roles.permissions}
-                                            </Badge>
-                                        </div>
-
-                                        <p className="text-xs text-muted-foreground">
-                                            {t.roles.cannotBeModified}
-                                        </p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ) : (
-                            // Regular Role Card - Interactive
-                            <InteractiveCard key={role.id} onClick={() => handleEditRole(role)}>
-                                <div className="flex flex-col items-center text-center">
-                                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-neutral-500/20 to-neutral-600/20 border border-neutral-500/30 mb-4">
-                                        <Shield className="h-8 w-8 text-foreground" />
-                                    </div>
-
-                                    <h3 className="text-xl font-bold mb-1">
-                                        {(t.roles.names as any)?.[role.name] || role.name}
-                                    </h3>
-
-                                    {role.isSystem && (
-                                        <span className="text-sm text-muted-foreground font-medium mb-3">
-                                            {t.roles.systemRole}
-                                        </span>
-                                    )}
-
-                                    <p className="text-sm text-muted-foreground mb-4 px-2">
-                                        {(t.roles.descriptions as any)?.[role.name] || role.description || t.roles.noDescription}
-                                    </p>
-
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <Badge variant="secondary" className="gap-1.5 px-3 py-1">
-                                            <Users className="h-3.5 w-3.5" />
-                                            {role.userCount} {t.roles.usersCount}
-                                        </Badge>
-                                        <Badge variant="secondary" className="gap-1.5 px-3 py-1">
-                                            <KeyRound className="h-3.5 w-3.5" />
-                                            {role.permissions.length} {t.roles.permissions}
-                                        </Badge>
-                                    </div>
-
-                                    <p className="text-xs text-muted-foreground">
-                                        {t.roles.editPermissions}
-                                    </p>
-                                </div>
-                            </InteractiveCard>
-                        )
-                    )}
+                    {sortedRoles.map((role) => (
+                        <RoleCard
+                            key={role.id}
+                            role={role}
+                            onClick={() => handleEditRole(role)}
+                        />
+                    ))}
                 </div>
 
                 {/* Edit Role Dialog */}

@@ -269,7 +269,7 @@ export function TemplatesClient({
             <PageHeader title={t.templates?.title || "Templates"} showBack>
                 <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)}>
                     <Plus className="h-4 w-4" />
-                    {t.templates?.createTemplate || "Create Template"}
+                    <span className="hidden sm:inline">{t.templates?.createTemplate || "Create Template"}</span>
                 </Button>
             </PageHeader>
 

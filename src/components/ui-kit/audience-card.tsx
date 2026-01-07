@@ -104,6 +104,16 @@ export function AudienceCard({
     // Red dashed border if NOT used in campaign - solid on hover
     const hasWarningBorder = !isUsedInCampaign;
 
+    const primaryColor = audience.client.brandColors?.primary;
+    const borderClasses = cn(
+        "border-dashed",
+        hasWarningBorder
+            ? "border-orange-500/60 hover:border-solid hover:border-orange-500"
+            : !primaryColor
+                ? "border-zinc-500/60 hover:border-solid hover:border-zinc-500"
+                : "hover:border-solid"
+    );
+
     const handleCampaignClick = (e: React.MouseEvent, campaignId: string) => {
         e.stopPropagation();
         if (onCampaignClick) {
@@ -117,10 +127,21 @@ export function AudienceCard({
         <div
             className={cn(
                 "group rounded-xl border bg-card p-4 transition-all duration-200 cursor-pointer h-full flex flex-col",
-                hasWarningBorder
-                    ? "border-dashed border-orange-500/60 hover:border-solid hover:border-orange-500"
-                    : "border-border hover:border-primary/50"
+                borderClasses
             )}
+            style={!hasWarningBorder && primaryColor ? {
+                borderColor: `${primaryColor}99` // 60% opacity
+            } : undefined}
+            onMouseEnter={(e) => {
+                if (!hasWarningBorder && primaryColor) {
+                    e.currentTarget.style.borderColor = primaryColor;
+                }
+            }}
+            onMouseLeave={(e) => {
+                if (!hasWarningBorder && primaryColor) {
+                    e.currentTarget.style.borderColor = `${primaryColor}99`;
+                }
+            }}
             onClick={() => onView?.(audience)}
         >
             {/* Header with Avatar and Info */}
@@ -205,7 +226,7 @@ export function AudienceCard({
             </div>
 
             {/* Stats Section - sticky to bottom */}
-            <div className="pt-3 mt-3 border-t border-dashed">
+            <div className="pt-3 mt-3 border-t border-dashed border-border/60">
                 <div className="grid grid-cols-2 gap-2 text-center">
                     <div className="flex flex-col items-center">
                         <span className="font-semibold text-foreground text-base">
@@ -215,7 +236,7 @@ export function AudienceCard({
                             {labels.contacts}
                         </span>
                     </div>
-                    <div className="flex flex-col items-center border-l border-dashed">
+                    <div className="flex flex-col items-center border-l border-dashed border-border/60">
                         <span className="font-semibold text-foreground text-base">
                             {audience._count.segments}
                         </span>

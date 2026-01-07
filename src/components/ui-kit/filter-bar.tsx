@@ -60,16 +60,16 @@ export function FilterBar({
     const hasActiveFilters = searchValue || Object.values(filterValues).some(v => v && v !== "all");
 
     return (
-        <div className={cn("flex flex-wrap items-center gap-3", className)}>
+        <div className={cn("flex flex-col sm:flex-row sm:items-center gap-3", className)}>
             {onSearchChange && (
-                <div className="relative flex-1 min-w-[200px] max-w-sm">
+                <div className="relative w-full sm:max-w-sm">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                         type="text"
                         placeholder={searchPlaceholder}
                         value={searchValue}
                         onChange={(e) => onSearchChange(e.target.value)}
-                        className="pl-9 pr-9"
+                        className="pl-9 pr-9 w-full"
                     />
                     {searchValue && (
                         <button
@@ -88,7 +88,7 @@ export function FilterBar({
                     value={filterValues[filter.key] || filter.defaultValue || "all"}
                     onValueChange={(value) => onFilterChange?.(filter.key, value)}
                 >
-                    <SelectTrigger className="w-[150px]">
+                    <SelectTrigger className="w-full sm:w-[150px]">
                         <div className="flex items-center gap-2">
                             <Filter className="h-3.5 w-3.5 text-muted-foreground" />
                             <SelectValue placeholder={filter.label} />

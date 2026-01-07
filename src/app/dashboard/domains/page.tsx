@@ -25,10 +25,10 @@ export default async function DomainsPage() {
     return (
         <>
             <PageHeader title="Domains">
-                <Button asChild>
+                <Button asChild className="gap-2">
                     <Link href="/dashboard/domains/new">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Domain
+                        <Plus className="h-4 w-4" />
+                        <span className="hidden sm:inline">Add Domain</span>
                     </Link>
                 </Button>
             </PageHeader>
@@ -41,10 +41,10 @@ export default async function DomainsPage() {
                             <p className="text-muted-foreground text-center mb-4">
                                 Add a sending domain and verify it to start sending emails.
                             </p>
-                            <Button asChild>
+                            <Button asChild className="gap-2">
                                 <Link href="/dashboard/domains/new">
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Add Your First Domain
+                                    <Plus className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Add Your First Domain</span>
                                 </Link>
                             </Button>
                         </CardContent>

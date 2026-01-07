@@ -128,14 +128,35 @@ export function TemplateCard({
         });
     };
 
+    const primaryColor = template.client?.primaryColor;
+    const borderClasses = cn(
+        "border-dashed",
+        !template.htmlContent
+            ? "border-orange-500/60 hover:border-solid hover:border-orange-500"
+            : !primaryColor
+                ? "border-zinc-500/60 hover:border-solid hover:border-zinc-500"
+                : "hover:border-solid"
+    );
+
     return (
         <div
             className={cn(
-                "group rounded-xl border bg-card overflow-hidden transition-all duration-200",
-                !template.htmlContent
-                    ? "border-dashed border-orange-500/60 hover:border-solid hover:border-orange-500"
-                    : "border-border hover:border-primary/50"
+                "group rounded-xl border bg-card overflow-hidden transition-all duration-200 cursor-pointer",
+                borderClasses
             )}
+            style={template.htmlContent && primaryColor ? {
+                borderColor: `${primaryColor}99` // 60% opacity
+            } : undefined}
+            onMouseEnter={(e) => {
+                if (template.htmlContent && primaryColor) {
+                    e.currentTarget.style.borderColor = primaryColor;
+                }
+            }}
+            onMouseLeave={(e) => {
+                if (template.htmlContent && primaryColor) {
+                    e.currentTarget.style.borderColor = `${primaryColor}99`;
+                }
+            }}
         >
             {/* Email Preview Area */}
             <div
@@ -269,7 +290,7 @@ export function TemplateCard({
                 </div>
 
                 {/* Metadata Section */}
-                <div className="pt-3 border-t border-dashed text-xs text-muted-foreground">
+                <div className="pt-3 border-t border-dashed border-border/60 text-xs text-muted-foreground">
                     {/* Created info */}
                     <div className="flex items-center justify-between">
                         <span className="text-foreground/50">{labels.createdBy}</span>
@@ -278,7 +299,7 @@ export function TemplateCard({
                         </span>
                     </div>
                     {/* Divider */}
-                    <div className="border-t border-dashed my-2" />
+                    <div className="border-t border-dashed border-border/60 my-2" />
                     {/* Edited info */}
                     <div className="flex items-center justify-between">
                         <span className="text-foreground/50">{labels.editedBy}</span>

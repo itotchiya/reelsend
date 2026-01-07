@@ -141,14 +141,36 @@ export function ClientCard({
     // Red dashed border only for non-verified SMTP
     const hasWarningBorder = !client.smtpVerified;
 
+    // Standardize border color/style
+    const primaryColor = client.brandColors?.primary;
+    const borderClasses = cn(
+        "border-dashed",
+        hasWarningBorder
+            ? "border-red-500/60 hover:border-solid hover:border-red-500"
+            : !primaryColor
+                ? "border-zinc-500/60 hover:border-solid hover:border-zinc-500"
+                : "hover:border-solid"
+    );
+
     return (
         <div
             className={cn(
                 "group rounded-xl border bg-card p-4 transition-all duration-200 cursor-pointer h-full flex flex-col",
-                hasWarningBorder
-                    ? "border-dashed border-red-500/60 hover:border-solid hover:border-red-500"
-                    : "border-border hover:border-primary/50"
+                borderClasses
             )}
+            style={!hasWarningBorder && primaryColor ? {
+                borderColor: `${primaryColor}99` // 60% opacity
+            } : undefined}
+            onMouseEnter={(e) => {
+                if (!hasWarningBorder && primaryColor) {
+                    e.currentTarget.style.borderColor = primaryColor;
+                }
+            }}
+            onMouseLeave={(e) => {
+                if (!hasWarningBorder && primaryColor) {
+                    e.currentTarget.style.borderColor = `${primaryColor}99`;
+                }
+            }}
             onClick={() => onView?.(client)}
         >
             {/* Header with Avatar and Info (matches AudienceCard layout) */}
@@ -226,7 +248,7 @@ export function ClientCard({
             </div>
 
             {/* Stats Section - Sticky to bottom */}
-            <div className="pt-3 mt-4 border-t border-dashed">
+            <div className="pt-3 mt-4 border-t border-dashed border-border/60">
                 <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="flex flex-col items-center">
                         <span className="font-semibold text-foreground text-base">
@@ -236,7 +258,7 @@ export function ClientCard({
                             {labels.campaigns}
                         </span>
                     </div>
-                    <div className="flex flex-col items-center border-x border-dashed">
+                    <div className="flex flex-col items-center border-x border-dashed border-border/60">
                         <span className="font-semibold text-foreground text-base">
                             {client._count.audiences.toLocaleString()}
                         </span>

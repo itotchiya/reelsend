@@ -16,7 +16,8 @@ interface SetupFormProps {
 export default function SetupForm({ token, email }: SetupFormProps) {
     const router = useRouter();
     const { t } = useI18n();
-    const [name, setName] = useState("");
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -27,8 +28,8 @@ export default function SetupForm({ token, email }: SetupFormProps) {
         e.preventDefault();
         setError("");
 
-        if (!name.trim()) {
-            setError("Please enter your name");
+        if (!firstName.trim() || !lastName.trim()) {
+            setError("Please enter your full name");
             return;
         }
 
@@ -44,11 +45,13 @@ export default function SetupForm({ token, email }: SetupFormProps) {
 
         setLoading(true);
 
+        const fullName = `${firstName.trim()} ${lastName.trim()}`;
+
         try {
             const res = await fetch("/api/auth/setup", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ token, name, password }),
+                body: JSON.stringify({ token, name: fullName, password }),
             });
 
             if (!res.ok) {
@@ -75,22 +78,42 @@ export default function SetupForm({ token, email }: SetupFormProps) {
                     type="email"
                     value={email}
                     disabled
+                    autoComplete="email"
                     className="bg-zinc-100 dark:bg-zinc-800 text-zinc-500"
                 />
             </div>
 
-            <div className="space-y-2">
-                <Label htmlFor="name" className="text-zinc-700 dark:text-zinc-300">
-                    {t.setup.fullName}
-                </Label>
-                <Input
-                    id="name"
-                    type="text"
-                    placeholder="John Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                />
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="firstName" className="text-zinc-700 dark:text-zinc-300">
+                        {t.setup.firstName}
+                    </Label>
+                    <Input
+                        id="firstName"
+                        name="given-name"
+                        type="text"
+                        placeholder="John"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        required
+                        autoComplete="given-name"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="lastName" className="text-zinc-700 dark:text-zinc-300">
+                        {t.setup.lastName}
+                    </Label>
+                    <Input
+                        id="lastName"
+                        name="family-name"
+                        type="text"
+                        placeholder="Doe"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        required
+                        autoComplete="family-name"
+                    />
+                </div>
             </div>
 
             <div className="space-y-2">
@@ -100,11 +123,13 @@ export default function SetupForm({ token, email }: SetupFormProps) {
                 <div className="relative">
                     <Input
                         id="password"
+                        name="new-password"
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        autoComplete="new-password"
                         className="pr-10"
                     />
                     <button
@@ -123,11 +148,13 @@ export default function SetupForm({ token, email }: SetupFormProps) {
                 </Label>
                 <Input
                     id="confirmPassword"
+                    name="new-password-confirm"
                     type="password"
                     placeholder="••••••••"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
+                    autoComplete="new-password"
                 />
             </div>
 

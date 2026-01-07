@@ -4,9 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { LanguageToggle } from "@/components/language-toggle";
-import { NotificationsToggle } from "@/components/notifications-toggle";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -38,7 +35,9 @@ import {
     SidebarMenuItem,
     SidebarProvider,
     SidebarTrigger,
+    useSidebar,
 } from "@/components/ui/sidebar";
+import { HeaderActions } from "@/components/dashboard/header-actions";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -113,6 +112,7 @@ export function AppSidebar() {
     const { t } = useI18n();
     const { user: userProfile } = useUserProfile();
 
+    const { isMobile, setOpenMobile } = useSidebar();
     const userPermissions = (session?.user as any)?.permissions as string[] | undefined;
     const userName = userProfile?.name || session?.user?.name || "User";
     const userEmail = userProfile?.email || session?.user?.email || "";
@@ -191,6 +191,7 @@ export function AppSidebar() {
                                             >
                                                 <Link
                                                     href={item.href}
+                                                    onClick={() => isMobile && setOpenMobile(false)}
                                                     className={`
                                                         flex items-center gap-3 px-3 py-2.5 rounded-lg
                                                         transition-all duration-150 ease-in-out
@@ -218,7 +219,7 @@ export function AppSidebar() {
                     <DropdownMenuTrigger asChild>
                         <SidebarMenuButton
                             size="lg"
-                            className="w-full flex items-center gap-3 px-3 h-14 hover:bg-background/60 rounded-xl transition-all"
+                            className="w-full flex items-center gap-3 px-3 h-14 hover:bg-background/60 rounded-xl transition-all cursor-pointer"
                         >
                             <Avatar className="h-8 w-8 rounded-full shrink-0">
                                 <AvatarImage src={userImage || ""} className="rounded-full" />
@@ -388,10 +389,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                             </div>
 
                             {/* Right side: notifications, language, theme */}
-                            <div className="ml-auto flex items-center gap-1 sm:gap-2">
-                                <NotificationsToggle />
-                                <LanguageToggle />
-                                <ThemeToggle />
+                            <div className="ml-auto">
+                                <HeaderActions />
                             </div>
                         </header>
 
@@ -401,8 +400,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         </div>
 
                         {/* Content area - only top rounded, connects to bottom */}
-                        <main className="flex-1 flex flex-col overflow-hidden px-4 pb-0">
-                            <div className="bg-dashboard-surface rounded-t-xl flex-1 flex flex-col overflow-y-auto min-h-0 shadow-none border-t border-x border-border/50">
+                        <main className="flex-1 flex flex-col overflow-hidden px-0 md:px-4 pb-0">
+                            <div className="bg-dashboard-surface rounded-none md:rounded-t-xl flex-1 flex flex-col overflow-y-auto min-h-0 shadow-none border-t-0 md:border-t md:border-x border-border/50">
                                 {children}
                             </div>
                         </main>

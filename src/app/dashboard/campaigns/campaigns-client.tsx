@@ -106,9 +106,9 @@ export function CampaignsClient({ initialCampaigns, clients }: CampaignsClientPr
                 title="Campaigns"
                 description="Manage all your email campaigns across clients"
                 action={
-                    <Button onClick={() => setCreateDialogOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        New Campaign
+                    <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
+                        <Plus className="h-4 w-4" />
+                        <span className="hidden sm:inline">New Campaign</span>
                     </Button>
                 }
             />
@@ -126,7 +126,7 @@ export function CampaignsClient({ initialCampaigns, clients }: CampaignsClientPr
                             />
                         </div>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="w-[160px]">
+                            <SelectTrigger className="w-full sm:w-[160px]">
                                 <SelectValue placeholder="Status" />
                             </SelectTrigger>
                             <SelectContent>
@@ -139,7 +139,7 @@ export function CampaignsClient({ initialCampaigns, clients }: CampaignsClientPr
                             </SelectContent>
                         </Select>
                         <Select value={clientFilter} onValueChange={setClientFilter}>
-                            <SelectTrigger className="w-[180px]">
+                            <SelectTrigger className="w-full sm:w-[180px]">
                                 <SelectValue placeholder="Client" />
                             </SelectTrigger>
                             <SelectContent>

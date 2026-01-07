@@ -245,7 +245,7 @@ export function CampaignsClient({
             <PageHeader title={t.campaigns?.title || "Campaigns"} showBack>
                 <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)}>
                     <Plus className="h-4 w-4" />
-                    {t.campaigns?.createCampaign || "Create Campaign"}
+                    <span className="hidden sm:inline">{t.campaigns?.createCampaign || "Create Campaign"}</span>
                 </Button>
             </PageHeader>
 

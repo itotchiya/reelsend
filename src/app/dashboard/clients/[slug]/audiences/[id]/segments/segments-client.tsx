@@ -95,7 +95,7 @@ export function SegmentsClient({ audience, segments: initialSegments }: Segments
             >
                 <Button size="sm" className="gap-2" onClick={() => router.push(newSegmentUrl)}>
                     <Plus className="h-4 w-4" />
-                    {t.audiences?.createSegment || "Create Segment"}
+                    <span className="hidden sm:inline">{t.audiences?.createSegment || "Create Segment"}</span>
                 </Button>
             </PageHeader>
 
@@ -130,9 +130,9 @@ export function SegmentsClient({ audience, segments: initialSegments }: Segments
                             <p className="text-muted-foreground mb-4">
                                 {t.audiences?.noSegmentsDescription || "Create your first segment to target specific contacts."}
                             </p>
-                            <Button onClick={() => router.push(newSegmentUrl)}>
-                                <Plus className="mr-2 h-4 w-4" />
-                                {t.audiences?.createSegment || "Create Segment"}
+                            <Button className="gap-2" onClick={() => router.push(newSegmentUrl)}>
+                                <Plus className="h-4 w-4" />
+                                <span className="hidden sm:inline">{t.audiences?.createSegment || "Create Segment"}</span>
                             </Button>
                         </div>
                     )}
