@@ -44,6 +44,10 @@ export function TemplatesClient({ initialTemplates, clients }: TemplatesClientPr
     const [pageSize, setPageSize] = useState(16);
     const [creatingDemo, setCreatingDemo] = useState(false);
 
+    // Edit Dialog State
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [editingTemplate, setEditingTemplate] = useState<TemplateCardData | null>(null);
+
     // Filter templates
     const filteredTemplates = useMemo(() => {
         return templates.filter((template) => {
@@ -228,6 +232,10 @@ export function TemplatesClient({ initialTemplates, clients }: TemplatesClientPr
                                     key={template.id}
                                     template={template}
                                     onOpen={() => handleOpen(template)}
+                                    onEdit={() => {
+                                        setEditingTemplate(template);
+                                        setEditDialogOpen(true);
+                                    }}
                                     onViewActivity={() => {
                                         setActivityTemplate(template);
                                         setActivityDialogOpen(true);
@@ -304,6 +312,26 @@ export function TemplatesClient({ initialTemplates, clients }: TemplatesClientPr
                     templateName={activityTemplate.name}
                 />
             )}
+
+            {/* Edit Dialog */}
+            <CreateTemplateDialog
+                open={editDialogOpen}
+                onOpenChange={(open) => {
+                    setEditDialogOpen(open);
+                    if (!open) setEditingTemplate(null);
+                }}
+                initialData={editingTemplate ? {
+                    id: editingTemplate.id,
+                    name: editingTemplate.name,
+                    description: editingTemplate.description,
+                    client: editingTemplate.client ? { id: editingTemplate.client.id } : { id: "" },
+                } : null}
+                onTemplateCreated={() => {
+                    setEditDialogOpen(false);
+                    setEditingTemplate(null);
+                    router.refresh();
+                }}
+            />
         </>
     );
 }
