@@ -137,8 +137,8 @@ export function CreateEntityDialog({
                 });
             }
 
-            // Fetch clients if no initialClientId and not editing
-            if (!initialClientId && !initialData) {
+            // Fetch clients if no initialClientId (allow editing to change client)
+            if (!initialClientId) {
                 fetchClients();
             }
         }
@@ -221,7 +221,7 @@ export function CreateEntityDialog({
                     <DialogDescription>{config.description}</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 py-4">
-                    {!initialClientId && !isEdit && (
+                    {!initialClientId && (
                         <div className="space-y-2">
                             <Label htmlFor="clientId">{t.common?.clients || "Client"} *</Label>
                             <Select
