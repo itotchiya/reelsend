@@ -72,7 +72,7 @@ export async function POST(
 
         // Prepare from address
         const fromName = campaign.fromName || campaign.client.name;
-        const fromEmail = campaign.client.smtpUser || `noreply@${process.env.MAILGUN_DOMAIN}`;
+        const fromEmail = campaign.fromEmail || `noreply@${process.env.MAILGUN_DOMAIN}`;
 
         // Update campaign status to SENDING
         await db.campaign.update({

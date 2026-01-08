@@ -1,30 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/session";
-import { z } from "zod";
-import nodemailer from "nodemailer";
+import { sendEmail } from "@/lib/mailgun";
 
-const testSendSchema = z.object({
-    email: z.string().email("Invalid email address"),
-});
-
-type Context = { params: Promise<{ id: string }> };
-
-export async function POST(req: NextRequest, { params }: Context) {
+export async function POST(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
     try {
-        const user = await getCurrentUser();
-        if (!user) return new NextResponse("Unauthorized", { status: 401 });
-
-        const { id } = await params;
-        const json = await req.json();
-        const body = testSendSchema.safeParse(json);
-
-        if (!body.success) {
-            return new NextResponse(body.error.message, { status: 400 });
+        const session = await auth();
+        if (!session?.user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { email } = body.data;
+        const { id } = await params;
+        const { email, contactId } = await request.json();
 
+        if (!email && !contactId) {
+            return NextResponse.json({ error: "Email or Contact ID is required" }, { status: 400 });
+        }
+
+        // Fetch campaign with related data
         const campaign = await db.campaign.findUnique({
             where: { id },
             include: {
@@ -34,43 +30,72 @@ export async function POST(req: NextRequest, { params }: Context) {
         });
 
         if (!campaign) {
-            return new NextResponse("Campaign not found", { status: 404 });
+            return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
         }
 
-        // Validate requirements
-        if (!campaign.client.smtpHost) {
-            return new NextResponse("SMTP settings missing for this client", { status: 400 });
+        if (!campaign.template) {
+            return NextResponse.json({ error: "Campaign has no template" }, { status: 400 });
         }
 
-        if (!campaign.template?.htmlContent) {
-            return new NextResponse("Template content is empty", { status: 400 });
-        }
+        let targetEmail = email;
+        let personalizationData = {};
 
-        // Configure Transporter
-        const transporter = nodemailer.createTransport({
-            host: campaign.client.smtpHost,
-            port: campaign.client.smtpPort || 587,
-            secure: campaign.client.smtpSecure,
-            auth: {
-                user: campaign.client.smtpUser || undefined,
-                pass: campaign.client.smtpPassword || undefined,
-            },
-            tls: {
-                rejectUnauthorized: false
+        // If contact ID is provided, fetch contact for personalization
+        if (contactId) {
+            const contact = await db.contact.findUnique({
+                where: { id: contactId },
+            });
+            if (contact) {
+                targetEmail = contact.email;
+                personalizationData = {
+                    firstName: contact.firstName || "",
+                    lastName: contact.lastName || "",
+                    email: contact.email,
+                    companyName: campaign.client.name,
+                };
             }
-        });
+        } else if (email) {
+            // Manual email case - limited personalization
+            personalizationData = {
+                firstName: "Test",
+                lastName: "User",
+                email: email,
+                companyName: campaign.client.name,
+            };
+        }
 
-        // Send Test Email
-        await transporter.sendMail({
-            from: `"${campaign.fromName || campaign.client.name}" <${campaign.fromEmail || campaign.client.smtpUser}>`,
-            to: email,
+        let personalizedHtml = campaign.template.htmlContent;
+        if (personalizationData) {
+            Object.entries(personalizationData).forEach(([key, value]) => {
+                personalizedHtml = personalizedHtml.replace(
+                    new RegExp(`{{${key}}}`, "g"),
+                    String(value || "")
+                );
+            });
+        }
+
+        // Send test email using Mailgun
+        const result = await sendEmail({
+            to: targetEmail,
             subject: `[TEST] ${campaign.subject || campaign.name}`,
-            html: campaign.template.htmlContent,
+            html: personalizedHtml,
+            from: `${campaign.fromName || campaign.client.name} <${campaign.fromEmail || "test@reelsend.com"}>`,
+            customVariables: {
+                campaign_id: campaign.id,
+                is_test: "true",
+            },
         });
 
-        return NextResponse.json({ success: true, message: "Test email sent" });
+        return NextResponse.json({
+            success: true,
+            message: `Test email sent to ${targetEmail}`,
+            result,
+        });
     } catch (error: any) {
-        console.error("Test send error:", error);
-        return new NextResponse(error.message || "Failed to send test email", { status: 500 });
+        console.error("[CAMPAIGN_TEST_SEND] Error:", error);
+        return NextResponse.json(
+            { error: error.message || "Failed to send test email" },
+            { status: 500 }
+        );
     }
 }

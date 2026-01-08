@@ -22,6 +22,9 @@ import {
 } from "@/components/ui/dialog";
 import { TemplateSelector } from "./template-selector";
 import { AudienceSelector } from "./audience-selector";
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select";
 import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -65,6 +68,9 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
         fromEmail: campaign.fromEmail || "",
     });
     const [testEmail, setTestEmail] = useState("");
+    const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+    const [audienceContacts, setAudienceContacts] = useState<any[]>([]);
+    const [loadingContacts, setLoadingContacts] = useState(false);
     const [sendingTest, setSendingTest] = useState(false);
 
     // Breadcrumbs
@@ -139,19 +145,46 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
         }
     };
 
+    const fetchAudienceContacts = async () => {
+        if (!campaign.audienceId) return;
+        setLoadingContacts(true);
+        try {
+            const response = await fetch(`/api/audiences/${campaign.audienceId}/contacts`);
+            if (response.ok) {
+                const data = await response.json();
+                setAudienceContacts(data.contacts || []);
+            }
+        } catch (error) {
+            console.error("Failed to fetch audience contacts", error);
+        } finally {
+            setLoadingContacts(false);
+        }
+    };
+
+    useEffect(() => {
+        if (testDialogOpen && campaign.audienceId) {
+            fetchAudienceContacts();
+        }
+    }, [testDialogOpen, campaign.audienceId]);
+
     const handleSendTest = async () => {
-        if (!testEmail) return;
+        if (!testEmail && !selectedContactId) return;
         setSendingTest(true);
         try {
             const response = await fetch(`/api/campaigns/${campaign.id}/test`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: testEmail }),
+                body: JSON.stringify({
+                    email: testEmail,
+                    contactId: selectedContactId
+                }),
             });
             const data = await response.json();
-            if (!response.ok) throw new Error(data.message || "Failed");
-            toast.success(`Test sent to ${testEmail}`);
+            if (!response.ok) throw new Error(data.error || "Failed");
+            toast.success(`Test email sent!`);
             setTestDialogOpen(false);
+            setTestEmail("");
+            setSelectedContactId(null);
         } catch (error: any) {
             toast.error(error.message);
         } finally {
@@ -162,17 +195,17 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
     const handleStartCampaign = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`/api/campaigns/${campaign.id}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status: "SENDING", sentAt: new Date() }),
+            const response = await fetch(`/api/campaigns/${campaign.id}/send`, {
+                method: "POST",
             });
-            if (!response.ok) throw new Error("Failed");
-            toast.success("Campaign started!");
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "Failed to start campaign");
+
+            toast.success("Campaign broadcasting started!");
             setStartDialogOpen(false);
             router.refresh();
-        } catch (error) {
-            toast.error("Failed to start campaign");
+        } catch (error: any) {
+            toast.error(error.message);
         } finally {
             setLoading(false);
         }
@@ -183,8 +216,7 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
         campaign.subject &&
         campaign.fromName &&
         campaign.fromEmail &&
-        campaign.template &&
-        campaign.client.smtpVerified
+        campaign.template
     );
 
     const checkList = [
@@ -192,11 +224,10 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
         { label: "Sender Details", valid: !!campaign.fromName && !!campaign.fromEmail },
         { label: "Template Selected", valid: !!campaign.templateId },
         { label: "Audience Selected", valid: !!campaign.audienceId && (campaign.audience?._count.contacts || 0) > 0 },
-        { label: "SMTP Verified", valid: campaign.client.smtpVerified },
     ];
     const isReadyToStart = checkList.every(i => i.valid);
 
-    const initials = campaign.client.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+    const initials = (campaign.client?.name || "").split(" ").map((n) => n[0] || "").join("").toUpperCase().slice(0, 2) || "?";
 
     // KPI Stats
     const kpiStats = campaign.analytics ? [
@@ -269,26 +300,6 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
                                 <Badge variant="outline" className="font-normal">
                                     {campaign.client.name}
                                 </Badge>
-
-                                {/* SMTP Badge */}
-                                <div className={cn(
-                                    "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border",
-                                    campaign.client.smtpVerified
-                                        ? "bg-green-500/10 text-green-600 border-green-500/20"
-                                        : "bg-orange-500/10 text-orange-600 border-orange-500/20"
-                                )}>
-                                    {campaign.client.smtpVerified ? (
-                                        <>
-                                            <Mail className="h-3 w-3" />
-                                            <span>SMTP Verified</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <AlertCircle className="h-3 w-3" />
-                                            <span>SMTP Required</span>
-                                        </>
-                                    )}
-                                </div>
                             </div>
 
                             <Button
@@ -365,18 +376,56 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
                                     <DialogContent>
                                         <DialogHeader>
                                             <DialogTitle>Send Test Email</DialogTitle>
-                                            <DialogDescription>Enter an email address to receive a test.</DialogDescription>
+                                            <DialogDescription>
+                                                Select a contact from your audience to test personalization, or enter a manual email.
+                                            </DialogDescription>
                                         </DialogHeader>
-                                        <div className="py-4">
-                                            <Label>Email</Label>
-                                            <Input
-                                                value={testEmail}
-                                                onChange={(e) => setTestEmail(e.target.value)}
-                                                placeholder="name@example.com"
-                                            />
+                                        <div className="py-4 space-y-4">
+                                            <div className="space-y-2">
+                                                <Label>Select Contact (for personalization)</Label>
+                                                <Select
+                                                    value={selectedContactId || "manual"}
+                                                    onValueChange={(val) => {
+                                                        if (val === "manual") {
+                                                            setSelectedContactId(null);
+                                                        } else {
+                                                            setSelectedContactId(val);
+                                                            setTestEmail("");
+                                                        }
+                                                    }}
+                                                    disabled={loadingContacts}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder={loadingContacts ? "Loading contacts..." : "Choose a contact"} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="manual">Manual Email Input</SelectItem>
+                                                        {audienceContacts.map((contact) => (
+                                                            <SelectItem key={contact.id} value={contact.id}>
+                                                                {contact.firstName} {contact.lastName} ({contact.email})
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {!selectedContactId && (
+                                                <div className="space-y-2">
+                                                    <Label>Manual Email</Label>
+                                                    <Input
+                                                        value={testEmail}
+                                                        onChange={(e) => setTestEmail(e.target.value)}
+                                                        placeholder="name@example.com"
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
                                         <DialogFooter>
-                                            <Button onClick={handleSendTest} disabled={sendingTest || !testEmail}>
+                                            <Button variant="ghost" onClick={() => setTestDialogOpen(false)}>Cancel</Button>
+                                            <Button
+                                                onClick={handleSendTest}
+                                                disabled={sendingTest || (!testEmail && !selectedContactId)}
+                                            >
                                                 {sendingTest && <Spinner className="mr-2 h-4 w-4" />}
                                                 Send Test
                                             </Button>
@@ -575,25 +624,6 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
                                 )}
                             </div>
                         </div>
-
-                        {/* SMTP Warning */}
-                        {!campaign.client.smtpVerified && (
-                            <div className="flex items-center justify-between p-4 rounded-lg bg-orange-500/10 border border-orange-500/20">
-                                <div className="flex items-center gap-3">
-                                    <AlertCircle className="h-5 w-5 text-orange-600" />
-                                    <div>
-                                        <p className="font-medium text-orange-600">SMTP Not Configured</p>
-                                        <p className="text-sm text-orange-600/80">Configure email settings for this client to send campaigns.</p>
-                                    </div>
-                                </div>
-                                <Link href={`/dashboard/clients/${campaign.client.slug}/edit`}>
-                                    <Button size="sm" variant="outline">
-                                        Configure SMTP
-                                        <ExternalLink className="ml-2 h-3.5 w-3.5" />
-                                    </Button>
-                                </Link>
-                            </div>
-                        )}
                     </div>
 
                     {/* KPI Stats Section */}
