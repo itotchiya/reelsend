@@ -207,11 +207,10 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        // Check if demo template already exists
+        // Check if demo template already exists by name
         const existingTemplate = await db.template.findFirst({
             where: {
                 name: "Campaign Demo Template",
-                isRecommended: true,
             },
         });
 
@@ -228,7 +227,6 @@ export async function POST(request: NextRequest) {
                 name: "Campaign Demo Template",
                 description: "A professional email template with all anti-spam best practices. Includes preheader, clear CTA, balanced text/image ratio, and CAN-SPAM compliant footer with unsubscribe link and physical address.",
                 htmlContent: DEMO_TEMPLATE_HTML,
-                jsonContent: DEMO_TEMPLATE_JSON,
                 isRecommended: true,
                 createdById: session.user.id,
                 // No clientId = global template available to all
