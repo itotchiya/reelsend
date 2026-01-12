@@ -10,6 +10,7 @@ interface SelectableCardProps {
     onClick: () => void;
     className?: string;
     showCheckmark?: boolean;
+    disabled?: boolean;
 }
 
 export function SelectableCard({
@@ -18,17 +19,21 @@ export function SelectableCard({
     onClick,
     className,
     showCheckmark = true,
+    disabled = false,
 }: SelectableCardProps) {
     return (
         <button
-            onClick={onClick}
+            onClick={disabled ? undefined : onClick}
+            disabled={disabled}
             className={cn(
                 "relative flex flex-col items-start gap-1 p-3 rounded-sm text-left w-full",
                 "border border-dashed transition-all duration-200",
                 "focus:outline-none focus:ring-2 focus:ring-primary/20",
                 isSelected
                     ? "border-solid border-primary bg-primary/5 ring-2 ring-primary/20"
-                    : "border-zinc-500/60 hover:border-solid hover:border-primary/40 hover:bg-accent/30",
+                    : disabled
+                        ? "border-zinc-500/30 bg-muted/20 cursor-not-allowed opacity-60"
+                        : "border-zinc-500/60 hover:border-solid hover:border-primary/40 hover:bg-accent/30",
                 className
             )}
         >
@@ -47,7 +52,7 @@ interface SelectableCardHeaderProps {
     title: string;
     subtitle?: string;
     badge?: string;
-    badgeVariant?: "primary" | "warning";
+    badgeVariant?: "primary" | "warning" | "secondary";
     className?: string;
 }
 
@@ -76,7 +81,9 @@ export function SelectableCardHeader({
                             "px-1.5 py-0.5 text-[10px] font-bold rounded whitespace-nowrap",
                             badgeVariant === "primary"
                                 ? "bg-primary/10 text-primary"
-                                : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                : badgeVariant === "secondary"
+                                    ? "bg-zinc-500/10 text-zinc-500"
+                                    : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                         )}>
                             {badge}
                         </span>

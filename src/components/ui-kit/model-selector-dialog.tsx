@@ -20,6 +20,7 @@ export interface AIModel {
     icon: React.ReactNode;
     isNew?: boolean;
     isFast?: boolean;
+    isComingSoon?: boolean;
 }
 
 export interface AIProvider {
@@ -58,8 +59,8 @@ export const AI_PROVIDERS: AIProvider[] = [
         icon: <GeminiIcon className="h-5 w-5" />,
         color: "from-blue-500 via-purple-500 to-pink-500",
         models: [
-            { id: "gemini-1.5-pro", icon: <Brain className="h-4 w-4" />, isNew: false },
-            { id: "gemini-1.5-flash", icon: <Zap className="h-4 w-4" />, isFast: true },
+            { id: "gemini-1.5-pro", icon: <Brain className="h-4 w-4" />, isComingSoon: true },
+            { id: "gemini-1.5-flash", icon: <Zap className="h-4 w-4" />, isComingSoon: true },
             { id: "gemini-2.0-flash", icon: <Zap className="h-4 w-4" />, isNew: true, isFast: true },
             { id: "gemini-2.0-flash-lite", icon: <Zap className="h-4 w-4" />, isFast: true },
         ],
@@ -84,7 +85,7 @@ export interface SelectedModel {
 
 export const DEFAULT_MODEL: SelectedModel = {
     provider: "gemini",
-    model: "gemini-1.5-flash",
+    model: "gemini-2.0-flash",
 };
 
 interface ModelSelectorDialogProps {
@@ -102,6 +103,11 @@ export function ModelSelectorDialog({
     const [open, setOpen] = React.useState(false);
 
     const handleModelSelect = (providerId: "openai" | "gemini", modelId: string) => {
+        const provider = AI_PROVIDERS.find(p => p.id === providerId);
+        const model = provider?.models.find(m => m.id === modelId);
+
+        if (model?.isComingSoon) return;
+
         onModelSelect({ provider: providerId, model: modelId });
         setOpen(false);
     };
@@ -184,13 +190,15 @@ export function ModelSelectorDialog({
                                         <SelectableCard
                                             key={model.id}
                                             isSelected={isSelected}
-                                            onClick={() => handleModelSelect(provider.id, model.id)}
+                                            disabled={model.isComingSoon}
+                                            onClick={() => handleModelSelect(provider.id as "openai" | "gemini", model.id)}
+                                            className={model.isComingSoon ? "opacity-60 cursor-not-allowed grayscale-[0.5]" : ""}
                                         >
                                             <SelectableCardHeader
                                                 icon={model.icon}
                                                 title={getModelLabel(model.id)}
-                                                badge={model.isNew ? "New" : model.isFast ? "Fast" : undefined}
-                                                badgeVariant={model.isNew ? "primary" : "warning"}
+                                                badge={model.isComingSoon ? "Coming Soon" : model.isNew ? "New" : model.isFast ? "Fast" : undefined}
+                                                badgeVariant={model.isComingSoon ? "warning" : model.isNew ? "primary" : "secondary"}
                                             />
                                             <SelectableCardDescription>
                                                 {getModelDesc(model.id)}
