@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
 interface PageHeaderProps {
-    title: string;
-    description?: string;
+    title: React.ReactNode;
+    description?: React.ReactNode;
     action?: React.ReactNode;
     children?: React.ReactNode; // Backward compatibility
     onBack?: () => void;

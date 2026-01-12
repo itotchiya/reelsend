@@ -2,63 +2,73 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Campaign, Client, Template, Audience, CampaignAnalytics } from "@prisma/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Campaign, Client, Template, Audience, Segment, CampaignAnalytics } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import {
-    Mail, Users, FileText, CheckCircle, AlertCircle, Play, Send,
-    Settings, Plus, ExternalLink, Eye, MousePointer, RotateCcw,
-    AlertTriangle, LayoutTemplate, Calendar
+    Mail, Users, CheckCircle, AlertCircle, Play, Send,
+    Settings, Eye, MousePointer, AlertTriangle, LayoutTemplate,
+    Calendar, Terminal
 } from "lucide-react";
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter,
     DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog";
 import { TemplateSelector } from "./template-selector";
-import { AudienceSelector } from "./audience-selector";
+import { SmtpSelector } from "./smtp-selector";
+import { AudienceSegmentSelector, AudienceWithSegments } from "./audience-segment-selector";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
 import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
+import { CampaignConfigCard } from "@/components/ui-kit/campaign-config-card";
+import { StatusBadge, ClientBadgeSolid, SmtpBadge, TemplateBadge, AudienceBadge } from "@/components/ui-kit/card-badge";
+import { SmtpProfile } from "@/components/ui-kit/smtp-profile-card";
+import { SegmentCardData } from "@/components/ui-kit/segment-card";
+import { useI18n } from "@/lib/i18n";
 
 // Types
 type CampaignWithRelations = Campaign & {
     client: Client;
     template: Template | null;
-    audience: (Audience & { _count: { contacts: number } }) | null;
+    audience: (Audience & {
+        _count: { contacts: number };
+        segments?: SegmentCardData[];
+    }) | null;
+    segment?: Segment | null;
     analytics: CampaignAnalytics | null;
-};
-
-type AudienceWithCount = Audience & {
-    _count: { contacts: number };
 };
 
 interface CampaignClientProps {
     initialCampaign: CampaignWithRelations;
     templates: Template[];
-    audiences: AudienceWithCount[];
+    audiences: AudienceWithSegments[];
+    smtpProfiles: SmtpProfile[];
 }
 
-export function CampaignClient({ initialCampaign, templates, audiences }: CampaignClientProps) {
+export function CampaignClient({ initialCampaign, templates, audiences, smtpProfiles }: CampaignClientProps) {
     const [campaign, setCampaign] = useState(initialCampaign);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const { t } = useI18n();
 
     // Dialog states
     const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
     const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
+    const [isSmtpSelectorOpen, setIsSmtpSelectorOpen] = useState(false);
     const [isAudienceSelectorOpen, setIsAudienceSelectorOpen] = useState(false);
     const [testDialogOpen, setTestDialogOpen] = useState(false);
     const [startDialogOpen, setStartDialogOpen] = useState(false);
+
+    // Selected SMTP profile (stored locally, update campaign on selection)
+    const [selectedSmtp, setSelectedSmtp] = useState<SmtpProfile | null>(null);
+    const [selectedSegment, setSelectedSegment] = useState<SegmentCardData | null>(null);
 
     // Edit forms
     const [settingsForm, setSettingsForm] = useState({
@@ -76,13 +86,13 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
     // Breadcrumbs
     const { setOverride, removeOverride } = useBreadcrumbs();
     useEffect(() => {
-        setOverride("campaigns", "Campaigns");
+        setOverride("campaigns", t.common?.campaigns || "Campaigns");
         setOverride(campaign.id, campaign.name);
         return () => {
             removeOverride("campaigns");
             removeOverride(campaign.id);
         };
-    }, [campaign.id, campaign.name, setOverride, removeOverride]);
+    }, [campaign.id, campaign.name, setOverride, removeOverride, t.common?.campaigns]);
 
     // Handlers
     const handleSaveSettings = async (e: React.FormEvent) => {
@@ -97,11 +107,11 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
             if (!response.ok) throw new Error("Failed to update");
             const updated = await response.json();
             setCampaign({ ...campaign, ...updated });
-            toast.success("Settings saved");
+            toast.success(t.common?.success || "Settings saved");
             setIsSettingsDialogOpen(false);
             router.refresh();
         } catch (error) {
-            toast.error("Failed to save settings");
+            toast.error(t.common?.error || "Failed to save settings");
         } finally {
             setLoading(false);
         }
@@ -117,29 +127,44 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
             });
             if (!response.ok) throw new Error("Failed to update");
             setCampaign({ ...campaign, template, templateId: template.id });
-            toast.success("Template updated");
+            toast.success(t.common?.success || "Template updated");
             router.refresh();
         } catch (error) {
-            toast.error("Failed to update template");
+            toast.error(t.common?.error || "Failed to update template");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleAudienceSelect = async (audience: AudienceWithCount) => {
+    const handleSmtpSelect = async (profile: SmtpProfile) => {
+        setSelectedSmtp(profile);
+        // TODO: Save smtpProfileId to campaign when API supports it
+        toast.success(`SMTP profile "${profile.name}" selected`);
+    };
+
+    const handleAudienceSegmentSelect = async (audience: AudienceWithSegments, segment: SegmentCardData) => {
         setLoading(true);
         try {
             const response = await fetch(`/api/campaigns/${campaign.id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ audienceId: audience.id }),
+                body: JSON.stringify({
+                    audienceId: audience.id,
+                    segmentId: segment.id,
+                }),
             });
             if (!response.ok) throw new Error("Failed to update");
-            setCampaign({ ...campaign, audience, audienceId: audience.id });
-            toast.success("Audience updated");
+            setCampaign({
+                ...campaign,
+                audience: { ...audience, _count: audience._count } as any,
+                audienceId: audience.id,
+                segment: segment as any,
+            });
+            setSelectedSegment(segment);
+            toast.success(t.common?.success || "Audience & segment updated");
             router.refresh();
         } catch (error) {
-            toast.error("Failed to update audience");
+            toast.error(t.common?.error || "Failed to update");
         } finally {
             setLoading(false);
         }
@@ -223,11 +248,9 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
         { label: "Valid Subject Line", valid: !!campaign.subject },
         { label: "Sender Details", valid: !!campaign.fromName && !!campaign.fromEmail },
         { label: "Template Selected", valid: !!campaign.templateId },
-        { label: "Audience Selected", valid: !!campaign.audienceId && (campaign.audience?._count.contacts || 0) > 0 },
+        { label: "Segment Selected", valid: !!selectedSegment || !!(campaign as any).segmentId },
     ];
     const isReadyToStart = checkList.every(i => i.valid);
-
-    const initials = (campaign.client?.name || "").split(" ").map((n) => n[0] || "").join("").toUpperCase().slice(0, 2) || "?";
 
     // KPI Stats
     const kpiStats = campaign.analytics ? [
@@ -239,6 +262,14 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
         { label: "UNSUBSCRIBED", value: campaign.analytics.unsubscribed, icon: Users, color: "orange" },
     ] : [];
 
+    const formatDate = (date: Date | string | null) => {
+        if (!date) return "—";
+        return new Date(date).toLocaleString('fr-FR', {
+            day: '2-digit', month: '2-digit', year: '2-digit',
+            hour: '2-digit', minute: '2-digit'
+        });
+    };
+
     return (
         <>
             <PageHeader
@@ -247,59 +278,23 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
                 onBack={() => router.push(`/dashboard/clients/${campaign.client.slug}/campaigns`)}
             />
             <PageContent>
-                <div className="space-y-8">
-                    {/* Header with Avatar */}
-                    <div className="relative">
-                        {/* Gradient Cover */}
-                        <div
-                            className="h-32 rounded-2xl overflow-hidden"
-                            style={{
-                                background: `linear-gradient(135deg, ${(campaign.client.brandColors as any)?.primary || '#6366f1'} 0%, ${(campaign.client.brandColors as any)?.secondary || '#a855f7'} 100%)`
-                            }}
-                        />
-
-                        {/* Avatar */}
-                        <div className="px-6 -mt-10 relative">
-                            <div className="h-20 w-20 rounded-xl bg-background border-2 border-background flex items-center justify-center overflow-hidden shadow-none">
-                                {campaign.client.logo ? (
-                                    <img src={campaign.client.logo} alt={campaign.client.name} className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="h-full w-full bg-muted flex items-center justify-center">
-                                        <span className="text-xl font-bold text-muted-foreground">{initials}</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
+                <div className="space-y-6">
                     {/* Campaign Details Section */}
                     <div className="rounded-xl border border-dashed p-6">
                         <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 flex-wrap">
                                 <p className="text-lg font-semibold">{campaign.name}</p>
 
                                 {/* Status Badge */}
-                                <div className={cn(
-                                    "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-colors",
-                                    campaign.status === "DRAFT" ? "bg-yellow-500/10 text-yellow-600 border-yellow-500/20" :
-                                        campaign.status === "SENDING" ? "bg-blue-500/10 text-blue-600 border-blue-500/20" :
-                                            campaign.status === "COMPLETED" ? "bg-green-500/10 text-green-600 border-green-500/20" :
-                                                campaign.status === "FAILED" ? "bg-red-500/10 text-red-600 border-red-500/20" :
-                                                    "bg-gray-500/10 text-gray-600 border-gray-500/20"
-                                )}>
-                                    <span className={cn("h-1.5 w-1.5 rounded-full",
-                                        campaign.status === "DRAFT" ? "bg-yellow-500" :
-                                            campaign.status === "SENDING" ? "bg-blue-500" :
-                                                campaign.status === "COMPLETED" ? "bg-green-500" :
-                                                    campaign.status === "FAILED" ? "bg-red-500" : "bg-gray-500"
-                                    )} />
-                                    <span>{campaign.status}</span>
-                                </div>
+                                <StatusBadge status={campaign.status.toLowerCase() as any}>
+                                    {campaign.status}
+                                </StatusBadge>
 
                                 {/* Client Badge */}
-                                <Badge variant="outline" className="font-normal">
-                                    {campaign.client.name}
-                                </Badge>
+                                <ClientBadgeSolid
+                                    clientName={campaign.client.name}
+                                    primaryColor={(campaign.client.brandColors as any)?.primary}
+                                />
                             </div>
 
                             <Button
@@ -324,45 +319,77 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                             <div className="space-y-1">
                                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Created</p>
-                                <p className="font-medium text-muted-foreground">
-                                    {new Date(campaign.createdAt).toLocaleString('fr-FR', {
-                                        day: '2-digit', month: '2-digit', year: '2-digit',
-                                        hour: '2-digit', minute: '2-digit'
-                                    })}
-                                </p>
+                                <p className="font-medium text-muted-foreground">{formatDate(campaign.createdAt)}</p>
                             </div>
                             <div className="space-y-1">
                                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Last Updated</p>
-                                <p className="font-medium text-muted-foreground">
-                                    {new Date(campaign.updatedAt).toLocaleString('fr-FR', {
-                                        day: '2-digit', month: '2-digit', year: '2-digit',
-                                        hour: '2-digit', minute: '2-digit'
-                                    })}
-                                </p>
+                                <p className="font-medium text-muted-foreground">{formatDate(campaign.updatedAt)}</p>
                             </div>
                             <div className="space-y-1">
                                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Sent At</p>
-                                <p className="font-medium text-muted-foreground">
-                                    {campaign.sentAt ? new Date(campaign.sentAt).toLocaleString('fr-FR', {
-                                        day: '2-digit', month: '2-digit', year: '2-digit',
-                                        hour: '2-digit', minute: '2-digit'
-                                    }) : "—"}
-                                </p>
+                                <p className="font-medium text-muted-foreground">{formatDate(campaign.sentAt)}</p>
                             </div>
                             <div className="space-y-1">
                                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Scheduled At</p>
-                                <p className="font-medium text-muted-foreground">
-                                    {campaign.scheduledAt ? new Date(campaign.scheduledAt).toLocaleString('fr-FR', {
-                                        day: '2-digit', month: '2-digit', year: '2-digit',
-                                        hour: '2-digit', minute: '2-digit'
-                                    }) : "—"}
-                                </p>
+                                <p className="font-medium text-muted-foreground">{formatDate(campaign.scheduledAt)}</p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Campaign Configuration Section */}
-                    <div className="rounded-xl border border-dashed p-6 space-y-6">
+                    {/* Email Settings Row */}
+                    <div className="rounded-xl border border-dashed p-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-6 flex-wrap flex-1">
+                                <div className="flex items-center gap-2">
+                                    <Mail className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm font-medium">Email Settings</span>
+                                </div>
+
+                                {campaign.subject ? (
+                                    <div className="flex items-center gap-6 text-sm">
+                                        <div>
+                                            <span className="text-muted-foreground">Subject: </span>
+                                            <span className="font-medium">{campaign.subject}</span>
+                                        </div>
+                                        <Separator orientation="vertical" className="h-4" />
+                                        <div>
+                                            <span className="text-muted-foreground">From: </span>
+                                            <span className="font-medium">{campaign.fromName}</span>
+                                        </div>
+                                        {campaign.previewText && (
+                                            <>
+                                                <Separator orientation="vertical" className="h-4" />
+                                                <div className="text-muted-foreground truncate max-w-[200px]">
+                                                    {campaign.previewText}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <span className="text-sm text-muted-foreground">Not configured</span>
+                                )}
+                            </div>
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                    setSettingsForm({
+                                        subject: campaign.subject || "",
+                                        previewText: campaign.previewText || "",
+                                        fromName: campaign.fromName || "",
+                                        fromEmail: campaign.fromEmail || "",
+                                    });
+                                    setIsSettingsDialogOpen(true);
+                                }}
+                            >
+                                {campaign.subject ? "Edit" : "Configure"}
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Campaign Configuration Cards */}
+                    <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold">Campaign Configuration</h3>
                             <div className="flex items-center gap-2">
@@ -450,20 +477,20 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
                                                 <div key={i} className="flex items-center justify-between p-2 rounded bg-muted/50">
                                                     <span className="text-sm font-medium">{item.label}</span>
                                                     {item.valid ? (
-                                                        <Badge variant="outline" className="bg-green-500/15 text-green-600 border-green-500/20">
-                                                            <CheckCircle className="mr-1 h-3 w-3" /> OK
-                                                        </Badge>
+                                                        <span className="flex items-center gap-1 text-xs text-green-600">
+                                                            <CheckCircle className="h-3 w-3" /> OK
+                                                        </span>
                                                     ) : (
-                                                        <Badge variant="destructive">
-                                                            <AlertCircle className="mr-1 h-3 w-3" /> Missing
-                                                        </Badge>
+                                                        <span className="flex items-center gap-1 text-xs text-red-600">
+                                                            <AlertCircle className="h-3 w-3" /> Missing
+                                                        </span>
                                                     )}
                                                 </div>
                                             ))}
                                             {isReadyToStart && (
                                                 <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-md text-sm text-yellow-600 mt-4">
                                                     <p className="font-semibold">Ready to launch!</p>
-                                                    <p>Sending to <strong>{campaign.audience?._count.contacts}</strong> contacts.</p>
+                                                    <p>Sending to <strong>{selectedSegment?._count.contacts || 0}</strong> contacts in segment.</p>
                                                 </div>
                                             )}
                                         </div>
@@ -480,149 +507,93 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
                         </div>
 
                         {/* Configuration Grid */}
-                        <div className="grid gap-6 lg:grid-cols-3">
-                            {/* Settings Card */}
-                            <div className="rounded-xl border border-dashed p-5 flex flex-col min-h-[280px]">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h4 className="font-semibold flex items-center gap-2">
-                                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                                            <Mail className="h-4 w-4 text-primary" />
+                        <div className="grid gap-4 lg:grid-cols-3">
+                            {/* SMTP Card */}
+                            <CampaignConfigCard
+                                icon={Terminal}
+                                title="SMTP Profile"
+                                color="blue"
+                                hasContent={!!selectedSmtp}
+                                emptyLabel="No SMTP selected"
+                                actionLabel="Select SMTP"
+                                onAction={() => setIsSmtpSelectorOpen(true)}
+                            >
+                                {selectedSmtp && (
+                                    <div className="space-y-3">
+                                        <div className="p-3 rounded-lg bg-muted/30 border border-dashed">
+                                            <p className="font-semibold text-sm">{selectedSmtp.name}</p>
+                                            <p className="text-xs text-muted-foreground">{selectedSmtp.host}:{selectedSmtp.port}</p>
                                         </div>
-                                        Email Settings
-                                    </h4>
-                                    <Button variant="ghost" size="sm" onClick={() => {
-                                        setSettingsForm({
-                                            subject: campaign.subject || "",
-                                            previewText: campaign.previewText || "",
-                                            fromName: campaign.fromName || "",
-                                            fromEmail: campaign.fromEmail || "",
-                                        });
-                                        setIsSettingsDialogOpen(true);
-                                    }}>
-                                        {campaign.subject ? "Edit" : "Configure"}
-                                    </Button>
-                                </div>
-                                {campaign.subject ? (
-                                    <div className="flex-1 space-y-4">
-                                        <div className="space-y-1">
-                                            <p className="text-xs text-muted-foreground uppercase tracking-wider">Subject</p>
-                                            <p className="font-medium">{campaign.subject}</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-xs text-muted-foreground uppercase tracking-wider">Preview Text</p>
-                                            <p className="text-sm text-muted-foreground">{campaign.previewText || "No preview text"}</p>
-                                        </div>
-                                        <Separator className="border-dashed" />
-                                        <div className="space-y-1">
-                                            <p className="text-xs text-muted-foreground uppercase tracking-wider">From</p>
-                                            <p className="font-medium">{campaign.fromName}</p>
-                                            <p className="text-sm text-muted-foreground">{campaign.fromEmail}</p>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
-                                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                                            <Mail className="h-6 w-6 text-muted-foreground" />
-                                        </div>
-                                        <p className="text-sm text-muted-foreground mb-2">No settings configured</p>
-                                        <Button size="sm" variant="outline" onClick={() => setIsSettingsDialogOpen(true)}>
-                                            Configure
-                                        </Button>
+                                        <SmtpBadge verified={true} profileName={selectedSmtp.name} />
                                     </div>
                                 )}
-                            </div>
+                            </CampaignConfigCard>
 
                             {/* Template Card */}
-                            <div className="rounded-xl border border-dashed p-5 flex flex-col min-h-[280px]">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h4 className="font-semibold flex items-center gap-2">
-                                        <div className="h-8 w-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                                            <LayoutTemplate className="h-4 w-4 text-violet-600" />
-                                        </div>
-                                        Template
-                                    </h4>
-                                    <Button variant="ghost" size="sm" onClick={() => setIsTemplateSelectorOpen(true)}>
-                                        {campaign.template ? "Change" : "Select"}
-                                    </Button>
-                                </div>
-                                {campaign.template ? (
+                            <CampaignConfigCard
+                                icon={LayoutTemplate}
+                                title="Template"
+                                color="violet"
+                                hasContent={!!campaign.template}
+                                emptyLabel="No template selected"
+                                actionLabel="Select Template"
+                                onAction={() => setIsTemplateSelectorOpen(true)}
+                            >
+                                {campaign.template && (
                                     <div className="flex-1 flex flex-col">
                                         <div className="flex-1 rounded-lg border bg-muted/20 overflow-hidden relative">
                                             {campaign.template.htmlContent && (
                                                 <iframe
                                                     srcDoc={campaign.template.htmlContent}
-                                                    className="w-full h-[200px] border-0 pointer-events-none"
+                                                    className="w-full h-[150px] border-0 pointer-events-none"
                                                     style={{ transform: 'scale(0.5)', transformOrigin: 'top left', width: '200%' }}
                                                 />
                                             )}
                                         </div>
                                         <div className="pt-3 border-t border-dashed mt-3">
-                                            <p className="font-medium">{campaign.template.name}</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                Last updated {new Date(campaign.template.updatedAt).toLocaleDateString()}
-                                            </p>
+                                            <p className="font-medium text-sm">{campaign.template.name}</p>
+                                            <TemplateBadge templateName={campaign.template.name} className="mt-2" />
                                         </div>
-                                    </div>
-                                ) : (
-                                    <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
-                                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                                            <LayoutTemplate className="h-6 w-6 text-muted-foreground" />
-                                        </div>
-                                        <p className="text-sm text-muted-foreground mb-2">No template selected</p>
-                                        <Button size="sm" variant="outline" onClick={() => setIsTemplateSelectorOpen(true)}>
-                                            Select Template
-                                        </Button>
                                     </div>
                                 )}
-                            </div>
+                            </CampaignConfigCard>
 
-                            {/* Audience Card */}
-                            <div className="rounded-xl border border-dashed p-5 flex flex-col min-h-[280px]">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h4 className="font-semibold flex items-center gap-2">
-                                        <div className="h-8 w-8 rounded-lg bg-green-500/10 flex items-center justify-center">
-                                            <Users className="h-4 w-4 text-green-600" />
-                                        </div>
-                                        Audience
-                                    </h4>
-                                    <Button variant="ghost" size="sm" onClick={() => setIsAudienceSelectorOpen(true)}>
-                                        {campaign.audience ? "Change" : "Select"}
-                                    </Button>
-                                </div>
-                                {campaign.audience ? (
+                            {/* Audience/Segment Card */}
+                            <CampaignConfigCard
+                                icon={Users}
+                                title="Audience & Segment"
+                                color="green"
+                                hasContent={!!selectedSegment || !!campaign.audience}
+                                emptyLabel="No segment selected"
+                                actionLabel="Select Segment"
+                                onAction={() => setIsAudienceSelectorOpen(true)}
+                            >
+                                {(selectedSegment || campaign.audience) && (
                                     <div className="flex-1 flex flex-col">
-                                        <div className="flex-1 p-4 rounded-lg bg-muted/20 border border-dashed">
+                                        <div className="flex-1 p-3 rounded-lg bg-muted/20 border border-dashed">
                                             <div className="flex items-start gap-3">
                                                 <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0">
                                                     <Users className="h-5 w-5 text-green-600" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="font-semibold truncate">{campaign.audience.name}</p>
-                                                    <p className="text-sm text-muted-foreground line-clamp-2">
-                                                        {campaign.audience.description || "No description"}
+                                                    <p className="font-semibold text-sm truncate">
+                                                        {selectedSegment?.name || campaign.audience?.name}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {campaign.audience?.name && selectedSegment ? `From: ${campaign.audience.name}` : ""}
                                                     </p>
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="pt-3 border-t border-dashed mt-3 flex items-center justify-between">
                                             <span className="text-xs text-muted-foreground uppercase tracking-wider">Contacts</span>
-                                            <Badge variant="secondary" className="text-sm font-bold">
-                                                {campaign.audience._count.contacts}
-                                            </Badge>
+                                            <span className="text-sm font-bold">
+                                                {selectedSegment?._count.contacts || campaign.audience?._count.contacts || 0}
+                                            </span>
                                         </div>
-                                    </div>
-                                ) : (
-                                    <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
-                                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                                            <Users className="h-6 w-6 text-muted-foreground" />
-                                        </div>
-                                        <p className="text-sm text-muted-foreground mb-2">No audience selected</p>
-                                        <Button size="sm" variant="outline" onClick={() => setIsAudienceSelectorOpen(true)}>
-                                            Select Audience
-                                        </Button>
                                     </div>
                                 )}
-                            </div>
+                            </CampaignConfigCard>
                         </div>
                     </div>
 
@@ -729,12 +700,21 @@ export function CampaignClient({ initialCampaign, templates, audiences }: Campai
                 onSelect={handleTemplateSelect}
             />
 
-            <AudienceSelector
+            <SmtpSelector
+                open={isSmtpSelectorOpen}
+                onOpenChange={setIsSmtpSelectorOpen}
+                profiles={smtpProfiles}
+                selectedId={selectedSmtp?.id}
+                onSelect={handleSmtpSelect}
+            />
+
+            <AudienceSegmentSelector
                 open={isAudienceSelectorOpen}
                 onOpenChange={setIsAudienceSelectorOpen}
                 audiences={audiences}
-                selectedId={campaign.audienceId}
-                onSelect={handleAudienceSelect}
+                selectedAudienceId={campaign.audienceId}
+                selectedSegmentId={selectedSegment?.id || (campaign as any).segmentId}
+                onSelect={handleAudienceSegmentSelect}
             />
         </>
     );

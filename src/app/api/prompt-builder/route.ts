@@ -11,7 +11,8 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 const BLOCK_TYPES_REFERENCE = `
 ## Available Email Builder Blocks
 
-You can use the following block types in your template:
+You can use the following block types in your template. 
+IMPORTANT: "Html" block is NOT available. Do not use it.
 
 1. **Heading** - For titles and headings
    - props: { text: string, level: "h1"|"h2"|"h3" }
@@ -48,9 +49,35 @@ You can use the following block types in your template:
    - props: { 
        columnsCount: 2 | 3,
        columnsGap: number,
-       columns: { childrenIds: string[] }[] 
+       columns: [
+         { childrenIds: string[] },
+         { childrenIds: string[] },
+         { childrenIds: string[] } // Must always provide 3 objects, even if columnsCount is 2
+       ]
      }
    - style: { padding: { top, bottom, left, right }, backgroundColor?: string }
+`;
+
+const PLACEHOLDER_INSTRUCTIONS = `
+## IMAGE PLACEHOLDER GUIDELINES (Use placehold.co)
+
+You must use 'https://placehold.co' for ALL dynamic images unless a specific logo is provided.
+
+FORMAT: https://placehold.co/{width}x{height}/{background_hex}/{text_hex}?text={text}&font={font}
+
+1. **Size**: Width x Height is required (e.g. 600x400).
+2. **Colors**: You must specify Background and Text colors.
+   - **Context-Aware Colors**: Derive shades/variants from the brand colors! 
+   - Start with the Primary Brand Color.
+   - Create light tints for backgrounds (e.g., #e0f2fe for a blue brand).
+   - Create dark shades for text (e.g., #003366).
+   - EXAMPLE: If primary is Blue (#0079cc):
+     - Hero Image: https://placehold.co/600x300/e6f4ff/0079cc?text=Hero+Image
+     - Product: https://placehold.co/400x400/f8fafc/cbd5e1?text=Product
+3. **Text**: URL encoded text description (e.g. ?text=Winter+Collection).
+4. **Font**: Use 'roboto' or 'lato' (e.g. &font=roboto).
+
+CRITICAL: Do not use generic grey/white for everything. Match the design style (e.g. bold colors for Marketing, soft for Minimal).
 `;
 
 const JSON_FORMAT_EXAMPLE = `
@@ -84,7 +111,8 @@ The template must be a JSON object with this structure:
         "columnsGap": 16,
         "columns": [
           { "childrenIds": ["col-1-img", "col-1-txt"] },
-          { "childrenIds": ["col-2-img", "col-2-txt"] }
+          { "childrenIds": ["col-2-img", "col-2-txt"] },
+          { "childrenIds": [] }
         ]
       }
     }
@@ -92,7 +120,7 @@ The template must be a JSON object with this structure:
   "col-1-img": {
     "type": "Image",
     "data": {
-       "props": { "url": "https://placehold.co/600x400", "alt": "Image 1" }
+       "props": { "url": "https://placehold.co/600x400/e0e7ff/4f46e5?text=Feature+1", "alt": "Image 1" }
     }
   },
   "col-1-txt": { "type": "Text", "data": { "props": { "text": "Description 1" } } },
@@ -109,11 +137,29 @@ IMPORTANT RULES:
 `;
 
 const STYLE_GUIDELINES: Record<string, string> = {
-    default: "Clean, professional layout with moderate spacing. Use a white canvas and light gray backdrop.",
-    colored: "Use vibrant, branded colors throughout. Apply the primary color to all headings and buttons aggressively. Use secondary color for accents and backgrounds.",
-    bento: "Use a structured grid-like layout with ColumnsContainer and Container blocks. Group related content visually with borders and background colors. Modern and organized.",
-    simple: "Minimalist design with ample whitespace. Focus on typography and a single accent color for CTAs.",
-    minimal: "Ultra-clean design. Very few elements, maximum whitespace, understated styling.",
+    default: `STYLE: Default (Clean & Balanced)
+    - STRUCTURE: Centered or single-column layout. Header title, 1–2 content sections, One primary CTA button, Simple footer.
+    - RULES: Neutral spacing, Standard button size, Soft borders or dividers, No aggressive visuals.
+    - TONE: Professional, Friendly, Clear and informative.
+    - INSTRUCTION: Build a balanced, professional email with a clean layout. Prioritize clarity and usability. Avoid overly bold visuals or heavy branding.`,
+
+    marketing: `STYLE: Marketing (Bold & Promotional)
+    - STRUCTURE: Hero section (large headline/banner), Supporting subtitle, Feature blocks or cards (2–3 max), Strong prominent CTA, Secondary CTA optional.
+    - RULES: Strong visual hierarchy, Emphasized CTA button, Use contrast and spacing to drive attention, Sections clearly separated.
+    - TONE: Persuasive, Energetic, Action-oriented.
+    - INSTRUCTION: Build a high-impact promotional email designed to maximize clicks and conversions. Emphasize the CTA and benefits. Visual structure should guide the reader toward action. Use BOLD colors from the palette.`,
+
+    minimal: `STYLE: Minimal (Plain & Text-Focused)
+    - STRUCTURE: No hero section, Mostly text blocks, Natural paragraph flow, CTA as a text link (not a button), Signature-style footer.
+    - RULES: Very light styling, No cards, no sections, No background colors, Looks like a personal email.
+    - TONE: Human, Conversational, Personal.
+    - INSTRUCTION: Generate a minimal, text-first email that feels like a personal message. Avoid visual elements and buttons. Focus on readability and authenticity.`,
+
+    branded: `STYLE: Branded (Custom & Visual)
+    - STRUCTURE: Brand header (logo or color bar), Structured sections, Reusable blocks (cards, feature rows), On-brand CTA, Branded footer.
+    - RULES: Apply brand colors consistently, Use visual blocks and grids, Maintain design system consistency, Footer is mandatory.
+    - TONE: Confident, Consistent, On-brand.
+    - INSTRUCTION: Build a structured, brand-consistent email using visual sections and reusable blocks. Apply brand identity strongly while maintaining clarity and readability.`,
 };
 
 // Helper to format saved blocks for AI context
@@ -163,11 +209,14 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { prompt, style = "default", clientId } = body;
+        const { prompt, style = "default", clientId, model: selectedModel } = body;
 
         if (!prompt) {
             return new NextResponse("Prompt is required", { status: 400 });
         }
+
+        // Model selection with fallback to gemini-1.5-flash (Public default)
+        const modelName = selectedModel || "gemini-1.5-flash";
 
         // Get client data if provided
         let clientData = null;
@@ -198,12 +247,15 @@ RULES FOR COLORS:
 1. ALL Buttons MUST use the Primary Color for "buttonBackgroundColor".
 2. Headings should optionally use the Primary Color.
 3. Links should use the Primary Color.
+4. **Shades & Variants**: When creating placeholder images or backgrounds, DO NOT just use the raw Primary Color. Create lighter tints (e.g. opacity 10%) for backgrounds and darker shades for text to create depth.
 `
             : "";
 
         const systemPrompt = `You are an expert email template designer. Generate a RICH, DETAILED, and COMPREHENSIVE email template based on the user's request.
 
 ${BLOCK_TYPES_REFERENCE}
+
+${PLACEHOLDER_INSTRUCTIONS}
 
 ${JSON_FORMAT_EXAMPLE}
 
@@ -213,6 +265,11 @@ ${STYLE_GUIDELINES[style] || STYLE_GUIDELINES.default}
 ${brandInstructions}
 
 ${savedBlocksInstructions}
+
+## Context-Aware Overrides
+1. **Themes/Moods**: Analyze the User Request for specific themes (e.g. "Christmas", "Black Friday", "Urgent"). If found, adjust the color palette and design mood to match (e.g. Red/Green for Christmas), even if it deviates slightly from strict brand colors.
+2. **Structural Hints**: If the user asks for "Team introduction", prioritize Avatar blocks. If "Product list", prioritize ColumnsContainer with Images.
+3. **Explicit Colors**: If the user says "Make the background blue", this overrides style defaults.
 
 ## Language Detection - CRITICAL
 - Detect the language of the 'User Request'.
@@ -230,7 +287,9 @@ ${savedBlocksInstructions}
 - IF SAVED BLOCKS ARE AVAILABLE (headers, footers), USE THEM!
 
 ## Your Response Format
-You must respond with a valid JSON object containing:
+You MUST respond with a valid JSON object ONLY. 
+Do NOT include any markdown code blocks, explanations, or additional text.
+Your response must be a single JSON object containing:
 {
   "title": "Short template title (max 8 words)",
   "description": "Brief description (max 16 words)",
@@ -238,8 +297,8 @@ You must respond with a valid JSON object containing:
 }
 `;
 
-        // Call Gemini API
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        // Call Gemini API with selected model
+        const model = genAI.getGenerativeModel({ model: modelName });
 
         const result = await model.generateContent({
             contents: [
@@ -295,6 +354,15 @@ You must respond with a valid JSON object containing:
 
             uniqueName = `${templateName} (${counter})`;
             counter++;
+        }
+
+        // Verify user exists in DB before creating template (Ghost Session check)
+        const dbUser = await db.user.findUnique({
+            where: { id: session.user.id }
+        });
+
+        if (!dbUser) {
+            return new NextResponse("User record missing from database. Please log out and back in.", { status: 401 });
         }
 
         const newTemplate = await db.template.create({

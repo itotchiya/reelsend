@@ -30,7 +30,11 @@ export default function SaveButton() {
         try {
             const htmlContent = renderToStaticMarkup(document, { rootBlockId: 'root' });
 
-            const res = await fetch(`/api/templates/${templateId}`, {
+            // Determine API endpoint: /api/blocks or /api/templates
+            const isBlockEditor = window.location.pathname.includes('/dashboard/blocks/');
+            const apiEndpoint = isBlockEditor ? `/api/blocks/${templateId}` : `/api/templates/${templateId}`;
+
+            const res = await fetch(apiEndpoint, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

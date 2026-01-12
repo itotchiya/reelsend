@@ -26,6 +26,9 @@ import {
     ExternalLink,
     Pencil,
     Copy,
+    Check,
+    X,
+    Server,
 } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -54,6 +57,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SmtpProfileCard } from "@/components/ui-kit/smtp-profile-card";
+import { CardBadge } from "@/components/ui-kit/card-badge";
 
 import {
     Dialog,
@@ -93,6 +98,16 @@ interface Template {
     updatedAt: string;
 }
 
+interface SmtpProfile {
+    id: string;
+    name: string;
+    host: string;
+    port: number;
+    user: string;
+    secure: boolean;
+    createdAt: string;
+}
+
 interface SmtpTestLog {
     id: string;
     smtpHost: string;
@@ -125,6 +140,7 @@ interface Client {
     audiences: Audience[];
     campaigns: Campaign[];
     templates: Template[];
+    smtpProfiles: SmtpProfile[];
     smtpTestLogs?: SmtpTestLog[];
 }
 
@@ -334,39 +350,47 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <p className="text-lg font-semibold">{client.name}</p>
-                                <div className={cn(
-                                    "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-colors",
-                                    (client.status?.toLowerCase() === "active" || (!client.status && client.active))
-                                        ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
-                                        : client.status?.toLowerCase() === "suspended"
-                                            ? "bg-yellow-500/10 text-yellow-600 border-yellow-500/20"
-                                            : "bg-red-500/10 text-red-600 border-red-500/20"
-                                )}>
-                                    <span className={cn("h-1.5 w-1.5 rounded-full",
-                                        (client.status?.toLowerCase() === "active" || (!client.status && client.active)) ? "bg-blue-500" :
-                                            client.status?.toLowerCase() === "suspended" ? "bg-yellow-500" : "bg-red-500"
-                                    )} />
-                                    <span className="capitalize">{client.status || (client.active ? (t.clients?.active || "active") : (t.clients?.inactive || "inactive"))}</span>
-                                </div>
+                                <CardBadge
+                                    variant="border"
+                                    color={client.active ? "blue" : "red"}
+                                >
+                                    <span className="capitalize">{client.active ? (t.clients?.active || "active") : (t.clients?.inactive || "inactive")}</span>
+                                </CardBadge>
 
-                                <div className={cn(
-                                    "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-colors",
-                                    client.smtpVerified
-                                        ? "bg-green-500/10 text-green-600 border-green-500/20"
-                                        : "bg-orange-500/10 text-orange-600 border-orange-500/20"
-                                )}>
-                                    {client.smtpVerified ? (
-                                        <>
-                                            <Mail className="h-3 w-3" />
-                                            <span>{t.clients.smtpVerified}</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <AlertCircle className="h-3 w-3" />
-                                            <span>{t.clients.smtpFixRequired}</span>
-                                        </>
-                                    )}
-                                </div>
+                                {/* SMTP Status Badges (Hierarchical Logic) */}
+                                {client.smtpProfiles && client.smtpProfiles.length > 0 ? (
+                                    <>
+                                        <CardBadge
+                                            variant="border"
+                                            color="green"
+                                            icon={<Check className="h-3 w-3" />}
+                                        >
+                                            {t.clients.smtpVerified}
+                                        </CardBadge>
+                                        {client.smtpProfiles.slice(0, 3).map((profile) => (
+                                            <CardBadge
+                                                key={profile.id}
+                                                variant="border"
+                                                color="green"
+                                            >
+                                                {profile.name}
+                                            </CardBadge>
+                                        ))}
+                                        {client.smtpProfiles.length > 3 && (
+                                            <CardBadge variant="border" color="gray">
+                                                +{client.smtpProfiles.length - 3} more
+                                            </CardBadge>
+                                        )}
+                                    </>
+                                ) : (
+                                    <CardBadge
+                                        variant="border"
+                                        color="red"
+                                        icon={<X className="h-3 w-3" />}
+                                    >
+                                        {t.clients.smtpFixRequired}
+                                    </CardBadge>
+                                )}
                             </div>
                             <Link href={`/dashboard/clients/${client.slug}/edit`}>
                                 <Button size="sm" className="gap-2">
@@ -407,38 +431,8 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                         </div>
                     </div>
 
-                    {/* Stats Cards with dashed border */}
+                    {/* Navigation Cards to Sub-Pages (Minimal Redesign) */}
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        {[
-                            { label: t.common.campaigns, count: client._count.campaigns, icon: Mail, color: "indigo" },
-                            { label: t.common.audiences, count: client._count.audiences, icon: Users, color: "violet" },
-                            { label: t.common.templates, count: client._count.templates, icon: FileText, color: "blue" },
-                            { label: t.common.domains, count: client._count.domains, icon: Globe, color: "emerald" }
-                        ].map((stat) => (
-                            <div
-                                key={stat.label}
-                                className="relative group rounded-xl border border-dashed border-muted-foreground/30 p-4 transition-all duration-300 hover:border-muted-foreground/50 overflow-hidden"
-                            >
-                                <div className={cn(
-                                    "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none",
-                                    stat.color === "indigo" ? "bg-indigo-500/[0.05]" :
-                                        stat.color === "violet" ? "bg-violet-500/[0.05]" :
-                                            stat.color === "blue" ? "bg-blue-500/[0.05]" : "bg-emerald-500/[0.05]"
-                                )} />
-                                <div className="relative z-10">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <p className="text-sm text-muted-foreground uppercase tracking-wider font-semibold text-[10px]">{stat.label}</p>
-                                        <stat.icon className="h-4 w-4 text-muted-foreground/50" />
-                                    </div>
-                                    <p className="text-2xl font-bold">{stat.count}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-
-                    {/* Navigation Cards to Sub-Pages */}
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         <NavigationCard
                             href={`/dashboard/clients/${client.slug}/campaigns`}
                             icon={Mail}
@@ -446,6 +440,14 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                             description={t.clients?.campaignsDescription || "Manage email campaigns"}
                             count={client._count.campaigns}
                             color="blue"
+                            variant="minimal"
+                            items={client.campaigns?.slice(0, 3).map(c => ({
+                                id: c.id,
+                                name: c.name,
+                                href: `/dashboard/clients/${client.slug}/campaigns/${c.id}`
+                            })) || []}
+                            maxItems={3}
+                            emptyLabel={t.clients?.noCampaigns || "No campaigns yet"}
                         />
                         <NavigationCard
                             href={`/dashboard/clients/${client.slug}/audiences`}
@@ -454,6 +456,14 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                             description={t.clients?.audiencesDescription || "Manage contacts and segments"}
                             count={client._count.audiences}
                             color="purple"
+                            variant="minimal"
+                            items={client.audiences?.slice(0, 3).map(a => ({
+                                id: a.id,
+                                name: a.name,
+                                href: `/dashboard/clients/${client.slug}/audiences/${a.id}`
+                            })) || []}
+                            maxItems={3}
+                            emptyLabel={t.clients?.noAudiences || "No audiences yet"}
                         />
                         <NavigationCard
                             href={`/dashboard/clients/${client.slug}/templates`}
@@ -462,6 +472,29 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                             description={t.clients?.templatesDescription || "Design email templates"}
                             count={client._count.templates}
                             color="green"
+                            variant="minimal"
+                            items={client.templates?.slice(0, 3).map(tmpl => ({
+                                id: tmpl.id,
+                                name: tmpl.name,
+                                href: `/dashboard/clients/${client.slug}/templates/${tmpl.id}`
+                            })) || []}
+                            maxItems={3}
+                            emptyLabel={t.clients?.noTemplates || "No templates yet"}
+                        />
+                        <NavigationCard
+                            href={`/dashboard/clients/${client.slug}/smtp`}
+                            icon={Server}
+                            title={t.clients.smtpConfiguration}
+                            description={t.clients.smtpConfigDescription}
+                            count={client.smtpProfiles?.length || 0}
+                            color="orange"
+                            variant="minimal"
+                            items={client.smtpProfiles?.slice(0, 3).map(p => ({
+                                id: p.id,
+                                name: p.name
+                            })) || []}
+                            maxItems={3}
+                            emptyLabel={t.clients?.noSmtpProfiles || "No SMTP profiles"}
                         />
                     </div>
                 </div>

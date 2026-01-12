@@ -26,7 +26,19 @@ export default async function AudiencePage({ params }: AudiencePageProps) {
                 select: { id: true, name: true, email: true }
             },
             _count: {
-                select: { contacts: true, segments: true }
+                select: { contacts: true }
+            },
+            segments: {
+                select: {
+                    id: true,
+                    name: true,
+                    campaigns: {
+                        select: { id: true, name: true }
+                    }
+                }
+            },
+            campaigns: {
+                select: { id: true, name: true }
             }
         }
     })) as any;

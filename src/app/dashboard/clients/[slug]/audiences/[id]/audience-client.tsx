@@ -34,8 +34,16 @@ interface Audience {
     };
     _count: {
         contacts: number;
-        segments: number;
     };
+    segments: {
+        id: string;
+        name: string;
+        campaigns?: { id: string; name: string }[];
+    }[];
+    campaigns?: {
+        id: string;
+        name: string;
+    }[];
 }
 
 interface AudienceClientProps {
@@ -62,13 +70,13 @@ export function AudienceClient({ audience: initialAudience }: AudienceClientProp
     }, [audience.client.slug, audience.client.name, setOverride, removeOverride]);
 
     const formatDate = (dateStr: string) => {
-        return new Date(dateStr).toLocaleString('fr-FR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        const date = new Date(dateStr);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        return `${day}/${month}/${year} - ${hours}:${minutes}`;
     };
 
     return (
@@ -76,7 +84,7 @@ export function AudienceClient({ audience: initialAudience }: AudienceClientProp
             <PageHeader
                 title={audience.name}
                 showBack
-                onBack={() => router.push(`/dashboard/clients/${audience.client.slug}`)}
+                onBack={() => router.push(`/dashboard/clients/${audience.client.slug}/audiences`)}
             >
                 <Button
                     size="sm"
@@ -138,51 +146,44 @@ export function AudienceClient({ audience: initialAudience }: AudienceClientProp
                         </div>
                     </div>
 
-                    {/* Stats Cards */}
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="relative group rounded-xl border border-dashed border-muted-foreground/30 p-4 transition-all duration-300 hover:border-muted-foreground/50 overflow-hidden">
-                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none bg-blue-500/[0.05]" />
-                            <div className="relative z-10">
-                                <div className="flex items-center justify-between mb-2">
-                                    <p className="text-sm text-muted-foreground uppercase tracking-wider font-semibold text-[10px]">
-                                        {t.common?.contacts || "Contacts"}
-                                    </p>
-                                    <Users className="h-4 w-4 text-muted-foreground/50" />
-                                </div>
-                                <p className="text-2xl font-bold">{audience._count.contacts}</p>
-                            </div>
-                        </div>
-                        <div className="relative group rounded-xl border border-dashed border-muted-foreground/30 p-4 transition-all duration-300 hover:border-muted-foreground/50 overflow-hidden">
-                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none bg-violet-500/[0.05]" />
-                            <div className="relative z-10">
-                                <div className="flex items-center justify-between mb-2">
-                                    <p className="text-sm text-muted-foreground uppercase tracking-wider font-semibold text-[10px]">
-                                        {t.audiences?.segments || "Segments"}
-                                    </p>
-                                    <LayoutGrid className="h-4 w-4 text-muted-foreground/50" />
-                                </div>
-                                <p className="text-2xl font-bold">{audience._count.segments}</p>
-                            </div>
-                        </div>
-                    </div>
-
                     {/* Navigation Cards */}
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-4 sm:grid-cols-3">
                         <NavigationCard
                             href={`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}/contacts`}
                             icon={Users}
                             title={t.common?.contacts || "Contacts"}
-                            description={t.audiences?.contactsDescription || "Manage audience contacts"}
+                            description={t.audiences?.contactsDescription || "Manage your contact list"}
                             count={audience._count.contacts}
                             color="blue"
+                            variant="minimal"
+                            supportingText={t.audiences?.manageContactsImport || "Import, export or add contacts manually"}
                         />
                         <NavigationCard
                             href={`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}/segments`}
                             icon={LayoutGrid}
                             title={t.audiences?.segments || "Segments"}
-                            description={t.audiences?.segmentsDescription || "Target specific groups"}
-                            count={audience._count.segments}
+                            description={t.audiences?.segmentsDescription || "Create targeted segments"}
+                            count={audience.segments?.length || 0}
                             color="purple"
+                            variant="minimal"
+                            items={audience.segments?.map(s => ({ id: s.id, name: s.name })) || []}
+                            emptyLabel={t.audiences?.noSegments || "No segments yet"}
+                        />
+                        <NavigationCard
+                            href="#"
+                            icon={Calendar}
+                            title={t.tables?.campaigns || "Used In"}
+                            description="Campaigns using this audience"
+                            count={audience.campaigns?.length || 0}
+                            color="orange"
+                            variant="minimal"
+                            items={
+                                // Show segments that are used in campaigns
+                                audience.segments
+                                    ?.filter(s => s.campaigns && s.campaigns.length > 0)
+                                    .map(s => ({ id: s.id, name: s.name })) || []
+                            }
+                            emptyLabel={t.audiences?.notUsedBadge || "Not used"}
                         />
                     </div>
                 </div>

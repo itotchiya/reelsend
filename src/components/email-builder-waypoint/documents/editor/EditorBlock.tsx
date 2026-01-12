@@ -19,7 +19,9 @@ export default function EditorBlock({ id }: EditorBlockProps) {
   const document = useDocument();
   const block = document[id];
   if (!block) {
-    throw new Error('Could not find block');
+    // Gracefully handle missing blocks instead of crashing the editor
+    console.warn(`EditorBlock: Could not find block with id "${id}". Skipping.`);
+    return null;
   }
   return (
     <EditorBlockContext.Provider value={id}>

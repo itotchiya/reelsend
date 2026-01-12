@@ -20,6 +20,8 @@ import {
     UserCog,
     LogOut,
     Sparkles,
+    Server,
+    LayoutGrid,
 } from "lucide-react";
 
 import {
@@ -84,6 +86,7 @@ const navigation: NavGroup[] = [
         items: [
             { titleKey: "campaigns", href: "/dashboard/campaigns", icon: Mail, permission: "campaigns:view" },
             { titleKey: "templates", href: "/dashboard/templates", icon: FileText, permission: "templates:view" },
+            { titleKey: "blockLibrary", href: "/dashboard/blocks", icon: LayoutGrid, permission: "templates:view" },
             { titleKey: "promptBuilder", href: "/dashboard/promptbuilder", icon: Sparkles, permission: "templates:create" },
             { titleKey: "audiences", href: "/dashboard/audiences", icon: Users, permission: "audiences:view" },
         ],
@@ -92,8 +95,8 @@ const navigation: NavGroup[] = [
         titleKey: "management",
         items: [
             { titleKey: "clients", href: "/dashboard/clients", icon: Building2, permission: "clients:view" },
-            { titleKey: "domains", href: "/dashboard/domains", icon: Globe, permission: "domains:view" },
             { titleKey: "analytics", href: "/dashboard/analytics", icon: BarChart3, permission: "analytics:view" },
+            { titleKey: "postalConfig", href: "/dashboard/postal", icon: Server, permission: "settings:view" },
         ],
     },
     {
@@ -131,6 +134,7 @@ export function AppSidebar() {
         emailMarketing: t.nav?.emailMarketing || "Email Marketing",
         campaigns: t.common.campaigns,
         templates: t.common.templates,
+        blockLibrary: t.blocks?.title || "Block Library",
         promptBuilder: t.promptBuilder?.title || "Prompt Builder",
         audiences: t.common.audiences,
         management: t.nav?.management || "Management",
@@ -138,6 +142,7 @@ export function AppSidebar() {
         domains: t.common.domains,
         analytics: t.common.analytics,
         settings: t.common.settings,
+        postalConfig: "Postal Config",
         rolesPermissions: t.common.rolesPermissions,
         team: t.common.team,
     };
@@ -356,9 +361,8 @@ function DashboardBreadcrumb() {
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    // Check if we are on a template editor page: /dashboard/clients/[slug]/templates/[id]
-    // We want to match /templates/[id] but NOT /templates (list)
-    const isEditor = /\/templates\/[^/]+$/.test(pathname);
+    // Check if we are on a template editor or block editor page
+    const isEditor = /\/templates\/[^/]+$/.test(pathname) || /\/blocks\/[^/]+$/.test(pathname);
 
     if (isEditor) {
         return (

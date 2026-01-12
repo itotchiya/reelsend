@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import * as acelle from "@/lib/acelle";
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -69,6 +70,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             gender,
             maritalStatus,
             metadata,
+            status,
         } = body;
 
         const updated = await db.contact.update({
@@ -85,8 +87,28 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
                 ...(gender !== undefined && { gender }),
                 ...(maritalStatus !== undefined && { maritalStatus }),
                 ...(metadata !== undefined && { metadata }),
+                ...(status !== undefined && { status }),
             }
         });
+
+        // Sync with Acelle if subscriber ID exists
+        if (contact.acelleSubscriberId) {
+            try {
+                await acelle.updateSubscriber(contact.acelleSubscriberId, {
+                    email: updated.email,
+                    FIRST_NAME: updated.firstName || undefined,
+                    LAST_NAME: updated.lastName || undefined,
+                    PHONE: updated.phone || undefined,
+                    COUNTRY: updated.country || undefined,
+                    CITY: updated.city || undefined,
+                    ADDRESS: updated.street || undefined,
+                    status: updated.status === "ACTIVE" ? "subscribed" : "unsubscribed",
+                });
+                console.log(`[ACELLE] Updated subscriber ${contact.acelleSubscriberId}`);
+            } catch (acelleError) {
+                console.error("[ACELLE] Subscriber update error:", acelleError);
+            }
+        }
 
         revalidatePath(`/dashboard/clients/${contact.audience.client.slug}/audiences/${contact.audienceId}/contacts`);
 
@@ -119,6 +141,16 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
         if (!contact) {
             return new NextResponse("Contact not found", { status: 404 });
+        }
+
+        // Delete from Acelle first if subscriber ID exists
+        if (contact.acelleSubscriberId) {
+            try {
+                await acelle.deleteSubscriber(contact.acelleSubscriberId);
+                console.log(`[ACELLE] Deleted subscriber ${contact.acelleSubscriberId}`);
+            } catch (acelleError) {
+                console.error("[ACELLE] Subscriber delete error:", acelleError);
+            }
         }
 
         await db.contact.delete({ where: { id } });

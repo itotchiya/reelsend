@@ -203,8 +203,8 @@ export function ImportContactsDialog({
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
-                <DialogHeader>
+            <DialogContent className="!w-[calc(100vw-2rem)] !max-w-2xl h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+                <DialogHeader className="shrink-0 p-4 sm:p-6 pb-4 border-b">
                     <DialogTitle>
                         {step === "upload" && (t.contacts?.importTitle || "Import Contacts")}
                         {step === "mapping" && (t.contacts?.mapColumns || "Map Columns")}
@@ -217,7 +217,8 @@ export function ImportContactsDialog({
                     </DialogDescription>
                 </DialogHeader>
 
-                <ScrollArea className="flex-1 pr-4">
+                {/* Scrollable content area */}
+                <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6">
                     {/* Step 1: Upload */}
                     {step === "upload" && (
                         <div className="py-6">
@@ -243,10 +244,10 @@ export function ImportContactsDialog({
 
                     {/* Step 2: Column Mapping */}
                     {step === "mapping" && parsedCSV && (
-                        <div className="py-4 space-y-4">
+                        <div className="space-y-4">
                             {/* File info */}
                             <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                                <FileText className="h-5 w-5 text-muted-foreground" />
+                                <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate">{file?.name}</p>
                                     <p className="text-xs text-muted-foreground">
@@ -258,20 +259,19 @@ export function ImportContactsDialog({
                             {/* Email required warning */}
                             {!isEmailMapped && (
                                 <div className="flex items-center gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-600">
-                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertCircle className="h-4 w-4 shrink-0" />
                                     <span className="text-sm">{t.contacts?.emailColumnRequired || "Email column is required"}</span>
                                 </div>
                             )}
 
-                            {/* Column mapping */}
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                                     {t.contacts?.mapColumns || "Map Columns"}
                                 </p>
                                 {parsedCSV.headers.map((header) => (
-                                    <div key={header} className="flex items-center gap-4">
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium truncate">{header}</p>
+                                    <div key={header} className="flex flex-col gap-2 p-3 rounded-lg bg-muted/30">
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-medium">{header}</p>
                                             <p className="text-xs text-muted-foreground truncate">
                                                 {t.contacts?.sample || "Sample"}: {parsedCSV.rows[0]?.[parsedCSV.headers.indexOf(header)] || "—"}
                                             </p>
@@ -292,12 +292,12 @@ export function ImportContactsDialog({
                                                 setColumnMapping(newMapping);
                                             }}
                                         >
-                                            <SelectTrigger className="w-48">
+                                            <SelectTrigger className="w-full">
                                                 <SelectValue placeholder={t.contacts?.selectField || "Select field"} />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="__skip__">
-                                                    <span className="text-muted-foreground">{t.contacts?.customFieldMetadata || "→ Custom Field (metadata)"}</span>
+                                                    <span className="text-muted-foreground">{t.contacts?.customFieldMetadata || "→ Custom Field"}</span>
                                                 </SelectItem>
                                                 {getStandardFields(t).map((f) => (
                                                     <SelectItem key={f.key} value={f.key}>
@@ -330,14 +330,14 @@ export function ImportContactsDialog({
 
                     {/* Step 3: Preview */}
                     {step === "preview" && (
-                        <div className="py-4 space-y-4">
+                        <div className="space-y-4">
                             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                                 {t.contacts?.previewFirstRows || "Preview (first 5 rows)"}
                             </p>
                             <div className="space-y-2">
                                 {previewData.map((contact, idx) => (
                                     <div key={idx} className="p-3 rounded-lg border bg-card text-sm">
-                                        <div className="flex items-center gap-2 mb-2">
+                                        <div className="flex flex-wrap items-center gap-2 mb-2">
                                             <span className="font-semibold">{contact.email}</span>
                                             {contact.firstName && <span className="text-muted-foreground">• {contact.firstName} {contact.lastName}</span>}
                                         </div>
@@ -358,9 +358,9 @@ export function ImportContactsDialog({
                             </p>
                         </div>
                     )}
-                </ScrollArea>
+                </div>
 
-                <DialogFooter className="pt-4 border-t">
+                <DialogFooter className="shrink-0 p-4 sm:p-6 pt-4 border-t flex-row justify-end gap-2">
                     {step === "upload" && (
                         <Button variant="ghost" onClick={() => handleOpenChange(false)}>
                             {t.common?.cancel || "Cancel"}
@@ -373,7 +373,7 @@ export function ImportContactsDialog({
                                 {t.common?.back || "Back"}
                             </Button>
                             <Button onClick={() => setStep("preview")} disabled={!isEmailMapped}>
-                                {t.common?.next || "Preview"}
+                                {t.common?.next || "Next"}
                                 <ArrowRight className="h-4 w-4 ml-2" />
                             </Button>
                         </>

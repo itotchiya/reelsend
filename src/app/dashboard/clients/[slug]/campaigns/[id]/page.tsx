@@ -19,8 +19,16 @@ export default async function CampaignPage({ params }: PageProps) {
                     _count: {
                         select: { contacts: true },
                     },
+                    segments: {
+                        include: {
+                            _count: { select: { contacts: true } },
+                            campaigns: { select: { id: true, name: true } },
+                            createdBy: { select: { id: true, name: true, email: true } },
+                        },
+                    },
                 },
             },
+            segment: true,
             analytics: true,
         },
     });
@@ -29,7 +37,8 @@ export default async function CampaignPage({ params }: PageProps) {
         notFound();
     }
 
-    const [templates, audiences] = await Promise.all([
+    // Fetch templates, audiences with segments, and SMTP profiles
+    const [templates, audiences, smtpProfiles] = await Promise.all([
         db.template.findMany({
             where: { clientId: campaign.clientId },
             orderBy: { createdAt: "desc" },
@@ -37,8 +46,48 @@ export default async function CampaignPage({ params }: PageProps) {
         db.audience.findMany({
             where: { clientId: campaign.clientId },
             include: {
+                client: {
+                    select: {
+                        id: true,
+                        name: true,
+                        slug: true,
+                        logo: true,
+                        brandColors: true,
+                    },
+                },
                 _count: {
-                    select: { contacts: true },
+                    select: { contacts: true, segments: true },
+                },
+                campaigns: {
+                    select: { id: true, name: true },
+                },
+                segments: {
+                    include: {
+                        _count: { select: { contacts: true } },
+                        campaigns: { select: { id: true, name: true } },
+                        createdBy: { select: { id: true, name: true, email: true } },
+                    },
+                },
+            },
+            orderBy: { createdAt: "desc" },
+        }),
+        // Fetch SMTP profiles - client-specific and system-wide
+        db.smtpProfile.findMany({
+            where: {
+                OR: [
+                    { clientId: campaign.clientId },
+                    { clientId: null }, // System-wide profiles
+                ],
+            },
+            include: {
+                campaigns: { select: { id: true, name: true } },
+                client: {
+                    select: {
+                        id: true,
+                        name: true,
+                        slug: true,
+                        brandColors: true,
+                    },
                 },
             },
             orderBy: { createdAt: "desc" },
@@ -47,9 +96,10 @@ export default async function CampaignPage({ params }: PageProps) {
 
     return (
         <CampaignClient
-            initialCampaign={campaign}
+            initialCampaign={campaign as any}
             templates={templates}
-            audiences={audiences}
+            audiences={audiences as any}
+            smtpProfiles={smtpProfiles as any}
         />
     );
 }

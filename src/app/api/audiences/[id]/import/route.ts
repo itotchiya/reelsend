@@ -34,6 +34,16 @@ export async function POST(req: Request, { params }: RouteParams) {
             return new NextResponse("No file uploaded", { status: 400 });
         }
 
+        // Verify audience exists
+        const audience = await db.audience.findUnique({
+            where: { id: audienceId },
+            select: { id: true }
+        });
+
+        if (!audience) {
+            return new NextResponse("Audience not found", { status: 404 });
+        }
+
         // Parse mapping (if provided by new UI)
         let columnMapping: Record<string, string> = {};
         if (mappingStr) {

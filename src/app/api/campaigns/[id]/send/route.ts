@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { sendCampaign } from "@/lib/mailgun";
-import { Contact } from "@prisma/client";
+import { sendBulkCampaignEmails, getSmtpConfigFromDb, getDefaultFromEmail } from "@/lib/smtp";
 
 export async function POST(
     request: NextRequest,
@@ -22,22 +21,7 @@ export async function POST(
             include: {
                 client: true,
                 template: true,
-                audience: {
-                    include: {
-                        contacts: {
-                            where: { status: "ACTIVE" },
-                        },
-                    },
-                },
-                segment: {
-                    include: {
-                        contacts: {
-                            include: {
-                                contact: true,
-                            },
-                        },
-                    },
-                },
+                audience: true,
             },
         });
 
@@ -54,25 +38,91 @@ export async function POST(
             return NextResponse.json({ error: "Campaign template is required" }, { status: 400 });
         }
 
-        // Get recipients from segment or audience
-        let contacts: Contact[] = [];
-
-        if (campaign.segment?.contacts) {
-            // Get contacts from segment
-            contacts = campaign.segment.contacts
-                .map((sc) => sc.contact)
-                .filter((c): c is Contact => c !== null && c.status === "ACTIVE");
-        } else if (campaign.audience?.contacts) {
-            contacts = campaign.audience.contacts;
+        if (!campaign.audience) {
+            return NextResponse.json({ error: "Audience is required" }, { status: 400 });
         }
+
+        // Get all contacts from the audience
+        const contacts = await db.contact.findMany({
+            where: {
+                audienceId: campaign.audienceId!,
+                status: "ACTIVE",
+            },
+            select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+                phone: true,
+            },
+        });
 
         if (contacts.length === 0) {
-            return NextResponse.json({ error: "No recipients found" }, { status: 400 });
+            return NextResponse.json(
+                { error: "Audience has no active contacts" },
+                { status: 400 }
+            );
         }
 
-        // Prepare from address
+        // 1. Get campaign's linked SMTP profile for this client
+        // We look for any profile associated with the client
+        const smtpProfile = await db.smtpProfile.findFirst({
+            where: { clientId: campaign.clientId }
+        });
+
+        let smtpConfig: any;
+
+        if (smtpProfile) {
+            console.log(`[SMTP] Found linked profile "${smtpProfile.name}" for client ${campaign.clientId}. Performing lazy update.`);
+            // LAZY UPDATE: Copy profile config to client's SMTP fields
+            const updatedClient = await db.client.update({
+                where: { id: campaign.clientId },
+                data: {
+                    smtpHost: smtpProfile.host,
+                    smtpPort: smtpProfile.port,
+                    smtpUser: smtpProfile.user,
+                    smtpPassword: smtpProfile.password,
+                    smtpSecure: smtpProfile.secure,
+                    smtpVerified: true,
+                    smtpLastTested: new Date(),
+                }
+            });
+
+            smtpConfig = {
+                host: smtpProfile.host,
+                port: smtpProfile.port,
+                user: smtpProfile.user,
+                password: smtpProfile.password,
+                secure: smtpProfile.secure,
+            };
+        } else {
+            console.log(`[SMTP] No linked profile for client ${campaign.clientId}. Using existing client config or system fallback.`);
+            // Fallback to client's direct SMTP or system-wide
+            const dbConfig = await getSmtpConfigFromDb();
+
+            // If client has its own config, use it, otherwise use system-wide
+            smtpConfig = {
+                host: campaign.client.smtpHost || dbConfig.host,
+                port: campaign.client.smtpPort || dbConfig.port,
+                user: campaign.client.smtpUser || dbConfig.user,
+                password: campaign.client.smtpPassword || dbConfig.password,
+                secure: campaign.client.smtpSecure !== null ? campaign.client.smtpSecure : dbConfig.secure,
+            };
+        }
+
+        if (!smtpConfig.host || !smtpConfig.user || !smtpConfig.password) {
+            return NextResponse.json(
+                { error: "SMTP is not configured. Please configure SMTP settings in Settings > Postal Config." },
+                { status: 400 }
+            );
+        }
+
+        // Prepare from address (from database, fallback to campaign, fallback to env)
         const fromName = campaign.fromName || campaign.client.name;
-        const fromEmail = campaign.fromEmail || `noreply@${process.env.MAILGUN_DOMAIN}`;
+        const defaultFromEmail = await getDefaultFromEmail();
+        const fromEmail = campaign.fromEmail || defaultFromEmail || "noreply@reelsend.com";
+
+        console.log(`[SMTP] Using from email: ${fromEmail}, from name: ${fromName}`);
 
         // Update campaign status to SENDING
         await db.campaign.update({
@@ -80,76 +130,64 @@ export async function POST(
             data: { status: "SENDING" },
         });
 
-        // Prepare recipients with variables for personalization
-        const recipients = contacts.map((contact) => ({
-            email: contact.email,
-            variables: {
-                firstName: contact.firstName || "",
-                lastName: contact.lastName || "",
-                email: contact.email,
-                contactId: contact.id,
+        console.log(`[SMTP] Starting campaign ${campaign.name} to ${contacts.length} recipients`);
+
+        // Send emails directly via SMTP
+        const sendResult = await sendBulkCampaignEmails(
+            contacts.map(c => ({
+                email: c.email,
+                firstName: c.firstName,
+                lastName: c.lastName,
+                phone: c.phone,
+            })),
+            {
+                from: fromEmail,
+                fromName: fromName,
+                subject: campaign.subject,
+                html: campaign.template.htmlContent,
+                replyTo: fromEmail,
             },
-        }));
+            smtpConfig
+        );
 
-        // Send campaign via Mailgun
-        const result = await sendCampaign({
-            campaignId: id,
-            recipients,
-            fromName,
-            fromEmail,
-            subject: campaign.subject,
-            html: campaign.template.htmlContent,
-            tags: [campaign.client.slug, campaign.name.replace(/\s+/g, "-").toLowerCase()],
-        });
-
-        // Update campaign with results
-        const finalStatus = result.failed === 0 ? "COMPLETED" : result.sent > 0 ? "COMPLETED" : "FAILED";
-
+        // Update campaign status
+        const finalStatus = sendResult.failed === sendResult.total ? "FAILED" : "COMPLETED";
         await db.campaign.update({
             where: { id },
             data: {
                 status: finalStatus,
                 sentAt: new Date(),
+                startedById: session.user.id,
             },
         });
 
-        // Create or update analytics
+        // Create/update analytics record
         await db.campaignAnalytics.upsert({
             where: { campaignId: id },
             update: {
-                sent: result.sent,
+                sent: sendResult.sent,
+                delivered: sendResult.sent, // Assume delivered = sent for now
             },
             create: {
                 campaignId: id,
-                sent: result.sent,
-                delivered: 0,
+                sent: sendResult.sent,
+                delivered: sendResult.sent,
                 opened: 0,
                 clicked: 0,
-                bounced: result.failed,
+                bounced: sendResult.failed,
                 complained: 0,
                 unsubscribed: 0,
             },
         });
 
-        // Log send events for each recipient
-        const sentResults = result.results.filter((r) => r.success);
-        if (sentResults.length > 0) {
-            await db.campaignEvent.createMany({
-                data: sentResults.map((r) => ({
-                    campaignId: id,
-                    contactId: contacts.find((c) => c.email === r.email)?.id || "",
-                    type: "SENT" as const,
-                    metadata: { messageId: r.messageId },
-                })),
-                skipDuplicates: true,
-            });
-        }
+        console.log(`[SMTP] Campaign complete: ${sendResult.sent}/${sendResult.total} sent`);
 
         return NextResponse.json({
             success: true,
-            sent: result.sent,
-            failed: result.failed,
-            status: finalStatus,
+            message: `Campaign sent: ${sendResult.sent}/${sendResult.total} emails delivered`,
+            sent: sendResult.sent,
+            failed: sendResult.failed,
+            total: sendResult.total,
         });
     } catch (error: any) {
         console.error("[CAMPAIGN_SEND] Error:", error);
@@ -159,3 +197,4 @@ export async function POST(
         );
     }
 }
+

@@ -358,26 +358,70 @@ export default function BlockLibraryDrawer() {
 
   // Add block to email document
   const handleAddBlock = (block: SavedBlock) => {
-    const blockContent = block.jsonContent;
+    const savedContent = block.jsonContent;
 
-    // Generate a unique ID for this block instance
+    // If it's a full document (wrapped in EmailLayout), we need to extract the actual block(s)
+    if (savedContent.root && savedContent.root.type === 'EmailLayout') {
+      const currentDoc = { ...document };
+      const rootBlock = currentDoc.root;
+      if (!rootBlock || rootBlock.type !== 'EmailLayout') return;
+
+      const childrenIds = savedContent.root.data?.childrenIds || [];
+      const idMap: Record<string, string> = {};
+
+      // 1. Generate new unique IDs for every block in the saved document
+      Object.keys(savedContent).forEach(oldId => {
+        if (oldId === 'root') return;
+        const newId = `block-${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${oldId}`;
+        idMap[oldId] = newId;
+      });
+
+      // 2. Recursively copy all blocks into the current document while updating their childrenIds
+      Object.keys(savedContent).forEach(oldId => {
+        if (oldId === 'root') return;
+        const newId = idMap[oldId];
+        const originalBlock = savedContent[oldId];
+
+        // Clone the block
+        const clonedBlock = JSON.parse(JSON.stringify(originalBlock));
+
+        // Update children references to use new IDs
+        if (clonedBlock.data?.childrenIds) {
+          clonedBlock.data.childrenIds = clonedBlock.data.childrenIds.map((childId: string) => idMap[childId] || childId);
+        }
+
+        currentDoc[newId] = clonedBlock;
+      });
+
+      // 3. Add the top-level blocks from the saved root to the current template's root
+      const newTopLevelIds = childrenIds.map((oldId: string) => idMap[oldId]).filter(Boolean);
+      const currentChildrenIds = rootBlock.data?.childrenIds || [];
+
+      currentDoc.root = {
+        ...rootBlock,
+        data: {
+          ...rootBlock.data,
+          childrenIds: [...currentChildrenIds, ...newTopLevelIds],
+        },
+      };
+
+      setDocument(currentDoc);
+      return;
+    }
+
+    // Fallback for legacy unwrapped blocks
     const blockId = `block-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-
-    // Get current document
     const currentDoc = { ...document };
     const rootBlock = currentDoc.root;
 
     if (!rootBlock || rootBlock.type !== 'EmailLayout') return;
 
-    // Add the block content to the document with the new ID
     const newBlock: TEditorBlock = {
-      type: blockContent.type || 'Container',
-      data: blockContent.data || blockContent,
+      type: savedContent.type || 'Container',
+      data: savedContent.data || savedContent,
     };
 
     currentDoc[blockId] = newBlock;
-
-    // Add block ID to root's childrenIds
     const currentChildrenIds = rootBlock.data?.childrenIds || [];
     currentDoc.root = {
       ...rootBlock,
@@ -396,7 +440,50 @@ export default function BlockLibraryDrawer() {
       throw new Error('No block selected');
     }
 
-    const blockData = document[selectedBlockId];
+    // Create a new document structure for this block
+    const jsonContent: any = {
+      root: {
+        type: 'EmailLayout',
+        data: {
+          backdropColor: '#F5F5F5',
+          canvasColor: '#FFFFFF',
+          textColor: '#262626',
+          fontFamily: 'MODERN_SANS',
+          childrenIds: ['main-block'],
+        },
+      },
+    };
+
+    // Recursive function to collect all descendant blocks
+    // Returns true if block was successfully collected, false otherwise
+    const collectBlocks = (blockId: string, targetId: string): boolean => {
+      const block = document[blockId];
+      if (!block) return false;
+
+      // Clone the block
+      const clonedBlock = JSON.parse(JSON.stringify(block));
+
+      // If it has children, collect them recursively
+      const childrenIds = clonedBlock.data?.childrenIds || [];
+      if (childrenIds.length > 0) {
+        const newChildrenIds: string[] = [];
+        childrenIds.forEach((childId: string, index: number) => {
+          const newChildId = `${targetId}-child-${index}`;
+          // Only add to newChildrenIds if the child was successfully collected
+          if (collectBlocks(childId, newChildId)) {
+            newChildrenIds.push(newChildId);
+          }
+        });
+        clonedBlock.data.childrenIds = newChildrenIds;
+      }
+
+      // Add to jsonContent AFTER processing children
+      jsonContent[targetId] = clonedBlock;
+      return true;
+    };
+
+    // Start recursion from the selected block
+    collectBlocks(selectedBlockId, 'main-block');
 
     const response = await fetch('/api/saved-blocks', {
       method: 'POST',
@@ -404,7 +491,7 @@ export default function BlockLibraryDrawer() {
       body: JSON.stringify({
         name,
         category,
-        jsonContent: blockData,
+        jsonContent,
         clientId: isGlobal ? null : clientId,
       }),
     });

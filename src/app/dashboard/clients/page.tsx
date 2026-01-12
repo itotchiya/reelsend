@@ -20,6 +20,12 @@ export default async function ClientsPage() {
     // Fetch all clients with counts
     const clients = await db.client.findMany({
         include: {
+            smtpProfiles: {
+                select: {
+                    id: true,
+                    name: true,
+                },
+            },
             _count: {
                 select: {
                     audiences: true,
@@ -34,11 +40,13 @@ export default async function ClientsPage() {
     });
 
     // Serialize dates and ensure types match
-    const serializedClients = clients.map((client) => ({
+    const serializedClients = clients.map((client: any) => ({
         ...client,
         createdAt: client.createdAt.toISOString(),
         updatedAt: client.updatedAt.toISOString(),
         brandColors: client.brandColors as { primary?: string; secondary?: string } | null,
+        smtpProfiles: client.smtpProfiles,
+        _count: client._count,
     }));
 
     // Check user permissions for actions

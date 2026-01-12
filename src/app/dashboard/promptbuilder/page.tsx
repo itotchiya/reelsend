@@ -6,11 +6,8 @@ import { useSession } from "next-auth/react";
 import { useI18n } from "@/lib/i18n";
 import { useSidebar } from "@/components/ui/sidebar";
 import {
-    Select,
     SelectContent,
     SelectItem,
-    SelectTrigger,
-    SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -19,20 +16,18 @@ import { AnimatedGradient } from "@/components/ui-kit/animated-gradient";
 import { GradientInputContainer, PromptInputArea } from "@/components/ui-kit/gradient-input-container";
 import { ExamplePromptCard, EXAMPLE_PROMPTS } from "@/components/ui-kit/example-prompt-card";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
+import { ModelSelectorDialog, DEFAULT_MODEL, SelectedModel } from "@/components/ui-kit/model-selector-dialog";
+import { StyleSelectorDialog, DEFAULT_STYLE } from "@/components/ui-kit/style-selector-dialog";
+import { ClientSelectorDialog } from "@/components/ui-kit/client-selector-dialog";
 
 interface Client {
     id: string;
     name: string;
     slug: string;
+    logo?: string | null;
 }
 
-const TEMPLATE_STYLES = [
-    { value: "default", labelKey: "default" },
-    { value: "colored", labelKey: "colored" },
-    { value: "bento", labelKey: "bento" },
-    { value: "simple", labelKey: "simple" },
-    { value: "minimal", labelKey: "minimal" },
-];
+
 
 // Loading steps for the generation process
 const LOADING_STEPS = [
@@ -67,8 +62,9 @@ export default function PromptBuilderPage() {
     const isMac = useIsMac();
 
     const [prompt, setPrompt] = useState("");
-    const [style, setStyle] = useState("default");
+    const [style, setStyle] = useState(DEFAULT_STYLE);
     const [clientId, setClientId] = useState<string | null>(null);
+    const [selectedModel, setSelectedModel] = useState<SelectedModel>(DEFAULT_MODEL);
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingClients, setLoadingClients] = useState(true);
@@ -143,13 +139,19 @@ export default function PromptBuilderPage() {
         setLoading(true);
         setSuccess(false);
         try {
-            const res = await fetch("/api/prompt-builder", {
+            // Determine the API endpoint based on the selected provider
+            const apiEndpoint = selectedModel.provider === "openai"
+                ? "/api/prompt-builder-openai"
+                : "/api/prompt-builder";
+
+            const res = await fetch(apiEndpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     prompt: prompt.trim(),
                     style,
                     clientId,
+                    model: selectedModel.model,
                 }),
             });
 
@@ -253,41 +255,29 @@ export default function PromptBuilderPage() {
                         </p>
                     </div>
 
-                    {/* Dropdowns - Full width, responsive grid */}
-                    <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                        {/* Style Selector - Full width on mobile, 50% on desktop */}
-                        <Select value={style} onValueChange={setStyle}>
-                            <SelectTrigger className="w-full h-11 text-sm">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {TEMPLATE_STYLES.map((s) => (
-                                    <SelectItem key={s.value} value={s.value}>
-                                        {getStyleLabel(s.labelKey)}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                    {/* Model Selector + Dropdowns - Full width grid */}
+                    <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                        {/* AI Model Selector */}
+                        <ModelSelectorDialog
+                            selectedModel={selectedModel}
+                            onModelSelect={setSelectedModel}
+                            className="w-full"
+                        />
+                        {/* Style Selector Dialog */}
+                        <StyleSelectorDialog
+                            selectedStyle={style}
+                            onStyleSelect={setStyle}
+                            className="w-full"
+                        />
 
-                        {/* Client Selector - Full width on mobile, 50% on desktop */}
-                        <Select
-                            value={clientId || "__none__"}
-                            onValueChange={(v) => setClientId(v === "__none__" ? null : v)}
-                        >
-                            <SelectTrigger className="w-full h-11 text-sm">
-                                <SelectValue placeholder={loadingClients ? "Loading..." : t.promptBuilder?.noClient || "No client"} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="__none__">
-                                    <span className="text-muted-foreground">{t.promptBuilder?.noClient || "No client (generic)"}</span>
-                                </SelectItem>
-                                {clients.map((client) => (
-                                    <SelectItem key={client.id} value={client.id}>
-                                        {client.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        {/* Client Selector Dialog */}
+                        <ClientSelectorDialog
+                            clients={clients}
+                            selectedClientId={clientId}
+                            onClientSelect={setClientId}
+                            loading={loadingClients}
+                            className="w-full"
+                        />
                     </div>
 
                     {/* Gradient Input Container with Input Area */}

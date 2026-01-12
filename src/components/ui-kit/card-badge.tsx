@@ -3,7 +3,7 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
-import { X } from "lucide-react";
+import { X, Check } from "lucide-react";
 import { getContrastColor } from "@/lib/colors";
 import { useI18n } from "@/lib/i18n";
 
@@ -359,11 +359,13 @@ export function SmtpBadge({
     verified,
     verifiedLabel,
     unverifiedLabel,
+    profileName,
     ...props
 }: Omit<CardBadgeProps, "variant" | "color" | "children" | "showDot"> & {
     verified: boolean;
     verifiedLabel?: string;
     unverifiedLabel?: string;
+    profileName?: string | null;
 }) {
     const { t } = useI18n();
     const vLabel = verifiedLabel || t.cards?.client?.smtpVerified || "SMTP Verified";
@@ -372,11 +374,11 @@ export function SmtpBadge({
     return (
         <CardBadge
             variant="border"
-            color={verified ? "green" : "red"}
-            showDot
+            color={profileName ? "green" : (verified ? "green" : "red")}
+            icon={!profileName ? (verified ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />) : undefined}
             {...props}
         >
-            {verified ? vLabel : uvLabel}
+            {profileName || (verified ? vLabel : uvLabel)}
         </CardBadge>
     );
 }

@@ -58,6 +58,20 @@ export default async function ClientDetailPage({ params }: PageProps) {
                 take: 10,
                 orderBy: { testedAt: "desc" },
             },
+            smtpProfiles: {
+                select: {
+                    id: true,
+                    name: true,
+                    host: true,
+                    port: true,
+                    user: true,
+                    password: true,
+                    secure: true,
+                    createdAt: true,
+                    updatedAt: true,
+                },
+                orderBy: { createdAt: "desc" },
+            },
         },
     });
 
@@ -66,31 +80,38 @@ export default async function ClientDetailPage({ params }: PageProps) {
     }
 
     // Serialize dates
+    const clientData = client as any;
     const serializedClient = {
-        ...client,
-        createdAt: client.createdAt.toISOString(),
-        updatedAt: client.updatedAt.toISOString(),
-        audiences: client.audiences.map((a) => ({
+        ...clientData,
+        createdAt: clientData.createdAt.toISOString(),
+        updatedAt: clientData.updatedAt.toISOString(),
+        audiences: clientData.audiences.map((a: any) => ({
             ...a,
             createdAt: a.createdAt.toISOString(),
             updatedAt: a.updatedAt.toISOString(),
         })),
-        campaigns: client.campaigns.map((c) => ({
+        campaigns: clientData.campaigns.map((c: any) => ({
             ...c,
             createdAt: c.createdAt.toISOString(),
             updatedAt: c.updatedAt.toISOString(),
             scheduledAt: c.scheduledAt?.toISOString() || null,
             sentAt: c.sentAt?.toISOString() || null,
         })),
-        templates: client.templates.map((t) => ({
+        templates: clientData.templates.map((t: any) => ({
             ...t,
             createdAt: t.createdAt.toISOString(),
             updatedAt: t.updatedAt.toISOString(),
         })),
-        smtpTestLogs: client.smtpTestLogs.map((log) => ({
+        smtpTestLogs: clientData.smtpTestLogs.map((log: any) => ({
             ...log,
             testedAt: log.testedAt.toISOString(),
         })),
+        smtpProfiles: clientData.smtpProfiles.map((p: any) => ({
+            ...p,
+            createdAt: p.createdAt.toISOString(),
+            updatedAt: p.updatedAt.toISOString(),
+        })),
+        _count: clientData._count,
     };
 
     // Check user permissions for actions

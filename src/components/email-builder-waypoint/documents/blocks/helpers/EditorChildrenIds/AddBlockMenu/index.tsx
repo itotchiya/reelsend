@@ -5,6 +5,7 @@ import { TEditorBlock } from '../../../../editor/core';
 import BlocksMenu from './BlocksMenu';
 import DividerButton from './DividerButton';
 import PlaceholderButton from './PlaceholderButton';
+import { AIBlockDialog } from './AIBlockDialog';
 
 type Props = {
   placeholder?: boolean;
@@ -13,6 +14,7 @@ type Props = {
 export default function AddBlockButton({ onSelect, placeholder }: Props) {
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [buttonElement, setButtonElement] = useState<HTMLElement | null>(null);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
 
   const handleButtonClick = () => {
     setMenuAnchorEl(buttonElement);
@@ -26,12 +28,27 @@ export default function AddBlockButton({ onSelect, placeholder }: Props) {
     }
   };
 
+  const handleAiClick = () => {
+    setMenuAnchorEl(null);
+    setAiDialogOpen(true);
+  };
+
   return (
     <>
       <div ref={setButtonElement} style={{ position: 'relative' }}>
         {renderButton()}
       </div>
-      <BlocksMenu anchorEl={menuAnchorEl} setAnchorEl={setMenuAnchorEl} onSelect={onSelect} />
+      <BlocksMenu
+        anchorEl={menuAnchorEl}
+        setAnchorEl={setMenuAnchorEl}
+        onSelect={onSelect}
+        onAiClick={handleAiClick}
+      />
+      <AIBlockDialog
+        open={aiDialogOpen}
+        onOpenChange={setAiDialogOpen}
+        onInsert={onSelect}
+      />
     </>
   );
 }

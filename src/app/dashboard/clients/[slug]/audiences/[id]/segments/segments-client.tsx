@@ -107,7 +107,6 @@ export function SegmentsClient({ audience, segments: initialSegments }: Segments
                                 <SegmentCard
                                     key={segment.id}
                                     segment={segment}
-                                    clientSlug={audience.client.slug}
                                     onEdit={() => {
                                         // TODO: Implement edit page
                                         toast.info("Edit coming soon");

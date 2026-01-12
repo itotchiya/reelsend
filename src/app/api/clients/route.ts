@@ -20,6 +20,13 @@ export async function GET() {
     try {
         const clients = await db.client.findMany({
             include: {
+                smtpProfiles: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                    take: 1
+                },
                 _count: {
                     select: {
                         audiences: true,

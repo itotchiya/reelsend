@@ -37,6 +37,17 @@ export async function POST(req: Request) {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    // Verify the user exists in the database
+    const userExists = await db.user.findUnique({
+        where: { id: session.user.id },
+        select: { id: true }
+    });
+
+    if (!userExists) {
+        console.error("[AUDIENCE_POST] User ID from session doesn't exist in database:", session.user.id);
+        return new NextResponse("User not found in database. Please log out and log back in.", { status: 401 });
+    }
+
     try {
         const body = await req.json();
         const { name, description, clientId } = body;
@@ -45,11 +56,23 @@ export async function POST(req: Request) {
             return new NextResponse("Missing required fields", { status: 400 });
         }
 
+        // Fetch client for revalidation path
+        const client = await db.client.findUnique({
+            where: { id: clientId },
+            select: { slug: true }
+        });
+
+        if (!client) {
+            return new NextResponse("Client not found", { status: 404 });
+        }
+
+        // Create audience in database
         const audience = await db.audience.create({
             data: {
                 name,
                 description,
-                clientId
+                clientId,
+                createdById: session.user.id
             },
             include: {
                 client: { select: { slug: true } }

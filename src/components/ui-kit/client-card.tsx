@@ -3,9 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Lock, Unlock } from "lucide-react";
+import { Lock, Unlock, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CardBadge, SmtpBadge } from "./card-badge";
+import { CardBadge } from "./card-badge";
 import { StandardCardActions } from "./card-actions";
 import { getContrastColor } from "@/lib/colors";
 import { useI18n } from "@/lib/i18n";
@@ -33,6 +33,7 @@ export interface ClientCardData {
     status: string;
     isPublic: boolean;
     smtpVerified: boolean;
+    smtpProfiles?: { id: string; name: string }[];
     _count: {
         audiences: number;
         campaigns: number;
@@ -138,8 +139,9 @@ export function ClientCard({
 
     const statusConfig = getStatusConfig(client.status, client.active);
 
-    // Red dashed border only for non-verified SMTP
-    const hasWarningBorder = !client.smtpVerified;
+    // Red dashed border only for non-configured SMTP
+    const hasSmtp = client.smtpProfiles && client.smtpProfiles.length > 0;
+    const hasWarningBorder = !hasSmtp;
 
     // Standardize border color/style
     const primaryColor = client.brandColors?.primary;
@@ -224,10 +226,10 @@ export function ClientCard({
                 {/* Status Badge */}
                 <CardBadge
                     variant="border"
-                    color={statusConfig.label === "active" ? "green" : statusConfig.label === "suspended" ? "orange" : "red"}
+                    color={statusConfig.state === "active" ? "blue" : statusConfig.state === "suspended" ? "orange" : "red"}
                     showDot
                 >
-                    {labels[statusConfig.label as keyof typeof labels] || statusConfig.label}
+                    {statusConfig.label}
                 </CardBadge>
 
                 {/* Public/Private Badge */}
@@ -239,12 +241,44 @@ export function ClientCard({
                     {client.isPublic ? labels.public : labels.private}
                 </CardBadge>
 
-                {/* SMTP Status Badge */}
-                <SmtpBadge
-                    verified={client.smtpVerified}
-                    verifiedLabel={labels.smtpVerified}
-                    unverifiedLabel={labels.smtpNotVerified}
-                />
+                {/* SMTP Status Badge (Order: Status -> Visibility -> SMTP State -> SMTP Name) */}
+                {hasSmtp ? (
+                    <CardBadge
+                        variant="border"
+                        color="green"
+                        icon={<Check className="h-3 w-3" />}
+                    >
+                        {labels.smtpVerified}
+                    </CardBadge>
+                ) : (
+                    <CardBadge
+                        variant="border"
+                        color="red"
+                        icon={<X className="h-3 w-3" />}
+                    >
+                        {labels.smtpNotVerified}
+                    </CardBadge>
+                )}
+
+                {/* SMTP Profile Name Badges (if exists) - Show up to 3 */}
+                {hasSmtp && client.smtpProfiles && (
+                    <>
+                        {client.smtpProfiles.slice(0, 3).map((profile) => (
+                            <CardBadge
+                                key={profile.id}
+                                variant="border"
+                                color="green"
+                            >
+                                {profile.name}
+                            </CardBadge>
+                        ))}
+                        {client.smtpProfiles.length > 3 && (
+                            <CardBadge variant="border" color="gray">
+                                +{client.smtpProfiles.length - 3} more
+                            </CardBadge>
+                        )}
+                    </>
+                )}
             </div>
 
             {/* Stats Section - Sticky to bottom */}

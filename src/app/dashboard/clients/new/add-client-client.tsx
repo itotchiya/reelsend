@@ -38,7 +38,6 @@ import { getContrastColor } from "@/lib/colors";
 const STEPS = [
     { id: "general", title: "General Info", icon: Building2 },
     { id: "identity", title: "Brand Identity", icon: Palette },
-    { id: "smtp", title: "Email Setup", icon: Mail },
 ];
 
 export function AddClientClient() {
@@ -48,7 +47,6 @@ export function AddClientClient() {
     const [loading, setLoading] = useState(false);
     const [uploadingLogo, setUploadingLogo] = useState(false);
     const [testingSmtp, setTestingSmtp] = useState(false);
-    const [smtpVerified, setSmtpVerified] = useState<boolean | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Form State
@@ -58,11 +56,6 @@ export function AddClientClient() {
         logo: "",
         primaryColor: "#4f46e5",
         secondaryColor: "#10b981",
-        smtpHost: "",
-        smtpPort: "587",
-        smtpUser: "",
-        smtpPassword: "",
-        smtpSecure: true,
     });
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,37 +126,6 @@ export function AddClientClient() {
         }
     };
 
-    const handleTestSmtp = async () => {
-        if (!formData.smtpHost || !formData.smtpUser || !formData.smtpPassword) {
-            toast.error("Please fill in all SMTP fields to test");
-            return;
-        }
-        setTestingSmtp(true);
-        try {
-            // For new clients, we create a temp test endpoint call
-            // Note: This is a mock test since client doesn't exist yet
-            // We'll validate the format at least
-            const transporter = {
-                host: formData.smtpHost,
-                port: parseInt(formData.smtpPort) || 587,
-                user: formData.smtpUser,
-                password: formData.smtpPassword,
-                secure: formData.smtpSecure,
-            };
-
-            // Simple validation - actual test will happen after create
-            if (transporter.host && transporter.user && transporter.password) {
-                // Show success for format validation
-                setSmtpVerified(null); // Will be tested after creation
-                toast.success("SMTP settings look valid! They will be tested after client creation.");
-            }
-        } catch (error) {
-            setSmtpVerified(false);
-            toast.error("Invalid SMTP settings format");
-        } finally {
-            setTestingSmtp(false);
-        }
-    };
 
     const nextStep = () => {
         // Validate current step
@@ -209,7 +171,6 @@ export function AddClientClient() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     ...formData,
-                    smtpPort: parseInt(formData.smtpPort),
                     brandColors: {
                         primary: formData.primaryColor,
                         secondary: formData.secondaryColor,
@@ -494,127 +455,6 @@ export function AddClientClient() {
                                 </div>
                             )}
 
-                            {currentStep === 2 && (
-                                <div className="space-y-6">
-                                    {/* SMTP Header with Test Button */}
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <Label className="text-sm font-medium">Email Settings (SMTP)</Label>
-                                                <Badge
-                                                    variant="outline"
-                                                    className={cn(
-                                                        "gap-1",
-                                                        smtpVerified === true
-                                                            ? "bg-green-500/10 text-green-600 border-green-500/20"
-                                                            : smtpVerified === false
-                                                                ? "bg-red-500/10 text-red-600 border-red-500/20"
-                                                                : "bg-muted text-muted-foreground border-muted-foreground/20"
-                                                    )}
-                                                >
-                                                    {smtpVerified === true ? (
-                                                        <>
-                                                            <CheckCircle className="h-3 w-3" />
-                                                            Verified
-                                                        </>
-                                                    ) : smtpVerified === false ? (
-                                                        <>
-                                                            <AlertCircle className="h-3 w-3" />
-                                                            Failed
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <AlertCircle className="h-3 w-3" />
-                                                            Not Tested
-                                                        </>
-                                                    )}
-                                                </Badge>
-                                            </div>
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                                Configure SMTP to send campaigns. Settings will be verified after creation.
-                                            </p>
-                                        </div>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            className="gap-2"
-                                            onClick={handleTestSmtp}
-                                            disabled={testingSmtp || !formData.smtpHost}
-                                        >
-                                            {testingSmtp ? <Spinner className="h-4 w-4" /> : <Mail className="h-4 w-4" />}
-                                            Validate Settings
-                                        </Button>
-                                    </div>
-
-                                    <div className="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-lg flex items-start gap-3 mb-6">
-                                        <Shield className="h-5 w-5 text-indigo-500 shrink-0 mt-0.5" />
-                                        <div className="text-sm">
-                                            <p className="font-semibold text-indigo-400">SMTP Server Information</p>
-                                            <p className="text-indigo-300 opacity-80">These credentials will be used to send emails on behalf of this client. Make sure to use verified sender details.</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2 md:col-span-2">
-                                            <Label htmlFor="smtpHost">SMTP Host</Label>
-                                            <Input
-                                                id="smtpHost"
-                                                placeholder="smtp.resend.com"
-                                                value={formData.smtpHost}
-                                                onChange={handleInputChange}
-                                                name="smtpHost"
-                                                className="h-12 bg-background/50"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="smtpPort">SMTP Port</Label>
-                                            <Input
-                                                id="smtpPort"
-                                                placeholder="587"
-                                                value={formData.smtpPort}
-                                                onChange={handleInputChange}
-                                                name="smtpPort"
-                                                className="h-12 bg-background/50"
-                                            />
-                                        </div>
-                                        <div className="flex items-center space-x-2 pt-8">
-                                            <input
-                                                type="checkbox"
-                                                id="smtpSecure"
-                                                checked={formData.smtpSecure}
-                                                onChange={handleInputChange}
-                                                name="smtpSecure"
-                                                className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                                            />
-                                            <Label htmlFor="smtpSecure" className="cursor-pointer">Use Secure Connection (SSL/TLS)</Label>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="smtpUser">Username</Label>
-                                            <Input
-                                                id="smtpUser"
-                                                placeholder="resend"
-                                                value={formData.smtpUser}
-                                                onChange={handleInputChange}
-                                                name="smtpUser"
-                                                className="h-12 bg-background/50"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="smtpPassword">Password</Label>
-                                            <Input
-                                                id="smtpPassword"
-                                                type="password"
-                                                placeholder="••••••••••••"
-                                                value={formData.smtpPassword}
-                                                onChange={handleInputChange}
-                                                name="smtpPassword"
-                                                className="h-12 bg-background/50"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
 
                             {/* Footer Buttons */}
                             <div className="flex justify-between mt-12 pt-8 border-t border-muted/50">
