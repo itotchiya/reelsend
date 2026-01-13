@@ -280,6 +280,26 @@ export default function PromptBuilderPage() {
                         />
                     </div>
 
+                    {/* Starter Prompts - Quick Chips */}
+                    <div className="w-full flex flex-wrap justify-center gap-2 mb-6">
+                        {[
+                            "Create a Welcome Email",
+                            "Create a Monthly Newsletter",
+                            "Create a Product Launch",
+                            "Create a Webinar Invite",
+                            "Create a Flash Sale"
+                        ].map((text) => (
+                            <button
+                                key={text}
+                                onClick={() => setPrompt(text)}
+                                className="px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-xs font-medium transition-colors border border-border/50 hover:border-primary/30"
+                            >
+                                <span className="mr-1.5 opacity-70">✨</span>
+                                {text}
+                            </button>
+                        ))}
+                    </div>
+
                     {/* Gradient Input Container with Input Area */}
                     <GradientInputContainer className="w-full">
                         <PromptInputArea

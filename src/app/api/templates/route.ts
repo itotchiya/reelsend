@@ -11,14 +11,14 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { name, description, clientId, duplicateFromId, htmlContent: providedHtml } = body;
+        const { name, description, clientId, duplicateFromId, htmlContent: providedHtml, category, jsonContent: providedJson } = body;
 
         if (!name) {
             return new NextResponse("Name is required", { status: 400 });
         }
 
         let htmlContent = providedHtml || "";
-        let jsonContent = {};
+        let jsonContent = providedJson || {};
 
         // If duplicating from another template, copy its content
         if (duplicateFromId) {
@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
             data: {
                 name,
                 description,
+                category: (category as string) || null,
                 clientId: clientId || null,
                 htmlContent,
                 jsonContent,
@@ -80,7 +81,15 @@ export async function GET(request: NextRequest) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
+        const { searchParams } = new URL(request.url);
+        const clientId = searchParams.get("clientId");
+        const hasCategory = searchParams.get("hasCategory") === "true";
+
         const templates = await db.template.findMany({
+            where: {
+                ...(clientId && { clientId }),
+                ...(hasCategory && { category: { not: null } }),
+            },
             include: {
                 client: true,
             },

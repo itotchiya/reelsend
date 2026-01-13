@@ -56,6 +56,7 @@ export async function PATCH(
         if (name !== undefined) updateData.name = name;
         if (description !== undefined) updateData.description = description;
         if (clientId !== undefined) updateData.clientId = clientId || null;
+        if (body.category !== undefined) updateData.category = body.category;
 
         const template = await db.template.update({
             where: { id },

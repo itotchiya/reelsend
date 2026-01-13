@@ -5,9 +5,27 @@ import { auth } from "@/lib/auth";
 import OpenAI from "openai";
 
 // Initialize OpenAI
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY || "",
-});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "" });
+
+function stripHtml(text: string) {
+    if (typeof text !== 'string') return text;
+    return text.replace(/<[^>]*>?/gm, '');
+}
+
+function deepStripHtml(obj: any): any {
+    if (Array.isArray(obj)) {
+        return obj.map(item => deepStripHtml(item));
+    } else if (obj !== null && typeof obj === 'object') {
+        const newObj: any = {};
+        for (const key in obj) {
+            newObj[key] = deepStripHtml(obj[key]);
+        }
+        return newObj;
+    } else if (typeof obj === 'string') {
+        return stripHtml(obj);
+    }
+    return obj;
+}
 
 // Available block types for the AI to use
 const BLOCK_TYPES_REFERENCE = `
@@ -61,25 +79,12 @@ IMPORTANT: "Html" block is NOT available. Do not use it.
 `;
 
 const PLACEHOLDER_INSTRUCTIONS = `
-## IMAGE PLACEHOLDER GUIDELINES (Use placehold.co)
-
-You must use 'https://placehold.co' for ALL dynamic images unless a specific logo is provided.
-
-FORMAT: https://placehold.co/{width}x{height}/{background_hex}/{text_hex}?text={text}&font={font}
-
-1. **Size**: Width x Height is required (e.g. 600x400).
-2. **Colors**: You must specify Background and Text colors.
-   - **Context-Aware Colors**: Derive shades/variants from the brand colors! 
-   - Start with the Primary Brand Color.
-   - Create light tints for backgrounds (e.g., #e0f2fe for a blue brand).
-   - Create dark shades for text (e.g., #003366).
-   - EXAMPLE: If primary is Blue (#0079cc):
-     - Hero Image: https://placehold.co/600x300/e6f4ff/0079cc?text=Hero+Image
-     - Product: https://placehold.co/400x400/f8fafc/cbd5e1?text=Product
-3. **Text**: URL encoded text description (e.g. ?text=Winter+Collection).
-4. **Font**: Use 'roboto' or 'lato' (e.g. &font=roboto).
-
-CRITICAL: Do not use generic grey/white for everything. Match the design style (e.g. bold colors for Marketing, soft for Minimal).
+- For all images, use placeholders from: https://placehold.co/[WIDTH]x[HEIGHT]?text=[SIZE]
+- NEVER use titles or descriptions in placeholder text. ONLY use the size (e.g., text=600x400).
+- Hero/Header Images: Use wide aspect (600x400)
+- Product/Card Images: Use square aspect (400x400)
+- Logo: Use small aspect (200x100)
+- Use high-quality, professional-looking dimensions.
 `;
 
 const JSON_FORMAT_EXAMPLE = `
@@ -90,10 +95,17 @@ The template must be a JSON object with this structure:
   "root": {
     "type": "EmailLayout",
     "data": {
-      "backdropColor": "#F5F5F5",
-      "canvasColor": "#FFFFFF", 
-      "textColor": "#262626",
-      "fontFamily": "MODERN_SANS",
+      "style": {
+        "backgroundColor": "#f8f9fa",
+        "textColor": "#212529",
+        "fontFamily": "MODERN_SANS", // Match tone: MODERN_SANS for clean/tech, SERIF for elegant/formal
+        "dividerColor": "#e9ecef" // Always use LIGHT, SUBTLE colors for dividers
+      },
+      "content": {
+        "text": "CLEAN, SHORT, AND SIMPLE TEXT ONLY. **STRICTLY NO HTML TAGS** (no <a>, <span>, etc.). Use natural language only.",
+        "buttonText": "Get Started",
+        "imageAlt": "600x400" // Size only
+      },
       "childrenIds": ["block-1", "block-2", "cols-1"]
     }
   },
@@ -164,13 +176,47 @@ const STYLE_GUIDELINES: Record<string, string> = {
     - INSTRUCTION: Build a structured, brand-consistent email using visual sections and reusable blocks. Apply brand identity strongly while maintaining clarity and readability.`,
 };
 
-// Helper to format saved blocks for AI context
+// Helper to get Blueprints (Full Templates)
+async function getSavedBlueprintsInstructions(clientId: string | null) {
+    const blueprints = await db.template.findMany({
+        where: {
+            OR: [
+                { clientId: clientId || null }, // Match client or global (null)
+                { clientId: null },
+            ],
+        },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, description: true, jsonContent: true, category: true }
+    });
+
+    if (blueprints.length === 0) return "";
+
+    const list = blueprints.map(bp => {
+        const cat = bp.category ? `[${bp.category}]` : "";
+        return `- ID: "${bp.id}"\n  Name: "${bp.name}" ${cat}\n  Desc: "${bp.description || ""}"\n  Structure: ${JSON.stringify(bp.jsonContent)}`;
+    }).join("\n\n");
+
+    return `
+## AVAILABLE BLUEPRINTS (USER TEMPLATES)
+The user has saved the following full-page templates. If the User Request matches one of these blueprints (e.g. "Create a Welcome Email" and you see a "Welcome Email" blueprint), you MUST use its structure as the base.
+
+${list}
+
+INSTRUCTION FOR BLUEPRINTS:
+1. If a blueprint matches the intent, set your "template" response to be the "Structure" JSON of that blueprint.
+2. Then, REPLACE the placeholder content (text, images) within that structure with new content relevant to the specific user request (e.g. populate the "Welcome" blueprint with "Gym Membership" copy if asked).
+3. Do NOT change the layout (containers, columns) of the blueprint unless requested.
+`;
+}
+
+// Helper to format saved blocks (Components) for AI context
 async function getSavedBlocksInstructions(clientId: string | null) {
     const savedBlocks = await db.savedBlock.findMany({
         where: {
+            category: { not: "template" },
             OR: [
                 { clientId: clientId || undefined },
-                { clientId: null }, // Global blocks
+                { clientId: null },
             ],
         },
         orderBy: { category: "asc" },
@@ -193,7 +239,7 @@ async function getSavedBlocksInstructions(clientId: string | null) {
     }).join("\n\n");
 
     return `
-## AVAILABLE REUSABLE BLOCKS
+## AVAILABLE REUSABLE BLOCKS (COMPONENTS)
 You have access to the following pre-saved blocks. You SHOULD prioritize using these blocks when they match the user's request, especially for headers, footers, and standard layouts.
 
 ${blocksList}
@@ -236,6 +282,7 @@ export async function POST(request: NextRequest) {
 
         // Get saved blocks instructions
         const savedBlocksInstructions = await getSavedBlocksInstructions(clientId || null);
+        const savedBlueprintsInstructions = await getSavedBlueprintsInstructions(clientId || null);
 
         // Build the system prompt
         const brandInstructions = clientData?.brandColors
@@ -266,6 +313,8 @@ ${STYLE_GUIDELINES[style] || STYLE_GUIDELINES.default}
 
 ${brandInstructions}
 
+${savedBlueprintsInstructions}
+
 ${savedBlocksInstructions}
 
 ## Context-Aware Overrides
@@ -284,8 +333,14 @@ ${savedBlocksInstructions}
 - Use at least 8-10 different blocks.
 - Use "ColumnsContainer" to create interesting layouts (e.g. side-by-side image and text).
 - Use "Container" to group related sections, potentially with background colors.
-- Include a Header section (Logo/Brand Name), Introduction, Main Content (using columns), Feature Highlights, and a Footer.
-- Write realistic, engaging copy relevant to the prompt. Do not use Lorem Ipsum.
+- TEXT: Keep it short, simple, and clean. **STRICTLY PROHIBIT ALL HTML TAGS** (no <a>, <span>, <br>, etc.). Output PLAIN TEXT only.
+- NO LINKS: Even for footers, DO NOT use <a> tags. Write "Unsubscribe" as plain text.
+- IMAGE PLACEHOLDERS: Use ONLY the size in the text parameter (e.g., ?text=600x400). NO titles.
+- DIVIDERS: Always use light, subtle colors (e.g., #e9ecef).
+- TYPEFACE: Select a fontFamily that suits the tone (MODERN_SANS, SERIF, or MONO).
+- CONTRAST: Ensure text is dark on light backgrounds.
+- NEGATIVE CONSTRAINT: NEVER wrap text in <a> tags. NEVER use <br> for spacing.
+- Focus on professional layout and perfect white space.
 - IF SAVED BLOCKS ARE AVAILABLE (headers, footers), USE THEM!
 
 ## Your Response Format
@@ -372,7 +427,6 @@ Your response must be a single JSON object containing:
         const dbUser = await db.user.findUnique({
             where: { id: session.user.id }
         });
-
         if (!dbUser) {
             return new NextResponse("User record missing from database. Please log out and back in.", { status: 401 });
         }
@@ -384,10 +438,11 @@ Your response must be a single JSON object containing:
                 htmlContent,
                 jsonContent: template,
                 isAIGenerated: true,
+                category: "AI Generated",
                 clientId: clientId || null,
                 createdById: session.user.id,
                 updatedById: session.user.id,
-            },
+            } as any,
             include: {
                 client: { select: { id: true, slug: true, name: true } },
             },
@@ -396,9 +451,9 @@ Your response must be a single JSON object containing:
         // Determine redirect URL
         let redirectUrl: string;
         if (newTemplate.client) {
-            redirectUrl = `/dashboard/clients/${newTemplate.client.slug}/templates/${newTemplate.id}`;
+            redirectUrl = `/dashboard/clients/${(newTemplate.client as any).slug}/templates/${newTemplate.id}`;
         } else {
-            redirectUrl = `/dashboard/templates/${newTemplate.id}`;
+            redirectUrl = `/dashboard/library/templates/${newTemplate.id}`;
         }
 
         // Revalidate paths to refresh the lists

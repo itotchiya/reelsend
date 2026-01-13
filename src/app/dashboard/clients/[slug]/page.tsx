@@ -43,6 +43,7 @@ export default async function ClientDetailPage({ params }: PageProps) {
                 orderBy: { createdAt: "desc" },
             },
             templates: {
+                where: { category: null },
                 take: 5,
                 orderBy: { createdAt: "desc" },
                 select: {

@@ -53,9 +53,9 @@ export function PageHeader({ title, description, action, children, onBack, showB
 }
 
 // Page content wrapper with proper padding
-export function PageContent({ children }: { children: React.ReactNode }) {
+export function PageContent({ children, className }: { children: React.ReactNode; className?: string }) {
     return (
-        <div className="flex-1 px-4 md:px-8 pt-4 md:pt-8 pb-8 md:pb-16">
+        <div className={`flex-1 px-4 md:px-8 pt-4 md:pt-8 pb-8 md:pb-16 ${className || ""}`}>
             {children}
         </div>
     );

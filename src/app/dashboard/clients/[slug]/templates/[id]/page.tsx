@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { notFound, redirect } from "next/navigation";
-import { WaypointEditorClient } from "./editor-client";
+import { WaypointEditorClient } from "@/components/dashboard/waypoint-editor-client";
 import { auth } from "@/lib/auth";
 
 interface Props {

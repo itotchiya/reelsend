@@ -360,6 +360,8 @@ model Template {
   campaigns    Campaign[]
   activities   TemplateActivity[]
   
+  category     String?     // Added for library organization
+  
   @@unique([clientId, name])
 }
 

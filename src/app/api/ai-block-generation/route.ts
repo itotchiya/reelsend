@@ -5,12 +5,33 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
+function stripHtml(text: string) {
+    if (typeof text !== 'string') return text;
+    // Remove HTML tags but keep content
+    return text.replace(/<[^>]*>?/gm, '');
+}
+
+function deepStripHtml(obj: any): any {
+    if (Array.isArray(obj)) {
+        return obj.map(item => deepStripHtml(item));
+    } else if (obj !== null && typeof obj === 'object') {
+        const newObj: any = {};
+        for (const key in obj) {
+            newObj[key] = deepStripHtml(obj[key]);
+        }
+        return newObj;
+    } else if (typeof obj === 'string') {
+        return stripHtml(obj);
+    }
+    return obj;
+}
+
 // Simplified block types for this specific task
 const BLOCK_TYPES_REFERENCE = `
 ## Available Email Builder Blocks
 1. **Heading** - { text: string, level: "h1"|"h2"|"h3" }
 2. **Text** - { text: string }
-3. **Button** - { text: string, url: string, buttonBackgroundColor: string, buttonStyle: "rectangle"|"rounded"|"pill" }
+3. **Button** - { text: string, url: string, buttonBackgroundColor: string, buttonStyle: "rectangle"|"rounded"|"pill", textColor: string }
 4. **Image** - props: { url: string, alt: string, linkHref?: string, contentAlignment: "middle"|"left"|"right" }
 5. **Divider** - { lineColor?: string, lineHeight?: number }
 6. **Spacer** - { height: number }
@@ -20,10 +41,30 @@ const BLOCK_TYPES_REFERENCE = `
 `;
 
 const PLACEHOLDER_INSTRUCTIONS = `
-## IMAGE PLACEHOLDER GUIDELINES (Use placehold.co)
-You must use 'https://placehold.co' for ALL dynamic images.
-FORMAT: https://placehold.co/{width}x{height}/{background_hex}/{text_hex}?text={text}&font=roboto
-- Derive colors from the User Request (e.g. "Christmas" -> Red/Green) or defaults.
+- For all images, use placeholders: https://placehold.co/[WIDTH]x[HEIGHT]?text=[SIZE]
+- Hero: 600x400
+- Product: 400x400
+- Logo: 200x100
+- NEVER use titles or HTML in content.
+`;
+
+const SYSTEM_PROMPT_CONSTRAINTS = `
+You are an AI that generates single email content blocks.
+- **THEME**: Always use LIGHT THEME colors as the builder UI is strictly light.
+- **RESPONSE**: ONLY return valid JSON.
+- **CONTENT**: Keep text short, simple, and clean. 
+- **STRICT PROHIBITION**: NEVER include HTML tags (no <a>, <span>, <br>, etc.). **PLAIN TEXT ONLY**.
+- **NO LINKS**: Even for footers or unsubscribe sections, DO NOT use <a> tags. Use plain text like "Unsubscribe here".
+- **IMAGES**: Use placeholders: https://placehold.co/[WIDTH]x[HEIGHT]?text=[SIZE] (e.g. 600x400).
+- **DIVIDERS**: Use light, subtle colors (e.g., #e9ecef).
+- **TYPEFACE**: Match requested tone (MODERN_SANS for modern, SERIF for elegant).
+- **CONTRAST**: Ensure dark text on light backgrounds.
+
+### NEGATIVE CONSTRAINTS (NEVER DO THESE):
+1. NEVER output <a href="...">text</a>.
+2. NEVER output <br/> or <p> tags inside the JSON strings.
+3. NEVER output <span> or <div> tags inside the content strings.
+4. If a piece of text requires a link, just write the text. The user will add the link later.
 `;
 
 const JSON_FORMAT_EXAMPLE = `
@@ -32,20 +73,24 @@ You must return a JSON object representing a SINGLE top-level block (usually a C
 
 Example for "Product Card":
 {
-  "rootBlockId": "container-1",
-  "blocks": {
-    "container-1": {
-        "type": "Container", 
-        "data": { 
-            "style": { "padding": { "top": 20, "bottom": 20, "left": 20, "right": 20 }, "backgroundColor": "#f9f9f9" }, 
-            "props": { "childrenIds": ["img-1", "head-1", "txt-1", "btn-1"] } 
-        }
-    },
-    "img-1": { "type": "Image", "data": { "props": { "url": "...", "alt": "Product" } } },
-    "head-1": { "type": "Heading", "data": { "props": { "text": "Product Name", "level": "h2" } } },
-    "txt-1": { "type": "Text", "data": { "props": { "text": "Description..." } } },
-    "btn-1": { "type": "Button", "data": { "props": { "text": "Buy Now", "buttonBackgroundColor": "#000" } } }
-  }
+    "rootBlockId": "container-1",
+    "blocks": {
+        "container-1": {
+            "type": "Container",
+            "data": {
+                "style": { 
+                    "padding": { "top": 20, "bottom": 20, "left": 20, "right": 20 }, 
+                    "backgroundColor": "#ffffff",
+                    "dividerColor": "#e9ecef"
+                },
+                "props": { "childrenIds": ["img-1", "head-1", "txt-1", "btn-1"] }
+            }
+        },
+        "img-1": { "type": "Image", "data": { "props": { "url": "https://placehold.co/400x400?text=400x400", "alt": "400x400" } } },
+        "head-1": { "type": "Heading", "data": { "props": { "text": "Product Name", "level": "h2" } } },
+        "txt-1": { "type": "Text", "data": { "props": { "text": "Professional and clean description." } } },
+        "btn-1": { "type": "Button", "data": { "props": { "text": "Buy Now", "buttonBackgroundColor": "#000000", "textColor": "#ffffff" } } }
+    }
 }
 `;
 
@@ -63,7 +108,6 @@ export async function POST(request: NextRequest) {
             return new NextResponse("Prompt is required", { status: 400 });
         }
 
-        // Optional: Fetch client colors if needed
         let clientData = null;
         if (clientSlug) {
             clientData = await db.client.findUnique({
@@ -80,24 +124,26 @@ export async function POST(request: NextRequest) {
 `
             : "";
 
-        const systemPrompt = `You are an expert email component designer. 
-        Your task is to generate a SINGLE, standalone email block (often a Container or Layout) based on the user's request.
-        
-        ${BLOCK_TYPES_REFERENCE}
-        ${PLACEHOLDER_INSTRUCTIONS}
-        ${brandInstructions}
-        ${JSON_FORMAT_EXAMPLE}
+        const systemPrompt = `
+${SYSTEM_PROMPT_CONSTRAINTS}
 
-        ## Instructions
-        1. Analyze the request (e.g. "Hero Section", "Product List", "Footer").
-        2. Choose the best Top-Level Block (usually 'Container' to wrap elements, or 'ColumnsContainer' for grids).
-        3. Generate all child blocks referenced in 'childrenIds'.
-        4. Return a clean, valid JSON object with "rootBlockId" and a map of "blocks".
-        5. DO NOT use the Html block.
-        6. Use elegant, modern padding and spacing.
-        `;
+You are an expert email component designer. 
+Your task is to generate a SINGLE, standalone email block (often a Container or Layout) based on the user's request.
 
-        // Verify user exists in DB before generating (Ghost Session check)
+${BLOCK_TYPES_REFERENCE}
+${PLACEHOLDER_INSTRUCTIONS}
+${brandInstructions}
+${JSON_FORMAT_EXAMPLE}
+
+## Instructions
+1. Analyze the request (e.g. "Hero Section", "Product List", "Footer").
+2. Choose the best Top-Level Block (usually 'Container' to wrap elements, or 'ColumnsContainer' for grids).
+3. Generate all child blocks referenced in 'childrenIds'.
+4. Return a clean, valid JSON object with "rootBlockId" and a map of "blocks".
+5. DO NOT use the Html block.
+6. Use elegant, modern padding and spacing.
+`;
+
         const dbUser = await db.user.findUnique({
             where: { id: session.user.id }
         });
@@ -106,7 +152,7 @@ export async function POST(request: NextRequest) {
             return new NextResponse("User record missing from database. Please log out and back in.", { status: 401 });
         }
 
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
         const result = await model.generateContent({
             contents: [{ role: "user", parts: [{ text: systemPrompt + "\n\nUser Request: " + prompt }] }],
             generationConfig: {
@@ -118,7 +164,10 @@ export async function POST(request: NextRequest) {
         const responseText = result.response.text();
         const jsonResponse = JSON.parse(responseText);
 
-        return NextResponse.json(jsonResponse);
+        // Sanitize response to remove any stubborn HTML tags
+        const sanitizedResponse = deepStripHtml(jsonResponse);
+
+        return NextResponse.json(sanitizedResponse);
 
     } catch (error: any) {
         console.error("[AI_BLOCK_GEN]", error);

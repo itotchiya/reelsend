@@ -17,12 +17,13 @@ import { LayoutTemplate } from "lucide-react";
 
 interface TemplatesClientProps {
     initialTemplates: TemplateCardData[];
-    clients: { id: string; name: string; slug: string }[];
+    clients?: { id: string; name: string; slug: string }[];
+    mode?: "standard" | "library";
 }
 
 const ITEMS_PER_PAGE = 12;
 
-export function TemplatesClient({ initialTemplates, clients }: TemplatesClientProps) {
+export function TemplatesClient({ initialTemplates, clients = [], mode = "standard" }: TemplatesClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -96,10 +97,15 @@ export function TemplatesClient({ initialTemplates, clients }: TemplatesClientPr
             return;
         }
 
+        // If in library mode, ALWAYS go to library editor, even if assigned to a client
+        if (mode === "library") {
+            router.push(`/dashboard/library/templates/${templateId}`);
+            return;
+        }
+
         if (template.client?.slug) {
             router.push(`/dashboard/clients/${template.client.slug}/templates/${templateId}`);
         } else {
-            // Navigate to global template editor for unassigned templates
             router.push(`/dashboard/templates/${templateId}`);
         }
     };
@@ -156,24 +162,28 @@ export function TemplatesClient({ initialTemplates, clients }: TemplatesClientPr
     return (
         <>
             <PageHeader
-                title="Templates"
-                description="Manage all your email templates across clients"
+                title={mode === "library" ? "Blueprints Library" : "Templates"}
+                description={mode === "library" ? "Manage your saved blueprints" : "Manage all your email templates across clients"}
+                showBack={mode === "library"}
+                onBack={() => router.push("/dashboard/library")}
                 action={
-                    <div className="flex items-center gap-2">
-                        <Button
-                            onClick={handleCreateDemoTemplate}
-                            disabled={creatingDemo}
-                            variant="outline"
-                            className="gap-2 bg-amber-400/10 text-amber-600 border-amber-400/30 hover:bg-amber-400/20 hover:text-amber-700 dark:text-amber-400 dark:border-amber-400/20 dark:hover:bg-amber-400/15"
-                        >
-                            <Star className="h-4 w-4" />
-                            <span className="hidden sm:inline">{creatingDemo ? 'Creating...' : 'Demo Template'}</span>
-                        </Button>
-                        <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
-                            <Plus className="h-4 w-4" />
-                            <span className="hidden sm:inline">New Template</span>
-                        </Button>
-                    </div>
+                    mode === "standard" ? (
+                        <div className="flex items-center gap-2">
+                            <Button
+                                onClick={handleCreateDemoTemplate}
+                                disabled={creatingDemo}
+                                variant="outline"
+                                className="gap-2 bg-amber-400/10 text-amber-600 border-amber-400/30 hover:bg-amber-400/20 hover:text-amber-700 dark:text-amber-400 dark:border-amber-400/20 dark:hover:bg-amber-400/15"
+                            >
+                                <Star className="h-4 w-4" />
+                                <span className="hidden sm:inline">{creatingDemo ? 'Creating...' : 'Demo Template'}</span>
+                            </Button>
+                            <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
+                                <Plus className="h-4 w-4" />
+                                <span className="hidden sm:inline">New Template</span>
+                            </Button>
+                        </div>
+                    ) : null
                 }
             />
             <PageContent>
@@ -231,6 +241,7 @@ export function TemplatesClient({ initialTemplates, clients }: TemplatesClientPr
                                 <TemplateCard
                                     key={template.id}
                                     template={template}
+                                    isLibrary={mode === "library"}
                                     onOpen={() => handleOpen(template)}
                                     onEdit={() => {
                                         setEditingTemplate(template);
@@ -263,10 +274,12 @@ export function TemplatesClient({ initialTemplates, clients }: TemplatesClientPr
                                     Clear Filters
                                 </Button>
                             ) : (
-                                <Button onClick={() => setCreateDialogOpen(true)}>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    New Template
-                                </Button>
+                                mode === "standard" && (
+                                    <Button onClick={() => setCreateDialogOpen(true)}>
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        New Template
+                                    </Button>
+                                )
                             )}
                         </div>
                     )}

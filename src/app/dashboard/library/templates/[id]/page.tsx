@@ -7,7 +7,7 @@ interface Props {
     params: Promise<{ id: string }>;
 }
 
-export default async function StandardTemplateEditorPage({ params }: Props) {
+export default async function LibraryTemplateEditorPage({ params }: Props) {
     const session = await auth();
     if (!session?.user) {
         redirect("/login");
@@ -35,16 +35,10 @@ export default async function StandardTemplateEditorPage({ params }: Props) {
         notFound();
     }
 
-    // For standard templates, we basically act like library templates if they aren't assigned to a client context explicitly? 
-    // Or we fetch blocks matching the template's client if it has one.
-    // Assuming Standard Templates implies potentially global or specific client but viewed in global context.
-
+    // For library templates, we load global blocks and client specific blocks if any
     const savedBlocks = await db.savedBlock.findMany({
         where: {
-            OR: [
-                template.clientId ? { clientId: template.clientId } : { clientId: null },
-                { clientId: null }
-            ]
+            clientId: null,
         },
         orderBy: { createdAt: "desc" },
     });

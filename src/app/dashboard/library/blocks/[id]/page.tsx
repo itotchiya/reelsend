@@ -32,7 +32,7 @@ export default async function BlockEditorPage({ params }: BlockEditorPageProps) 
     });
 
     if (!blockRaw) {
-        redirect("/dashboard/blocks");
+        redirect("/dashboard/library/blocks");
     }
 
     // Transform to include primaryColor extracted from brandColors

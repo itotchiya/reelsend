@@ -101,24 +101,21 @@ export function AIBlockDialog({ open, onOpenChange, onInsert }: AIBlockDialogPro
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md overflow-hidden border-0 bg-background/80 backdrop-blur-xl">
-                {/* Subtle ambient background */}
-                <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
-                    <AnimatedGradient variant={isLoading ? "active" : "default"} />
-                </div>
-
-                <DialogHeader className="relative z-10 flex flex-col items-center gap-4 py-6">
-                    <AISphere state={isLoading ? "active" : "idle"} size="md" />
-                    <DialogTitle className="text-xl font-semibold text-center">
+            <DialogContent className="sm:max-w-md overflow-hidden bg-white border border-zinc-200 shadow-lg !rounded-xl !p-0">
+                <DialogHeader className="relative flex flex-col items-center gap-3 pt-8 pb-4 px-6">
+                    <div className="relative">
+                        <AISphere state={isLoading ? "active" : "idle"} size="md" />
+                    </div>
+                    <DialogTitle className="text-xl font-bold text-center text-zinc-900">
                         {isLoading ? t.aiBlockGenerator?.generating : t.aiBlockGenerator?.title}
                     </DialogTitle>
-                    <DialogDescription className="sr-only">
-                        {t.aiBlockGenerator?.description}
+                    <DialogDescription className="text-sm text-center text-zinc-500 max-w-sm mx-auto">
+                        {t.aiBlockGenerator?.description || "Describe what you want to build and our AI will generate it for you."}
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="relative z-10 space-y-4 px-2 pb-6">
-                    <GradientInputContainer>
+                <div className="space-y-4 px-6 pb-8">
+                    <div className="p-0.5 rounded-xl bg-gradient-to-br from-zinc-100 to-zinc-200 border border-zinc-200 shadow-inner overflow-hidden">
                         <PromptInputArea
                             value={prompt}
                             onChange={setPrompt}
@@ -127,9 +124,9 @@ export function AIBlockDialog({ open, onOpenChange, onInsert }: AIBlockDialogPro
                             disabled={isLoading}
                             buttonLabel={isLoading ? t.aiBlockGenerator?.thinking : t.aiBlockGenerator?.generate}
                         />
-                    </GradientInputContainer>
-                    <p className="text-xs text-center text-muted-foreground">
-                        {t.aiBlockGenerator?.description}
+                    </div>
+                    <p className="text-[10px] text-center text-zinc-400 font-semibold uppercase tracking-widest">
+                        Powered by Gemini 2.0 Flash Lite
                     </p>
                 </div>
             </DialogContent>

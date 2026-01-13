@@ -36,7 +36,7 @@ export default async function ClientTemplatesPage({ params, searchParams }: Page
     const pageSize = parseInt(pageSizeParam) || 16;
 
     // Build where clause
-    const where: any = { clientId: client.id };
+    const where: any = { clientId: client.id, category: null };
     if (search) {
         where.OR = [
             { name: { contains: search, mode: "insensitive" } },

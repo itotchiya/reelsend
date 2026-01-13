@@ -251,6 +251,11 @@ export function BlockCard({
                             {labels.global}
                         </CardBadge>
                     )}
+
+                    {/* Type Badge */}
+                    <CardBadge variant="flat" color="purple">
+                        Block Component
+                    </CardBadge>
                 </div>
 
                 {/* Metadata Footer */}

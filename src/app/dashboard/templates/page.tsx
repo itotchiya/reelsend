@@ -1,10 +1,14 @@
 import { db } from "@/lib/db";
 import { Suspense } from "react";
 import { TemplatesClient } from "./templates-client";
+import { TemplateCardData } from "@/components/ui-kit/template-card";
 
 export default async function TemplatesPage() {
     const [templates, clients] = await Promise.all([
         db.template.findMany({
+            where: {
+                category: null
+            },
             include: {
                 client: {
                     select: {
@@ -46,7 +50,7 @@ export default async function TemplatesPage() {
     ]);
 
     // Transform templates to match TemplateCardData interface
-    const transformedTemplates = templates.map((template) => ({
+    const transformedTemplates = templates.map((template: any) => ({
         ...template,
         client: template.client
             ? {
@@ -54,7 +58,7 @@ export default async function TemplatesPage() {
                 primaryColor: (template.client.brandColors as any)?.primary || null,
             }
             : null,
-    })) as any[];
+    })) as TemplateCardData[];
 
     return (
         <Suspense fallback={<div>Loading...</div>}>

@@ -117,7 +117,7 @@ export function BlocksClient({
         // Reset to page 1 when filters change
         params.delete("page");
 
-        router.push(`/dashboard/blocks?${params.toString()}`);
+        router.push(`/dashboard/library/blocks?${params.toString()}`);
     };
 
     // Handle search with debounce
@@ -146,7 +146,7 @@ export function BlocksClient({
     const handlePageChange = (newPage: number) => {
         const params = new URLSearchParams(searchParams.toString());
         params.set("page", newPage.toString());
-        router.push(`/dashboard/blocks?${params.toString()}`);
+        router.push(`/dashboard/library/blocks?${params.toString()}`);
     };
 
     // Create block
@@ -194,7 +194,7 @@ export function BlocksClient({
             setNewBlockClientId("");
 
             // Navigate to editor
-            router.push(`/dashboard/blocks/${block.id}`);
+            router.push(`/dashboard/library/blocks/${block.id}`);
         } catch (error) {
             console.error(error);
             toast.error(t.blocks?.createFailed || "Failed to create block");
@@ -205,7 +205,7 @@ export function BlocksClient({
 
     // Open block in editor
     const handleOpenBlock = (block: BlockCardData) => {
-        router.push(`/dashboard/blocks/${block.id}`);
+        router.push(`/dashboard/library/blocks/${block.id}`);
     };
 
     // Edit block details
@@ -312,6 +312,8 @@ export function BlocksClient({
             <PageHeader
                 title={t.blocks?.title || "Block Library"}
                 description={t.blocks?.description || "Manage reusable email blocks"}
+                showBack={true}
+                onBack={() => router.push("/dashboard/library")}
             >
                 <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
                     <Plus className="h-4 w-4" />

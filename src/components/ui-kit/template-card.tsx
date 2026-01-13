@@ -74,7 +74,9 @@ export interface TemplateCardProps {
         editedBy?: string;
         aiGenerated?: string;
         notAssigned?: string;
+        blueprintTemplate?: string;
     };
+    isLibrary?: boolean;
 }
 
 export function TemplateCard({
@@ -85,6 +87,7 @@ export function TemplateCard({
     onDelete,
     onViewActivity,
     labels: customLabels,
+    isLibrary,
 }: TemplateCardProps) {
     const { t } = useI18n();
 
@@ -103,6 +106,7 @@ export function TemplateCard({
         editedBy: t.cards?.common?.updatedBy || "Edited by",
         aiGenerated: t.cards?.template?.aiGenerated || "AI Generated",
         notAssigned: t.cards?.template?.notAssigned || "Not Assigned",
+        blueprintTemplate: "Blueprint Template",
     };
 
     const labels = { ...defaultLabels, ...customLabels };
@@ -255,6 +259,13 @@ export function TemplateCard({
                     {/* AI Generated Badge */}
                     {template.isAIGenerated && (
                         <AIGeneratedBadge label={labels.aiGenerated} />
+                    )}
+
+                    {/* Blueprint Template Badge */}
+                    {isLibrary && (
+                        <CardBadge variant="flat" color="blue">
+                            {labels.blueprintTemplate}
+                        </CardBadge>
                     )}
 
                     {/* Client Badge - Filled with primary color, or Not Assigned */}

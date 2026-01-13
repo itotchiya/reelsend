@@ -22,6 +22,7 @@ import {
     Sparkles,
     Server,
     LayoutGrid,
+    LayoutTemplate,
 } from "lucide-react";
 
 import {
@@ -85,8 +86,8 @@ const navigation: NavGroup[] = [
         titleKey: "emailMarketing",
         items: [
             { titleKey: "campaigns", href: "/dashboard/campaigns", icon: Mail, permission: "campaigns:view" },
-            { titleKey: "templates", href: "/dashboard/templates", icon: FileText, permission: "templates:view" },
-            { titleKey: "blockLibrary", href: "/dashboard/blocks", icon: LayoutGrid, permission: "templates:view" },
+            { titleKey: "templates", href: "/dashboard/templates", icon: LayoutTemplate, permission: "templates:view" },
+            { titleKey: "library", href: "/dashboard/library", icon: LayoutGrid, permission: "templates:view" },
             { titleKey: "promptBuilder", href: "/dashboard/promptbuilder", icon: Sparkles, permission: "templates:create" },
             { titleKey: "audiences", href: "/dashboard/audiences", icon: Users, permission: "audiences:view" },
         ],
@@ -133,6 +134,7 @@ export function AppSidebar() {
         dashboard: t.common.dashboard,
         emailMarketing: t.nav?.emailMarketing || "Email Marketing",
         campaigns: t.common.campaigns,
+        library: "Library",
         templates: t.common.templates,
         blockLibrary: t.blocks?.title || "Block Library",
         promptBuilder: t.promptBuilder?.title || "Prompt Builder",
@@ -362,7 +364,7 @@ function DashboardBreadcrumb() {
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     // Check if we are on a template editor or block editor page
-    const isEditor = /\/templates\/[^/]+$/.test(pathname) || /\/blocks\/[^/]+$/.test(pathname);
+    const isEditor = /\/library\/templates\/[^/]+$/.test(pathname) || /\/library\/blocks\/[^/]+$/.test(pathname) || /\/templates\/[^/]+$/.test(pathname) || /\/blocks\/[^/]+$/.test(pathname);
 
     if (isEditor) {
         return (
