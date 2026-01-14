@@ -35,7 +35,9 @@ async function main() {
         redirectUri
     );
 
-    const scopes = ['https://www.googleapis.com/auth/drive.file'];
+    // We need full 'drive' scope to access folders created by the User in the Web UI.
+    // 'drive.file' only allows access to files created by THIS app.
+    const scopes = ['https://www.googleapis.com/auth/drive'];
 
     const authUrl = oauth2Client.generateAuthUrl({
         access_type: 'offline',
