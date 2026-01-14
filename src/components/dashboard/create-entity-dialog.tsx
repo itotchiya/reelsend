@@ -166,7 +166,8 @@ export function CreateEntityDialog({
             toast.error("Name is required");
             return;
         }
-        if (!formData.clientId) {
+        // Client is optional for templates - they can be unassigned
+        if (entityType !== "template" && !formData.clientId) {
             toast.error("Please select a client");
             return;
         }
@@ -179,7 +180,10 @@ export function CreateEntityDialog({
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    ...formData,
+                    clientId: formData.clientId === "none" ? null : (formData.clientId || null),
+                }),
             });
 
             if (res.ok) {
@@ -223,7 +227,9 @@ export function CreateEntityDialog({
                 <form onSubmit={handleSubmit} className="space-y-4 py-4">
                     {!initialClientId && (
                         <div className="space-y-2">
-                            <Label htmlFor="clientId">{t.common?.clients || "Client"} *</Label>
+                            <Label htmlFor="clientId">
+                                {t.common?.clients || "Client"}{entityType !== "template" && " *"}
+                            </Label>
                             <Select
                                 value={formData.clientId}
                                 onValueChange={(value) => setFormData({ ...formData, clientId: value })}
@@ -233,6 +239,11 @@ export function CreateEntityDialog({
                                     <SelectValue placeholder={fetchingClients ? t.common.loading : "Select a client"} />
                                 </SelectTrigger>
                                 <SelectContent>
+                                    {entityType === "template" && (
+                                        <SelectItem value="none">
+                                            {t.templates?.createDialog?.noClient || "No Client (Unassigned)"}
+                                        </SelectItem>
+                                    )}
                                     {clients.map((client) => (
                                         <SelectItem key={client.id} value={client.id}>
                                             {client.name}
@@ -277,7 +288,7 @@ export function CreateEntityDialog({
                         </Button>
                         <Button
                             type="submit"
-                            disabled={loading || (fetchingClients && !initialClientId && !isEdit) || (!formData.clientId && !initialClientId && !isEdit)}
+                            disabled={loading || (fetchingClients && !initialClientId && !isEdit) || (entityType !== "template" && !formData.clientId && !initialClientId && !isEdit)}
                             className="gap-2"
                         >
                             {loading && <Spinner className="h-4 w-4" />}

@@ -430,7 +430,7 @@ Your response must be a single JSON object containing:
                 htmlContent,
                 jsonContent: template,
                 isAIGenerated: true,
-                category: "AI Generated",
+                // category is intentionally NOT set - only Library Blueprints should have category
                 clientId: clientId || null,
                 createdById: session.user.id,
                 updatedById: session.user.id,
@@ -445,7 +445,8 @@ Your response must be a single JSON object containing:
         if (newTemplate.client) {
             redirectUrl = `/dashboard/clients/${(newTemplate.client as any).slug}/templates/${newTemplate.id}`;
         } else {
-            redirectUrl = `/dashboard/library/templates/${newTemplate.id}`;
+            // Templates without client go to /dashboard/templates, not library
+            redirectUrl = `/dashboard/templates/${newTemplate.id}`;
         }
 
         // Revalidate paths to refresh the lists

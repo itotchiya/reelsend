@@ -557,6 +557,7 @@
             "description": "Set up the basic details for your new email template.",
             "clientLabel": "Client",
             "selectClient": "Select a client",
+            "noClient": "No Client (Unassigned)",
             "nameLabel": "Template Name",
             "namePlaceholder": "e.g., Welcome Email",
             "descLabel": "Description",

@@ -616,17 +616,28 @@ export default function BlockLibraryDrawer() {
         }
 
         // Handle columns (for ColumnsContainer)
-        const columns = clonedBlock.data?.columns || [];
+        const columns = clonedBlock.data?.props?.columns || clonedBlock.data?.columns || [];
         if (columns.length > 0) {
-          clonedBlock.data.columns = columns.map((col: any, colIdx: number) => {
+          // Clone the columns array to avoid mutating the original prop if it was a reference
+          const newColumns = JSON.parse(JSON.stringify(columns));
+
+          newColumns.forEach((col: any, colIdx: number) => {
             const colChildrenIds = col.childrenIds || [];
             const newColChildrenIds: string[] = [];
+
             colChildrenIds.forEach((childId: string, childIdx: number) => {
               const newChildId = `${targetId}-col-${colIdx}-child-${childIdx}`;
               if (collectBlocks(childId, newChildId)) newColChildrenIds.push(newChildId);
             });
-            return { ...col, childrenIds: newColChildrenIds };
+
+            col.childrenIds = newColChildrenIds;
           });
+
+          if (clonedBlock.data?.props?.columns) {
+            clonedBlock.data.props.columns = newColumns;
+          } else {
+            clonedBlock.data.columns = newColumns;
+          }
         }
 
         wrapperDocument[targetId] = clonedBlock;

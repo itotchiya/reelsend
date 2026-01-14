@@ -40,7 +40,11 @@ export default async function CampaignPage({ params }: PageProps) {
     // Fetch templates, audiences with segments, and SMTP profiles
     const [templates, audiences, smtpProfiles] = await Promise.all([
         db.template.findMany({
-            where: { clientId: campaign.clientId },
+            where: {
+                clientId: campaign.clientId,
+                // Exclude "Blueprints" (which typically have a category set from the Library)
+                category: null,
+            },
             orderBy: { createdAt: "desc" },
         }),
         db.audience.findMany({
