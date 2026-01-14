@@ -31,12 +31,14 @@ jobs:
       - name: Create Service Account Key File
         run: echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}' > service-account.json
 
+      - name: Add PostgreSQL 17 to PATH
+        run: echo "/usr/lib/postgresql/17/bin" >> $GITHUB_PATH
+
       - name: Run Backup Script
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           GOOGLE_APPLICATION_CREDENTIALS: service-account.json
           GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
-          PATH: /usr/lib/postgresql/17/bin:${{ env.PATH }}
         run: npx tsx scripts/backup-to-drive.ts
 
       - name: Cleanup Key File
