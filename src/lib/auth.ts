@@ -62,15 +62,38 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }),
     ],
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger }) {
+            // On initial sign-in, populate the token
             if (user) {
                 token.id = user.id;
                 token.role = (user as any).role;
                 token.permissions = (user as any).permissions;
             }
+
+            // On every request (session update), verify user still exists
+            // This handles the case where user was deleted from DB
+            if (trigger === "update" || !user) {
+                // Check if user exists in database
+                const existingUser = await db.user.findUnique({
+                    where: { id: token.id as string },
+                    select: { id: true, status: true },
+                });
+
+                // If user doesn't exist or is disabled, invalidate the session
+                if (!existingUser || existingUser.status === "DISABLED") {
+                    // Returning an empty object effectively invalidates the token
+                    return { ...token, error: "UserNotFound" };
+                }
+            }
+
             return token;
         },
         async session({ session, token }) {
+            // If token has an error (user deleted), return null session
+            if ((token as any).error === "UserNotFound") {
+                return { ...session, user: undefined, expires: new Date(0).toISOString() };
+            }
+
             if (token && session.user) {
                 session.user.id = token.id as string;
                 (session.user as any).role = token.role;

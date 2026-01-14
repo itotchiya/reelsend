@@ -1,0 +1,59 @@
+name: Restore Database from Google Drive
+
+on:
+  workflow_dispatch:
+    inputs:
+      backup_index:
+        description: 'Backup number to restore (1 = most recent)'
+        required: true
+        default: '1'
+        type: string
+      confirm:
+        description: 'Type "RESTORE" to confirm data destruction'
+        required: true
+        type: string
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Validate Confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "RESTORE" ]; then
+            echo "❌ Confirmation failed. You must type 'RESTORE' to proceed."
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Add PostgreSQL 17 Repository
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+          sudo apt-get update
+
+      - name: Install PostgreSQL 17 Client
+        run: sudo apt-get install -y postgresql-client-17
+
+      - name: Add pg_restore to PATH
+        run: echo "/usr/lib/postgresql/17/bin" >> $GITHUB_PATH
+
+      - name: Run Restore Script
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+          BACKUP_INDEX: ${{ github.event.inputs.backup_index }}
+        run: npx tsx scripts/restore-from-drive-ci.ts
