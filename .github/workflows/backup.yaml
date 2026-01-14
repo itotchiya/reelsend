@@ -37,8 +37,10 @@ jobs:
       - name: Run Backup Script
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          GOOGLE_APPLICATION_CREDENTIALS: service-account.json
           GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
         run: npx tsx scripts/backup-to-drive.ts
 
       - name: Cleanup Key File

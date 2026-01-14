@@ -13,21 +13,40 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 const execAsync = promisify(exec);
 
 // Configuration
-const SERVICE_ACCOUNT_KEY_FILE = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-const DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID;
 const DATABASE_URL = process.env.DATABASE_URL;
+const DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID;
 
-if (!SERVICE_ACCOUNT_KEY_FILE || !DRIVE_FOLDER_ID || !DATABASE_URL) {
+// Auth Config
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN;
+const SERVICE_ACCOUNT_KEY = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+
+// Decide Authentication Method
+async function getDriveClient() {
+    if (CLIENT_ID && CLIENT_SECRET && REFRESH_TOKEN) {
+        console.log('🔐 Authenticating via OAuth 2.0 (User Quota)...');
+        const oauth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET);
+        oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
+        return google.drive({ version: 'v3', auth: oauth2Client });
+    }
+
+    if (SERVICE_ACCOUNT_KEY) {
+        console.log('🤖 Authenticating via Service Account...');
+        const auth = new google.auth.GoogleAuth({
+            keyFile: SERVICE_ACCOUNT_KEY,
+            scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+        });
+        return google.drive({ version: 'v3', auth });
+    }
+
+    throw new Error('❌ No valid Google credentials found.');
+}
+
+if (!DRIVE_FOLDER_ID || !DATABASE_URL) {
     console.error('❌ Missing configuration (check .env).');
     process.exit(1);
 }
-
-const auth = new google.auth.GoogleAuth({
-    keyFile: SERVICE_ACCOUNT_KEY_FILE,
-    scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-});
-
-const drive = google.drive({ version: 'v3', auth });
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -38,6 +57,7 @@ const question = (query: string) => new Promise<string>((resolve) => rl.question
 
 async function restore() {
     try {
+        const drive = await getDriveClient();
         console.log('🔍 Listing backups from Google Drive...');
 
         // List files in the folder
@@ -100,9 +120,6 @@ async function restore() {
         console.log('✅ Download complete.');
         console.log('🔄 Restoring database...');
 
-        // Restore command
-        // Using --clean to drop existing objects
-        // Using --no-owner --no-acl for Neon compatibility
         const cmd = `pg_restore --clean --no-owner --no-acl --dbname="${DATABASE_URL}" "${destPath}"`;
         await execAsync(cmd);
 

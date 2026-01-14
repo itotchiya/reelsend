@@ -5,32 +5,49 @@ import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 
-// Load environment variables from .env depending on your setup
-// You might want to point this to .env.local if that's where your secrets are
+// Load environmental variables
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const execAsync = promisify(exec);
 
 // Configuration
-const SERVICE_ACCOUNT_KEY_FILE = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-const DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID;
 const DATABASE_URL = process.env.DATABASE_URL;
+const DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID;
 
-if (!SERVICE_ACCOUNT_KEY_FILE || !DRIVE_FOLDER_ID || !DATABASE_URL) {
-    console.error('❌ Missing configuration. Please ensure the following environment variables are set:');
-    console.error('   - GOOGLE_APPLICATION_CREDENTIALS (path to service-account.json)');
-    console.error('   - GOOGLE_DRIVE_FOLDER_ID (ID of the folder to upload to)');
-    console.error('   - DATABASE_URL (Neon PostgreSQL connection string)');
-    process.exit(1);
+// Auth Config
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN;
+const SERVICE_ACCOUNT_KEY = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+
+// Decide Authentication Method
+async function getDriveClient() {
+    // 1. Prefer OAuth (User impersonation) to avoid Quota limits
+    if (CLIENT_ID && CLIENT_SECRET && REFRESH_TOKEN) {
+        console.log('🔐 Authenticating via OAuth 2.0 (User Quota)...');
+        const oauth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET);
+        oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
+        return google.drive({ version: 'v3', auth: oauth2Client });
+    }
+
+    // 2. Fallback to Service Account (Only works for Workspace/Shared Drives)
+    if (SERVICE_ACCOUNT_KEY) {
+        console.log('🤖 Authenticating via Service Account...');
+        const auth = new google.auth.GoogleAuth({
+            keyFile: SERVICE_ACCOUNT_KEY,
+            scopes: ['https://www.googleapis.com/auth/drive.file'],
+        });
+        return google.drive({ version: 'v3', auth });
+    }
+
+    throw new Error('❌ No valid Google credentials found. Set GOOGLE_CLIENT_ID/SECRET/REFRESH_TOKEN or GOOGLE_APPLICATION_CREDENTIALS.');
 }
 
-const auth = new google.auth.GoogleAuth({
-    keyFile: SERVICE_ACCOUNT_KEY_FILE,
-    scopes: ['https://www.googleapis.com/auth/drive.file'],
-});
-
-const drive = google.drive({ version: 'v3', auth });
+if (!DRIVE_FOLDER_ID || !DATABASE_URL) {
+    console.error('❌ Missing configuration. Please ensure DATABASE_URL and GOOGLE_DRIVE_FOLDER_ID are set.');
+    process.exit(1);
+}
 
 async function backup() {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -46,16 +63,17 @@ async function backup() {
 
     try {
         // 1. Dump Database
-        // Note: This requires pg_dump to be installed and in the PATH
         const command = `pg_dump "${DATABASE_URL}" -Fc -f "${tempFilePath}"`;
         await execAsync(command);
         console.log('✅ Database dump created locally.');
 
         // 2. Upload to Google Drive
+        const drive = await getDriveClient();
         console.log('☁️ Uploading to Google Drive...');
+
         const fileMetadata = {
             name: filename,
-            parents: [DRIVE_FOLDER_ID as string],
+            parents: [DRIVE_FOLDER_ID as string], // Cast to string to fix TS error
         };
 
         const media = {
