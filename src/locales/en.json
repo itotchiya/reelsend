@@ -388,7 +388,7 @@
         "identifier": "Identifier",
         "slugDesc": "Used for URLs and internal identification",
         "editClient": "Client Details",
-        "editClientDesc": "Update client information.",
+        "editClientDesc": "Manage client details",
         "deleteClient": "Delete Client",
         "deleteConfirm": "Are you sure you want to delete",
         "deleteWarning": "This will also delete all associated campaigns, audiences, and templates.",
@@ -447,6 +447,7 @@
     },
     "clientDetails": {
         "title": "Client Details",
+        "editClientDesc": "Manage client details",
         "clientInfo": "Client Info",
         "identifier": "Identifier",
         "emailSettings": "Email Settings",

@@ -449,6 +449,7 @@
     },
     "clientDetails": {
         "title": "Détails du Client",
+        "editClientDesc": "Gérer les détails du client",
         "clientInfo": "Infos Client",
         "identifier": "Identifiant",
         "emailSettings": "Paramètres Email",
