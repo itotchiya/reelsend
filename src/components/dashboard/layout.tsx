@@ -273,7 +273,7 @@ export function AppSidebar() {
 }
 
 // Breadcrumb component that generates crumbs from pathname
-function DashboardBreadcrumb() {
+export function DashboardBreadcrumb() {
     const pathname = usePathname();
     const { t } = useI18n();
 
@@ -370,10 +370,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     // Check if we are on a template editor or block editor page
     const isEditor = /\/library\/templates\/[^/]+$/.test(pathname) || /\/library\/blocks\/[^/]+$/.test(pathname) || /\/templates\/[^/]+$/.test(pathname) || /\/blocks\/[^/]+$/.test(pathname);
 
-    // Check if we are on a settings page (full-page layout without sidebar)
+    // Check if we are on a settings page or new client wizard (full-page layout without sidebar)
     const isSettings = pathname.startsWith("/dashboard/settings");
+    const isNewClient = pathname.startsWith("/dashboard/clients/new");
+    const isClientSubPage = /\/dashboard\/clients\/[^/]+\/(edit|campaigns|templates|smtp)$/.test(pathname) ||
+        /\/dashboard\/clients\/[^/]+\/audiences(\/.*)?$/.test(pathname);
 
-    if (isEditor || isSettings) {
+    if (isEditor || isSettings || isNewClient || isClientSubPage) {
         return (
             <BreadcrumbProvider>
                 {children}

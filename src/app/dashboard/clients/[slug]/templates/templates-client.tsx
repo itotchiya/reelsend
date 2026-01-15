@@ -2,12 +2,11 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 import { DataTable, Column } from "@/components/ui-kit/data-table";
 import { FilterBar } from "@/components/ui-kit/filter-bar";
 import { Button } from "@/components/ui/button";
 import { CardBadge, AIGeneratedBadge } from "@/components/ui-kit/card-badge";
-import { Plus, FileText, CheckCircle, AlertCircle } from "lucide-react";
+import { Plus, FileText, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react";
 import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
 import { useI18n } from "@/lib/i18n";
 import { CreateTemplateDialog } from "@/components/dashboard/create-entity-dialog";
@@ -16,6 +15,10 @@ import { TableRowActions, buildTemplateActions } from "@/components/ui-kit/table
 import { ActivityHistoryDialog } from "@/components/dashboard/activity-history-dialog";
 import { toast } from "sonner";
 import Link from "next/link";
+import { DashboardBreadcrumb } from "@/components/dashboard/layout";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
+import { Pagination } from "@/components/ui-kit/pagination";
 
 interface Template {
     id: string;
@@ -265,16 +268,33 @@ export function TemplatesClient({
     ];
 
     return (
-        <>
-            <PageHeader title={t.templates?.title || "Templates"} showBack>
-                <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)}>
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">{t.templates?.createTemplate || "Create Template"}</span>
-                </Button>
-            </PageHeader>
+        <div className="h-dvh flex flex-col bg-background">
+            <header className="shrink-0 flex items-center justify-between px-6 py-4 border-b bg-background">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" asChild className="-ml-2">
+                        <Link href={`/dashboard/clients/${client.slug}`}>
+                            <ArrowLeft className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <DashboardBreadcrumb />
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)}>
+                        <Plus className="h-4 w-4" />
+                        <span className="hidden sm:inline">{t.templates?.createTemplate || "Create Template"}</span>
+                    </Button>
+                    <LanguagePickerDialog />
+                    <ThemeToggle />
+                </div>
+            </header>
 
-            <PageContent>
-                <div className="space-y-6">
+            <main className="flex-1 overflow-y-auto">
+                <div className="p-6 md:p-12 space-y-6">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">{t.templates?.title || "Templates"}</h1>
+                        <p className="text-muted-foreground">{t.templates?.description || "Manage your email templates."}</p>
+                    </div>
+
                     <FilterBar
                         searchValue={searchValue}
                         onSearchChange={handleSearch}
@@ -288,14 +308,26 @@ export function TemplatesClient({
                         currentPage={currentPage}
                         totalItems={totalCount}
                         pageSize={pageSize}
-                        onPageChange={handlePageChange}
-                        onPageSizeChange={handlePageSizeChange}
-                        pageSizeOptions={[16, 20, 50, 100]}
+                        // onPageChange={handlePageChange}
+                        // onPageSizeChange={handlePageSizeChange}
+                        pageSizeOptions={[10, 20, 30, 40, 50]}
                         emptyMessage={t.templates?.noTemplates || "No templates found"}
                         emptyIcon={<FileText className="h-10 w-10 text-muted-foreground/40" />}
                     />
                 </div>
-            </PageContent>
+            </main>
+
+            <div className="shrink-0 border-t bg-background p-4 flex justify-between items-center z-10">
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                    pageSize={pageSize}
+                    onPageSizeChange={handlePageSizeChange}
+                    pageSizeOptions={[10, 20, 30, 40, 50]}
+                    totalItems={totalCount}
+                />
+            </div>
 
             <CreateTemplateDialog
                 open={isCreateDialogOpen}
@@ -334,6 +366,6 @@ export function TemplatesClient({
                     templateName={activityTemplate.name}
                 />
             )}
-        </>
+        </div>
     );
 }

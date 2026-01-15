@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
-import { SettingsTabs } from "@/components/ui-kit/settings-tabs";
+import { MotionTabs } from "@/components/ui-kit/motion-tabs";
 import { useI18n } from "@/lib/i18n";
 
 export function SettingsHeader() {
@@ -26,7 +26,7 @@ export function SettingsHeader() {
             </div>
 
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:block">
-                <SettingsTabs />
+                <MotionTabs />
             </div>
 
             <div className="flex-1 flex justify-end items-center gap-2">

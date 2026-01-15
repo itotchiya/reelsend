@@ -2,12 +2,11 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 import { DataTable, Column } from "@/components/ui-kit/data-table";
 import { FilterBar } from "@/components/ui-kit/filter-bar";
 import { Button } from "@/components/ui/button";
 import { CardBadge } from "@/components/ui-kit/card-badge";
-import { Plus, Users } from "lucide-react";
+import { Plus, Users, ArrowLeft } from "lucide-react";
 import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
 import { useI18n } from "@/lib/i18n";
 import { CreateAudienceDialog } from "@/components/dashboard/create-entity-dialog";
@@ -15,6 +14,10 @@ import { DeleteConfirmDialog } from "@/components/dashboard/delete-confirm-dialo
 import { TableRowActions, buildAudienceActions } from "@/components/ui-kit/table-row-actions";
 import { toast } from "sonner";
 import Link from "next/link";
+import { DashboardBreadcrumb } from "@/components/dashboard/layout";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
+import { Pagination } from "@/components/ui-kit/pagination";
 
 interface Audience {
     id: string;
@@ -205,16 +208,33 @@ export function AudiencesClient({
     };
 
     return (
-        <>
-            <PageHeader title={t.audiences?.title || "Audiences"} showBack>
-                <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)}>
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">{t.audiences?.createAudience || "Create Audience"}</span>
-                </Button>
-            </PageHeader>
+        <div className="h-dvh flex flex-col bg-background">
+            <header className="shrink-0 flex items-center justify-between px-6 py-4 border-b bg-background">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" asChild className="-ml-2">
+                        <Link href={`/dashboard/clients/${client.slug}`}>
+                            <ArrowLeft className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <DashboardBreadcrumb />
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)}>
+                        <Plus className="h-4 w-4" />
+                        <span className="hidden sm:inline">{t.audiences?.createAudience || "Create Audience"}</span>
+                    </Button>
+                    <LanguagePickerDialog />
+                    <ThemeToggle />
+                </div>
+            </header>
 
-            <PageContent>
-                <div className="space-y-6">
+            <main className="flex-1 overflow-y-auto">
+                <div className="p-6 md:p-12 space-y-6">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">{t.audiences?.title || "Audiences"}</h1>
+                        <p className="text-muted-foreground">{t.audiences?.description || "Manage your contacts and audiences."}</p>
+                    </div>
+
                     <FilterBar
                         searchValue={searchValue}
                         onSearchChange={handleSearch}
@@ -228,14 +248,25 @@ export function AudiencesClient({
                         currentPage={currentPage}
                         totalItems={totalCount}
                         pageSize={pageSize}
-                        onPageChange={handlePageChange}
-                        onPageSizeChange={handlePageSizeChange}
-                        pageSizeOptions={[16, 20, 50, 100]}
+                        // onPageChange={handlePageChange}
+                        pageSizeOptions={[10, 20, 30, 40, 50]}
                         emptyMessage={t.audiences?.noAudiences || "No audiences found"}
                         emptyIcon={<Users className="h-10 w-10 text-muted-foreground/40" />}
                     />
                 </div>
-            </PageContent>
+            </main>
+
+            <div className="shrink-0 border-t bg-background p-4 flex justify-between items-center z-10">
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                    pageSize={pageSize}
+                    onPageSizeChange={handlePageSizeChange}
+                    pageSizeOptions={[10, 20, 30, 40, 50]}
+                    totalItems={totalCount}
+                />
+            </div>
 
             <CreateAudienceDialog
                 open={isCreateDialogOpen}
@@ -252,6 +283,6 @@ export function AudiencesClient({
                 description="This action cannot be undone. This will permanently delete the audience and all associated contacts."
                 loading={deleteLoading}
             />
-        </>
+        </div>
     );
 }

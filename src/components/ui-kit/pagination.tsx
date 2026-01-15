@@ -28,6 +28,7 @@ export interface PaginationProps {
     pageSize?: number;
     onPageSizeChange?: (size: number) => void;
     pageSizeOptions?: number[];
+    totalItems?: number;
 }
 
 export function CustomPagination({
@@ -38,11 +39,36 @@ export function CustomPagination({
     className,
     pageSize,
     onPageSizeChange,
-    pageSizeOptions = [10, 20, 50, 100],
+    pageSizeOptions = [10, 20, 30, 40, 50],
+    totalItems,
 }: PaginationProps) {
     const { t } = useI18n();
 
-    if (totalPages === 0) return null;
+    // Even if no pages, we might want to show "0 results" or similar if totalItems is 0,
+    // but typically we return null if no data. However, for 0 items we might still want to show
+    // the structure or just null. Let's stick to returning null if totalPages is 0 AND we have no items.
+    // But if we have items (e.g. 1 item = 1 page), we show.
+    // If no items, show simplified footer with "No results"
+    if (totalPages === 0 || (totalItems !== undefined && totalItems === 0)) {
+        return (
+            <div className={cn("grid grid-cols-1 sm:grid-cols-3 items-center gap-4 w-full", className)}>
+                <div className="flex justify-center sm:justify-start order-2 sm:order-1">
+                    {/* Empty left side or could show page size if desired even for 0 results, 
+                        but usually better to hide controls. Keeping simplified. */}
+                </div>
+                <div className="flex justify-center order-1 sm:order-2">
+                    <span className="text-sm text-muted-foreground">{t.common?.noResults || "No results"}</span>
+                </div>
+                <div className="flex justify-center sm:justify-end order-3 text-sm text-muted-foreground">
+                    {totalItems !== undefined && (
+                        <span>
+                            0 results
+                        </span>
+                    )}
+                </div>
+            </div>
+        );
+    }
 
     const getPageNumbers = () => {
         const pages: (number | "ellipsis")[] = [];
@@ -82,32 +108,36 @@ export function CustomPagination({
     const pages = getPageNumbers();
 
     return (
-        <div className={cn("flex flex-col sm:flex-row items-center justify-between gap-4 w-full", className)}>
-            {pageSize && onPageSizeChange && (
-                <div className="flex items-center gap-3 text-sm text-muted-foreground order-2 sm:order-1">
-                    <span className="whitespace-nowrap">{t.pagination?.show || "Show"}</span>
-                    <Select
-                        value={pageSize.toString()}
-                        onValueChange={(value) => {
-                            onPageSizeChange(Number(value));
-                        }}
-                    >
-                        <SelectTrigger className="h-8 w-[70px]">
-                            <SelectValue placeholder={pageSize} />
-                        </SelectTrigger>
-                        <SelectContent side="top">
-                            {pageSizeOptions.map((size) => (
-                                <SelectItem key={size} value={size.toString()}>
-                                    {size}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <span className="whitespace-nowrap">{t.pagination?.perPage || "per page"}</span>
-                </div>
-            )}
+        <div className={cn("grid grid-cols-1 sm:grid-cols-3 items-center gap-4 w-full", className)}>
+            {/* Left: Page Size Select */}
+            <div className="flex justify-center sm:justify-start order-2 sm:order-1">
+                {pageSize && onPageSizeChange && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span className="whitespace-nowrap">{t.pagination?.show || "Show"}</span>
+                        <Select
+                            value={pageSize.toString()}
+                            onValueChange={(value) => {
+                                onPageSizeChange(Number(value));
+                            }}
+                        >
+                            <SelectTrigger className="h-8 w-[70px]">
+                                <SelectValue placeholder={pageSize} />
+                            </SelectTrigger>
+                            <SelectContent side="top">
+                                {pageSizeOptions.map((size) => (
+                                    <SelectItem key={size} value={size.toString()}>
+                                        {size}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <span className="whitespace-nowrap">{t.pagination?.perPage || "per page"}</span>
+                    </div>
+                )}
+            </div>
 
-            <div className="order-1 sm:order-2 w-full sm:w-auto flex justify-center sm:justify-end">
+            {/* Middle: Pagination Controls */}
+            <div className="flex justify-center order-1 sm:order-2">
                 <Pagination className={cn("w-auto mx-0")}>
                     <PaginationContent>
                         <PaginationItem>
@@ -139,7 +169,7 @@ export function CustomPagination({
 
                         <PaginationItem className="sm:hidden">
                             <span className="text-sm text-muted-foreground px-2">
-                                {t.pagination?.page || "Page"} {currentPage} {t.pagination?.of || "of"} {totalPages}
+                                {currentPage} / {totalPages}
                             </span>
                         </PaginationItem>
 
@@ -155,6 +185,15 @@ export function CustomPagination({
                         </PaginationItem>
                     </PaginationContent>
                 </Pagination>
+            </div>
+
+            {/* Right: Total Results */}
+            <div className="flex justify-center sm:justify-end order-3 text-sm text-muted-foreground">
+                {totalItems !== undefined && (
+                    <span>
+                        {totalItems} results
+                    </span>
+                )}
             </div>
         </div>
     );

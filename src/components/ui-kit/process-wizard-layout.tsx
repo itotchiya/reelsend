@@ -1,11 +1,22 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProcessSteps } from "@/components/ui-kit/process-steps";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ProcessWizardLayoutProps {
     steps: string[];
@@ -43,6 +54,7 @@ export function ProcessWizardLayout({
     children,
 }: ProcessWizardLayoutProps) {
     const router = useRouter();
+    const [showExitDialog, setShowExitDialog] = useState(false);
 
     const handleCancel = () => {
         if (onCancel) {
@@ -60,13 +72,14 @@ export function ProcessWizardLayout({
         <div className="h-dvh bg-background flex flex-col overflow-hidden">
             {/* Fixed Header */}
             <header className="shrink-0 h-24 flex items-center justify-between px-4 md:px-12 lg:px-24 border-b border-border bg-background relative z-10">
+                {/* Left: Back Button */}
                 <Button
                     variant="ghost"
-                    onClick={handleCancel}
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors z-20 relative"
+                    onClick={() => setShowExitDialog(true)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors z-20 relative"
                 >
-                    <X className="h-4 w-4" />
-                    <span className="hidden sm:inline">Cancel</span>
+                    <ArrowLeft className="h-4 w-4" />
+                    <span className="hidden sm:inline">Back</span>
                 </Button>
 
                 {/* Centered Steps Indicator */}
@@ -80,8 +93,39 @@ export function ProcessWizardLayout({
                     </div>
                 </div>
 
-                <div className="w-20" /> {/* Spacer for centering balance */}
+                {/* Right: Cancel Button */}
+                <div className="z-20 relative">
+                    <Button
+                        variant="ghost"
+                        onClick={() => setShowExitDialog(true)}
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                    >
+                        <span className="hidden sm:inline mr-2">Cancel</span>
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
             </header>
+
+            {/* Exit Confirmation Dialog */}
+            <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Discard creation?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to cancel the creation? All progress will be lost.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Continue Editing</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleCancel}
+                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                        >
+                            Discard
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Scrollable Content */}
             <main className="flex-1 overflow-y-auto px-4 md:px-12 lg:px-24 py-8">

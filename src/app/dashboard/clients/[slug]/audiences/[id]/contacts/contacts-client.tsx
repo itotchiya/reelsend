@@ -3,12 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
-import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 import { DataTable, Column } from "@/components/ui-kit/data-table";
 import { FilterBar } from "@/components/ui-kit/filter-bar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Upload, Download, UserCircle } from "lucide-react";
+import { Plus, Upload, Download, UserCircle, ArrowLeft } from "lucide-react";
 import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
 import { TableRowActions } from "@/components/ui-kit/table-row-actions";
 import { toast } from "sonner";
@@ -17,6 +16,11 @@ import { AddContactDialog } from "../components/add-contact-dialog";
 import { ImportContactsDialog } from "../components/import-contacts-dialog";
 import { ContactDetailDialog } from "../components/contact-detail-dialog";
 import { DeleteConfirmDialog } from "@/components/dashboard/delete-confirm-dialog";
+import { DashboardBreadcrumb } from "@/components/dashboard/layout";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
+import { Pagination } from "@/components/ui-kit/pagination";
+import Link from "next/link";
 
 interface Contact {
     id: string;
@@ -80,8 +84,12 @@ export function ContactsClient({
 
     useEffect(() => {
         setOverride(audience.client.slug, audience.client.name);
-        return () => removeOverride(audience.client.slug);
-    }, [audience.client.slug, audience.client.name, setOverride, removeOverride]);
+        setOverride(audience.id, audience.name);
+        return () => {
+            removeOverride(audience.client.slug);
+            removeOverride(audience.id);
+        };
+    }, [audience.client.slug, audience.client.name, audience.id, audience.name, setOverride, removeOverride]);
 
     const updateUrl = (params: Record<string, string>) => {
         const searchParams = new URLSearchParams();
@@ -99,11 +107,11 @@ export function ContactsClient({
     };
 
     const handlePageChange = (page: number) => {
-        updateUrl({ search: searchValue, page: page.toString(), status: statusFilter });
+        updateUrl({ search: searchValue, page: page.toString(), status: statusFilter, pageSize: pageSize.toString() });
     };
 
     const handlePageSizeChange = (size: number) => {
-        updateUrl({ search: searchValue, page: "1", status: statusFilter });
+        updateUrl({ search: searchValue, page: "1", status: statusFilter, pageSize: size.toString() });
     };
 
     const handleClearFilters = () => {
@@ -252,14 +260,20 @@ export function ContactsClient({
         },
     ];
 
+    const totalPages = Math.ceil(totalCount / pageSize);
+
     return (
-        <>
-            <PageHeader
-                title={t.common?.contacts || "Contacts"}
-                showBack
-                onBack={() => router.push(`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}`)}
-            >
-                <div className="flex gap-2">
+        <div className="h-dvh flex flex-col bg-background">
+            <header className="shrink-0 flex items-center justify-between px-6 py-4 border-b bg-background">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" asChild className="-ml-2">
+                        <Link href={`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}`}>
+                            <ArrowLeft className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <DashboardBreadcrumb />
+                </div>
+                <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}>
                         <Download className="h-4 w-4" />
                         <span className="hidden sm:inline">{t.audiences?.exportContacts || "Export CSV"}</span>
@@ -272,11 +286,18 @@ export function ContactsClient({
                         <Plus className="h-4 w-4" />
                         <span className="hidden sm:inline">{t.audiences?.details?.addContact || "Add Contact"}</span>
                     </Button>
+                    <LanguagePickerDialog />
+                    <ThemeToggle />
                 </div>
-            </PageHeader>
+            </header>
 
-            <PageContent>
-                <div className="space-y-6">
+            <main className="flex-1 overflow-y-auto">
+                <div className="p-6 md:p-12 space-y-6">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">{t.common?.contacts || "Contacts"}</h1>
+                        <p className="text-muted-foreground">{t.audiences?.contactsDescription || "Manage your contact list."}</p>
+                    </div>
+
                     <FilterBar
                         searchValue={searchValue}
                         onSearchChange={handleSearch}
@@ -290,14 +311,25 @@ export function ContactsClient({
                         currentPage={currentPage}
                         totalItems={totalCount}
                         pageSize={pageSize}
-                        onPageChange={handlePageChange}
-                        onPageSizeChange={handlePageSizeChange}
-                        pageSizeOptions={[20, 50, 100]}
+                        // onPageChange={handlePageChange}
+                        pageSizeOptions={[10, 20, 30, 40, 50]}
                         emptyMessage={t.audiences?.noContactsFound || "No contacts found"}
                         emptyIcon={<UserCircle className="h-10 w-10 text-muted-foreground/40" />}
                     />
                 </div>
-            </PageContent>
+            </main>
+
+            <div className="shrink-0 border-t bg-background p-4 flex justify-between items-center z-10">
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                    pageSize={pageSize}
+                    onPageSizeChange={handlePageSizeChange}
+                    pageSizeOptions={[10, 20, 30, 40, 50]}
+                    totalItems={totalCount}
+                />
+            </div>
 
             <AddContactDialog
                 audienceId={audience.id}
@@ -328,6 +360,6 @@ export function ContactsClient({
                 description={t.audiences?.deleteContactConfirm || "This action cannot be undone."}
                 loading={deleteLoading}
             />
-        </>
+        </div>
     );
 }

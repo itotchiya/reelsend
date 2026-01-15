@@ -123,6 +123,7 @@
     "roles": {
         "title": "Rôles et Permissions",
         "description": "Gérez les rôles utilisateurs et leurs permissions sur la plateforme.",
+        "newRole": "Nouveau Rôle",
         "systemRole": "Rôle Système",
         "permissions": "permissions",
         "editPermissions": "Modifier les Permissions",
@@ -431,6 +432,7 @@
         "templatesDescription": "Concevoir les modèles d'email",
         "smtpConfiguration": "Configuration SMTP",
         "smtpConfigDescription": "Profils SMTP connectés pour ce client",
+        "manageSmtpDescription": "Voir et gérer les profils SMTP pour ce client.",
         "manageProfiles": "Gérer les Profils",
         "noSmtpProfiles": "Aucun profil SMTP configuré pour ce client.",
         "smtpProfilesRequired": "Les paramètres SMTP sont requis pour envoyer des campagnes.",

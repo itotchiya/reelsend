@@ -3,13 +3,16 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
-import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
-import { Plus, LayoutGrid } from "lucide-react";
+import { Plus, LayoutGrid, ArrowLeft } from "lucide-react";
 import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
 import { SegmentCard } from "./segment-card";
 import { DeleteConfirmDialog } from "@/components/dashboard/delete-confirm-dialog";
 import { toast } from "sonner";
+import { DashboardBreadcrumb } from "@/components/dashboard/layout";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
+import Link from "next/link";
 
 interface Segment {
     id: string;
@@ -62,8 +65,12 @@ export function SegmentsClient({ audience, segments: initialSegments }: Segments
     // Breadcrumbs
     useEffect(() => {
         setOverride(audience.client.slug, audience.client.name);
-        return () => removeOverride(audience.client.slug);
-    }, [audience.client.slug, audience.client.name, setOverride, removeOverride]);
+        setOverride(audience.id, audience.name);
+        return () => {
+            removeOverride(audience.client.slug);
+            removeOverride(audience.id);
+        };
+    }, [audience.client.slug, audience.client.name, audience.id, audience.name, setOverride, removeOverride]);
 
     const handleDelete = async () => {
         if (!deletingSegment) return;
@@ -87,20 +94,33 @@ export function SegmentsClient({ audience, segments: initialSegments }: Segments
     };
 
     return (
-        <>
-            <PageHeader
-                title={t.audiences?.segments || "Segments"}
-                showBack
-                onBack={() => router.push(`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}`)}
-            >
-                <Button size="sm" className="gap-2" onClick={() => router.push(newSegmentUrl)}>
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">{t.audiences?.createSegment || "Create Segment"}</span>
-                </Button>
-            </PageHeader>
+        <div className="h-dvh flex flex-col bg-background">
+            <header className="shrink-0 flex items-center justify-between px-6 py-4 border-b bg-background">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" asChild className="-ml-2">
+                        <Link href={`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}`}>
+                            <ArrowLeft className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <DashboardBreadcrumb />
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button size="sm" className="gap-2" onClick={() => router.push(newSegmentUrl)}>
+                        <Plus className="h-4 w-4" />
+                        <span className="hidden sm:inline">{t.audiences?.createSegment || "Create Segment"}</span>
+                    </Button>
+                    <LanguagePickerDialog />
+                    <ThemeToggle />
+                </div>
+            </header>
 
-            <PageContent>
-                <div className="space-y-6">
+            <main className="flex-1 overflow-y-auto">
+                <div className="p-6 md:p-12 space-y-6">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">{t.audiences?.segments || "Segments"}</h1>
+                        <p className="text-muted-foreground">{t.audiences?.segmentsDescription || "Create targeted segments."}</p>
+                    </div>
+
                     {segments.length > 0 ? (
                         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                             {segments.map((segment) => (
@@ -136,7 +156,13 @@ export function SegmentsClient({ audience, segments: initialSegments }: Segments
                         </div>
                     )}
                 </div>
-            </PageContent>
+            </main>
+
+            <div className="shrink-0 border-t bg-background p-4 flex justify-between items-center z-10 min-h-[64px]">
+                <div className="text-xs text-muted-foreground">
+                    {segments.length} segments found
+                </div>
+            </div>
 
             <DeleteConfirmDialog
                 open={deleteDialogOpen}
@@ -146,7 +172,6 @@ export function SegmentsClient({ audience, segments: initialSegments }: Segments
                 description={t.audiences?.deleteSegmentConfirm || "This action cannot be undone. Contacts will not be deleted."}
                 loading={deleteLoading}
             />
-        </>
+        </div>
     );
 }
-

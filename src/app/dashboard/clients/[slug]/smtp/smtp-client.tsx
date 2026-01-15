@@ -1,18 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Server, Pencil, Trash2, Eye, EyeOff, Copy, Shield, ShieldOff, Check } from "lucide-react";
+import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
+import { Server, Pencil, Trash2, Eye, EyeOff, Copy, Shield, ShieldOff, Check, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 import { FilterBar } from "@/components/ui-kit/filter-bar";
 import { DataTable, Column } from "@/components/ui-kit/data-table";
 import { CardBadge } from "@/components/ui-kit/card-badge";
 import { EditProfileNameDialog, DeleteProfileDialog } from "@/components/dashboard/smtp-profile-dialogs";
+import { DashboardBreadcrumb } from "@/components/dashboard/layout";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
+import { Pagination } from "@/components/ui-kit/pagination";
 
 interface SmtpProfile {
     id: string;
@@ -42,8 +46,19 @@ interface SmtpClientProps {
 export function SmtpClient({ client, canEdit }: SmtpClientProps) {
     const { t } = useI18n();
     const router = useRouter();
+    const { setOverride, removeOverride } = useBreadcrumbs();
+
+    useEffect(() => {
+        setOverride(client.slug, client.name);
+        return () => removeOverride(client.slug);
+    }, [client.slug, client.name, setOverride, removeOverride]);
+
     const [profiles, setProfiles] = useState<SmtpProfile[]>(client.smtpProfiles);
     const [searchValue, setSearchValue] = useState("");
+
+    // Pagination State (Client-side)
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
 
     // Password visibility state (per profile)
     const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
@@ -61,6 +76,16 @@ export function SmtpClient({ client, canEdit }: SmtpClientProps) {
         p.host.toLowerCase().includes(searchValue.toLowerCase()) ||
         p.user.toLowerCase().includes(searchValue.toLowerCase())
     );
+
+    // Pagination Logic
+    const totalItems = filteredProfiles.length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const paginatedProfiles = filteredProfiles.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+    // Reset to page 1 when search changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchValue]);
 
     const togglePasswordVisibility = (id: string) => {
         setVisiblePasswords((prev) => {
@@ -94,7 +119,7 @@ export function SmtpClient({ client, canEdit }: SmtpClientProps) {
             key: "number",
             header: "#",
             render: (_, index) => (
-                <span className="text-muted-foreground text-xs">{index + 1}</span>
+                <span className="text-muted-foreground text-xs">{(currentPage - 1) * pageSize + index + 1}</span>
             ),
         },
         {
@@ -217,18 +242,35 @@ export function SmtpClient({ client, canEdit }: SmtpClientProps) {
     }
 
     return (
-        <>
-            <PageHeader title={t.clients?.smtpConfiguration || "SMTP Configuration"} showBack>
-                <Link href="/dashboard/postal">
-                    <Button variant="outline" className="gap-2">
-                        <Server className="h-4 w-4" />
-                        <span className="hidden sm:inline">{t.clients?.manageProfiles || "Manage All Profiles"}</span>
+        <div className="h-dvh flex flex-col bg-background">
+            <header className="shrink-0 flex items-center justify-between px-6 py-4 border-b bg-background">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" asChild className="-ml-2">
+                        <Link href={`/dashboard/clients/${client.slug}`}>
+                            <ArrowLeft className="h-4 w-4" />
+                        </Link>
                     </Button>
-                </Link>
-            </PageHeader>
+                    <DashboardBreadcrumb />
+                </div>
+                <div className="flex items-center gap-2">
+                    <Link href="/dashboard/postal">
+                        <Button variant="outline" className="gap-2">
+                            <Server className="h-4 w-4" />
+                            <span className="hidden sm:inline">{t.clients?.manageProfiles || "Manage All Profiles"}</span>
+                        </Button>
+                    </Link>
+                    <LanguagePickerDialog />
+                    <ThemeToggle />
+                </div>
+            </header>
 
-            <PageContent>
-                <div className="space-y-6">
+            <main className="flex-1 overflow-y-auto">
+                <div className="p-6 md:p-12 space-y-6">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">{t.clients?.smtpConfiguration || "SMTP Configuration"}</h1>
+                        <p className="text-muted-foreground">{t.clients?.manageSmtpDescription || "View and manage SMTP profiles for this client."}</p>
+                    </div>
+
                     <FilterBar
                         searchValue={searchValue}
                         onSearchChange={setSearchValue}
@@ -237,18 +279,31 @@ export function SmtpClient({ client, canEdit }: SmtpClientProps) {
                     />
 
                     <DataTable
-                        data={filteredProfiles}
+                        data={paginatedProfiles}
                         columns={columns}
-                        currentPage={1}
-                        totalItems={filteredProfiles.length}
-                        pageSize={filteredProfiles.length || 10}
-                        onPageChange={() => { }}
-                        onPageSizeChange={() => { }}
+                        currentPage={currentPage}
+                        totalItems={totalItems}
+                        pageSize={pageSize}
+                        onPageChange={setCurrentPage}
+                        onPageSizeChange={setPageSize}
+                        pageSizeOptions={[10, 20, 30, 40, 50]}
                         emptyMessage={t.clients?.noSmtpProfiles || "No SMTP profiles found"}
                         emptyIcon={<Server className="h-10 w-10 text-muted-foreground/40" />}
                     />
                 </div>
-            </PageContent>
+            </main>
+
+            <div className="shrink-0 border-t bg-background p-4 flex justify-between items-center z-10">
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    pageSize={pageSize}
+                    onPageSizeChange={setPageSize}
+                    pageSizeOptions={[10, 20, 30, 40, 50]}
+                    totalItems={totalItems}
+                />
+            </div>
 
             {/* Edit Name Dialog */}
             <EditProfileNameDialog
@@ -267,6 +322,6 @@ export function SmtpClient({ client, canEdit }: SmtpClientProps) {
                 profileName={deletingProfile?.name || ""}
                 onSuccess={refreshProfiles}
             />
-        </>
+        </div>
     );
 }

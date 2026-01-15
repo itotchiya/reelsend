@@ -123,6 +123,7 @@
     "roles": {
         "title": "Roles & Permissions",
         "description": "Manage user roles and their permissions across the platform.",
+        "newRole": "New Role",
         "systemRole": "System Role",
         "permissions": "permissions",
         "editPermissions": "Edit Permissions",
@@ -429,6 +430,7 @@
         "templatesDescription": "Design email templates",
         "smtpConfiguration": "SMTP Configuration",
         "smtpConfigDescription": "Connected SMTP profiles for this client",
+        "manageSmtpDescription": "View and manage SMTP profiles for this client.",
         "manageProfiles": "Manage Profiles",
         "noSmtpProfiles": "No SMTP profiles configured for this client.",
         "smtpProfilesRequired": "SMTP settings are required to send campaigns.",

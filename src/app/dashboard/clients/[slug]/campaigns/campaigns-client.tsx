@@ -7,7 +7,7 @@ import { DataTable, Column } from "@/components/ui-kit/data-table";
 import { FilterBar, FilterConfig } from "@/components/ui-kit/filter-bar";
 import { Button } from "@/components/ui/button";
 import { CardBadge } from "@/components/ui-kit/card-badge";
-import { Plus, Mail, Clock, CheckCircle, AlertCircle, Send, Ban } from "lucide-react";
+import { Plus, Mail, Clock, CheckCircle, AlertCircle, Send, Ban, ArrowLeft } from "lucide-react";
 import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
 import { useI18n } from "@/lib/i18n";
 import { CreateCampaignDialog } from "@/components/dashboard/create-entity-dialog";
@@ -15,6 +15,10 @@ import { DeleteConfirmDialog } from "@/components/dashboard/delete-confirm-dialo
 import { TableRowActions, buildCampaignActions } from "@/components/ui-kit/table-row-actions";
 import { toast } from "sonner";
 import Link from "next/link";
+import { DashboardBreadcrumb } from "@/components/dashboard/layout";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
+import { Pagination } from "@/components/ui-kit/pagination";
 
 interface Campaign {
     id: string;
@@ -241,16 +245,33 @@ export function CampaignsClient({
     };
 
     return (
-        <>
-            <PageHeader title={t.campaigns?.title || "Campaigns"} showBack>
-                <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)}>
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">{t.campaigns?.createCampaign || "Create Campaign"}</span>
-                </Button>
-            </PageHeader>
+        <div className="h-dvh flex flex-col bg-background">
+            <header className="shrink-0 flex items-center justify-between px-6 py-4 border-b bg-background">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" asChild className="-ml-2">
+                        <Link href={`/dashboard/clients/${client.slug}`}>
+                            <ArrowLeft className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <DashboardBreadcrumb />
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)}>
+                        <Plus className="h-4 w-4" />
+                        <span className="hidden sm:inline">{t.campaigns?.createCampaign || "Create Campaign"}</span>
+                    </Button>
+                    <LanguagePickerDialog />
+                    <ThemeToggle />
+                </div>
+            </header>
 
-            <PageContent>
-                <div className="space-y-6">
+            <main className="flex-1 overflow-y-auto">
+                <div className="p-6 md:p-12 space-y-6">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">{t.campaigns?.title || "Campaigns"}</h1>
+                        <p className="text-muted-foreground">{t.campaigns?.description || "Manage your email campaigns."}</p>
+                    </div>
+
                     <FilterBar
                         searchValue={searchValue}
                         onSearchChange={handleSearch}
@@ -267,14 +288,27 @@ export function CampaignsClient({
                         currentPage={currentPage}
                         totalItems={totalCount}
                         pageSize={pageSize}
-                        onPageChange={handlePageChange}
-                        onPageSizeChange={handlePageSizeChange}
-                        pageSizeOptions={[16, 20, 50, 100]}
+                        // We do NOT pass onPageChange here to avoid double pagination
+                        // onPageChange={handlePageChange}
+                        // onPageSizeChange={handlePageSizeChange}
+                        pageSizeOptions={[10, 20, 30, 40, 50]}
                         emptyMessage={t.campaigns?.noCampaigns || "No campaigns found"}
                         emptyIcon={<Mail className="h-10 w-10 text-muted-foreground/40" />}
                     />
                 </div>
-            </PageContent>
+            </main>
+
+            <div className="shrink-0 border-t bg-background p-4 flex justify-between items-center z-10">
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(totalCount / pageSize)}
+                    onPageChange={handlePageChange}
+                    pageSize={pageSize}
+                    onPageSizeChange={handlePageSizeChange}
+                    pageSizeOptions={[10, 20, 30, 40, 50]}
+                    totalItems={totalCount}
+                />
+            </div>
 
             <CreateCampaignDialog
                 open={isCreateDialogOpen}
@@ -308,6 +342,6 @@ export function CampaignsClient({
                     router.refresh();
                 }}
             />
-        </>
+        </div>
     );
 }
