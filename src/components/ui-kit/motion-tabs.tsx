@@ -6,12 +6,24 @@ import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 
-export function MotionTabs() {
+export interface TabItem {
+    name: string;
+    href: string;
+    active: boolean;
+    onClick?: () => void;
+}
+
+interface MotionTabsProps {
+    tabs?: TabItem[];
+    className?: string;
+}
+
+export function MotionTabs({ tabs: customTabs, className }: MotionTabsProps) {
     const pathname = usePathname();
     const { t } = useI18n();
     const settings = (t as any).settings;
 
-    const tabs = [
+    const defaultTabs: TabItem[] = [
         {
             name: settings?.tabs?.general || "General",
             href: "/dashboard/settings",
@@ -29,6 +41,8 @@ export function MotionTabs() {
         }
     ];
 
+    const tabs = customTabs || defaultTabs;
+
     return (
         <nav className="relative flex items-center justify-center">
             <div className="flex items-center gap-1 p-1 bg-muted/100 rounded-full">
@@ -36,6 +50,12 @@ export function MotionTabs() {
                     <Link
                         key={tab.href}
                         href={tab.href}
+                        onClick={(e) => {
+                            if (tab.onClick) {
+                                e.preventDefault();
+                                tab.onClick();
+                            }
+                        }}
                         className={cn(
                             "relative px-4 py-2 text-sm font-medium rounded-full transition-colors z-10",
                             tab.active

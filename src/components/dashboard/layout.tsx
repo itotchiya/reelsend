@@ -23,6 +23,7 @@ import {
     Server,
     LayoutGrid,
     LayoutTemplate,
+    Home,
 } from "lucide-react";
 
 import {
@@ -62,6 +63,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { hasPermission, Permission } from "@/lib/permissions";
 import { BreadcrumbProvider, useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
+import { TabLoadingProvider } from "@/lib/contexts/tab-loading-context";
 
 interface NavItem {
     titleKey: string;
@@ -276,13 +278,13 @@ export function AppSidebar() {
 export function DashboardBreadcrumb() {
     const pathname = usePathname();
     const { t } = useI18n();
+    const { overrides } = useBreadcrumbs();
 
     const segments = pathname.split("/").filter(Boolean);
 
     // Map segments to readable names
     const getSegmentLabel = (segment: string): string => {
         // Check for overrides first
-        const { overrides } = useBreadcrumbs();
         if (overrides[segment]) return overrides[segment];
 
         const labelMap: Record<string, string> = {
@@ -300,11 +302,16 @@ export function DashboardBreadcrumb() {
         return labelMap[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
     };
 
-    // Filter out UUID-like segments for display but keep paths correct
-    const displaySegments = segments.filter(s => !s.match(/^[a-z0-9]{20,}$/i));
+    // Filter out UUID-like segments unless they have an override
+    const displaySegments = segments.filter(s => {
+        // Always show if it has an override
+        if (overrides[s]) return true;
+        // Otherwise hide if it looks like an ID
+        return !s.match(/^[a-z0-9]{20,}$/i);
+    });
 
-    // Handle ellipsis for long paths (> 4 items)
-    const MAX_ITEMS = 4;
+    // Handle ellipsis for long paths (> 3 items)
+    const MAX_ITEMS = 3;
     const items = displaySegments.map((segment) => ({
         label: getSegmentLabel(segment),
         href: "/" + segments.slice(0, segments.indexOf(segment) + 1).join("/"),
@@ -323,19 +330,31 @@ export function DashboardBreadcrumb() {
 
     return (
         <Breadcrumb>
-            <BreadcrumbList>
+            <BreadcrumbList className="flex-nowrap">
                 {visibleItems.map((item, index) => {
                     const isLast = index === visibleItems.length - 1;
                     const isFirst = index === 0;
 
+                    // Custom rendering for Dashboard (first item)
+                    const labelContent = isFirst && item.label === t.common.dashboard ? (
+                        <>
+                            <span className="hidden sm:inline">{item.label}</span>
+                            <Home className="sm:hidden h-4 w-4" />
+                        </>
+                    ) : (
+                        item.label
+                    );
+
                     return (
                         <React.Fragment key={item.href}>
-                            {index > 0 && <BreadcrumbSeparator>/</BreadcrumbSeparator>}
+                            {index > 0 && <BreadcrumbSeparator className="hidden sm:block">/</BreadcrumbSeparator>}
+                            {index > 0 && <BreadcrumbSeparator className="sm:hidden text-xs">/</BreadcrumbSeparator>}
+
                             {isFirst && hasEllipsis && (
                                 <>
-                                    <BreadcrumbItem>
-                                        <BreadcrumbLink href={item.href} className="text-muted-foreground hover:text-foreground transition-colors overflow-hidden text-ellipsis whitespace-nowrap max-w-[100px] inline-block align-bottom">
-                                            {item.label}
+                                    <BreadcrumbItem className="shrink-0">
+                                        <BreadcrumbLink href={item.href} className="text-muted-foreground hover:text-foreground transition-colors inline-flex items-center">
+                                            {labelContent}
                                         </BreadcrumbLink>
                                     </BreadcrumbItem>
                                     <BreadcrumbSeparator>/</BreadcrumbSeparator>
@@ -345,14 +364,14 @@ export function DashboardBreadcrumb() {
                                 </>
                             )}
                             {(!isFirst || !hasEllipsis) && (
-                                <BreadcrumbItem>
+                                <BreadcrumbItem className={isLast ? "min-w-0" : "shrink-0"}>
                                     {isLast ? (
-                                        <BreadcrumbPage className="font-bold text-foreground overflow-hidden text-ellipsis whitespace-nowrap max-w-[150px] sm:max-w-[200px]">
-                                            {item.label}
+                                        <BreadcrumbPage className="font-bold text-foreground truncate block max-w-[120px] sm:max-w-[200px]">
+                                            {labelContent}
                                         </BreadcrumbPage>
                                     ) : (
-                                        <BreadcrumbLink href={item.href} className="text-muted-foreground hover:text-foreground transition-colors overflow-hidden text-ellipsis whitespace-nowrap max-w-[100px] sm:max-w-[150px] inline-block align-bottom">
-                                            {item.label}
+                                        <BreadcrumbLink href={item.href} className="text-muted-foreground hover:text-foreground transition-colors truncate block max-w-[80px] sm:max-w-[150px]">
+                                            {labelContent}
                                         </BreadcrumbLink>
                                     )}
                                 </BreadcrumbItem>
@@ -378,52 +397,56 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
     if (isEditor || isSettings || isNewClient || isClientSubPage) {
         return (
-            <BreadcrumbProvider>
-                {children}
-            </BreadcrumbProvider>
+            <TabLoadingProvider>
+                <BreadcrumbProvider>
+                    {children}
+                </BreadcrumbProvider>
+            </TabLoadingProvider>
         );
     }
 
     return (
-        <BreadcrumbProvider>
-            <SidebarProvider>
-                {/* Outer container with dashboard background */}
-                <div className="flex min-h-screen w-full bg-dashboard-bg">
-                    <AppSidebar />
+        <TabLoadingProvider>
+            <BreadcrumbProvider>
+                <SidebarProvider>
+                    {/* Outer container with dashboard background */}
+                    <div className="flex min-h-screen w-full bg-dashboard-bg">
+                        <AppSidebar />
 
-                    {/* Main area wrapper */}
-                    <div className="flex-1 flex flex-col min-w-0">
-                        {/* Top header bar */}
-                        <header className="sticky top-0 z-20 flex h-16 items-center gap-4 bg-dashboard-bg px-4">
-                            {/* Left side: sidebar toggle + breadcrumbs (hidden on mobile) */}
-                            <div className="flex items-center gap-3">
-                                <SidebarTrigger className="h-9 w-9" />
-                                <Separator orientation="vertical" className="h-5" />
-                                <div className="hidden md:block">
-                                    <DashboardBreadcrumb />
+                        {/* Main area wrapper */}
+                        <div className="flex-1 flex flex-col min-w-0">
+                            {/* Top header bar */}
+                            <header className="sticky top-0 z-20 flex h-16 items-center gap-4 bg-dashboard-bg px-4">
+                                {/* Left side: sidebar toggle + breadcrumbs (hidden on mobile) */}
+                                <div className="flex items-center gap-3">
+                                    <SidebarTrigger className="h-9 w-9" />
+                                    <Separator orientation="vertical" className="h-5" />
+                                    <div className="hidden md:block">
+                                        <DashboardBreadcrumb />
+                                    </div>
                                 </div>
+
+                                {/* Right side: notifications, language, theme */}
+                                <div className="ml-auto">
+                                    <HeaderActions />
+                                </div>
+                            </header>
+
+                            {/* Mobile Breadcrumb Sub-header */}
+                            <div className="md:hidden px-4 pb-3 flex items-center h-10 -mt-2">
+                                <DashboardBreadcrumb />
                             </div>
 
-                            {/* Right side: notifications, language, theme */}
-                            <div className="ml-auto">
-                                <HeaderActions />
-                            </div>
-                        </header>
-
-                        {/* Mobile Breadcrumb Sub-header */}
-                        <div className="md:hidden px-4 pb-3 flex items-center h-10 -mt-2">
-                            <DashboardBreadcrumb />
+                            {/* Content area - only top rounded, connects to bottom */}
+                            <main className="flex-1 flex flex-col overflow-hidden px-0 md:px-4 pb-0">
+                                <div className="bg-dashboard-surface rounded-none md:rounded-t-xl flex-1 flex flex-col overflow-y-auto min-h-0 shadow-none border-t-0 md:border-t md:border-x border-border/50">
+                                    {children}
+                                </div>
+                            </main>
                         </div>
-
-                        {/* Content area - only top rounded, connects to bottom */}
-                        <main className="flex-1 flex flex-col overflow-hidden px-0 md:px-4 pb-0">
-                            <div className="bg-dashboard-surface rounded-none md:rounded-t-xl flex-1 flex flex-col overflow-y-auto min-h-0 shadow-none border-t-0 md:border-t md:border-x border-border/50">
-                                {children}
-                            </div>
-                        </main>
                     </div>
-                </div>
-            </SidebarProvider>
-        </BreadcrumbProvider>
+                </SidebarProvider>
+            </BreadcrumbProvider>
+        </TabLoadingProvider>
     );
 }

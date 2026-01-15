@@ -59,6 +59,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SmtpProfileCard } from "@/components/ui-kit/smtp-profile-card";
 import { CardBadge } from "@/components/ui-kit/card-badge";
+import { useTabLoading } from "@/lib/contexts/tab-loading-context";
+import { ClientContentSkeleton } from "@/components/skeletons/client-content-skeleton";
 
 import {
     Dialog,
@@ -151,6 +153,7 @@ interface ClientDetailClientProps {
 
 export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps) {
     const { t } = useI18n();
+    const { isLoading } = useTabLoading();
 
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -315,190 +318,194 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                     </Button>
                 </ButtonGroup>
             </PageHeader>
-            <PageContent>
-                <div className="space-y-8">
-                    {/* Header with Avatar Only */}
-                    <div className="relative">
-                        {/* Gradient Cover */}
-                        <div
-                            className="h-32 rounded-2xl overflow-hidden"
-                            style={{
-                                background: `linear-gradient(135deg, ${client.brandColors?.primary || '#6366f1'} 0%, ${client.brandColors?.secondary || '#a855f7'} 100%)`
-                            }}
-                        />
+            {isLoading ? (
+                <ClientContentSkeleton hasFilters={false} hasTable={false} rowCount={0} />
+            ) : (
+                <PageContent>
+                    <div className="space-y-8">
+                        {/* Header with Avatar Only */}
+                        <div className="relative">
+                            {/* Gradient Cover */}
+                            <div
+                                className="h-32 rounded-2xl overflow-hidden"
+                                style={{
+                                    background: `linear-gradient(135deg, ${client.brandColors?.primary || '#6366f1'} 0%, ${client.brandColors?.secondary || '#a855f7'} 100%)`
+                                }}
+                            />
 
-                        {/* Avatar positioned at bottom of cover */}
-                        <div className="px-6 -mt-10 relative">
-                            <div className="h-20 w-20 rounded-xl bg-background border-2 border-background flex items-center justify-center overflow-hidden shadow-none">
-                                {client.logo ? (
-                                    <img
-                                        src={client.logo}
-                                        alt={client.name}
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="h-full w-full bg-muted flex items-center justify-center">
-                                        <span className="text-xl font-bold text-muted-foreground">{initials}</span>
-                                    </div>
-                                )}
+                            {/* Avatar positioned at bottom of cover */}
+                            <div className="px-6 -mt-10 relative">
+                                <div className="h-20 w-20 rounded-xl bg-background border-2 border-background flex items-center justify-center overflow-hidden shadow-none">
+                                    {client.logo ? (
+                                        <img
+                                            src={client.logo}
+                                            alt={client.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="h-full w-full bg-muted flex items-center justify-center">
+                                            <span className="text-xl font-bold text-muted-foreground">{initials}</span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Client Details Section */}
-                    <div className="rounded-xl border border-dashed p-6">
-                        <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <p className="text-lg font-semibold">{client.name}</p>
-                                <CardBadge
-                                    variant="border"
-                                    color={client.active ? "blue" : "red"}
-                                >
-                                    <span className="capitalize">{client.active ? (t.clients?.active || "active") : (t.clients?.inactive || "inactive")}</span>
-                                </CardBadge>
-
-                                {/* SMTP Status Badges (Hierarchical Logic) */}
-                                {client.smtpProfiles && client.smtpProfiles.length > 0 ? (
-                                    <>
-                                        <CardBadge
-                                            variant="border"
-                                            color="green"
-                                            icon={<Check className="h-3 w-3" />}
-                                        >
-                                            {t.clients.smtpVerified}
-                                        </CardBadge>
-                                        {client.smtpProfiles.slice(0, 3).map((profile) => (
-                                            <CardBadge
-                                                key={profile.id}
-                                                variant="border"
-                                                color="green"
-                                            >
-                                                {profile.name}
-                                            </CardBadge>
-                                        ))}
-                                        {client.smtpProfiles.length > 3 && (
-                                            <CardBadge variant="border" color="gray">
-                                                +{client.smtpProfiles.length - 3} more
-                                            </CardBadge>
-                                        )}
-                                    </>
-                                ) : (
+                        {/* Client Details Section */}
+                        <div className="rounded-xl border border-dashed p-6">
+                            <div className="flex items-start justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <p className="text-lg font-semibold">{client.name}</p>
                                     <CardBadge
                                         variant="border"
-                                        color="red"
-                                        icon={<X className="h-3 w-3" />}
+                                        color={client.active ? "blue" : "red"}
                                     >
-                                        {t.clients.smtpFixRequired}
+                                        <span className="capitalize">{client.active ? (t.clients?.active || "active") : (t.clients?.inactive || "inactive")}</span>
                                     </CardBadge>
-                                )}
-                            </div>
-                            <Link href={`/dashboard/clients/${client.slug}/edit`}>
-                                <Button size="sm" className="gap-2">
-                                    <Settings className="h-4 w-4" />
-                                    {t.clients.editClient}
-                                </Button>
-                            </Link>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                            <div className="space-y-1">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wider">{t.clients.slug}</p>
-                                <p className="font-medium text-muted-foreground">@{client.slug}</p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wider">{t.clients.created}</p>
-                                <p className="font-medium text-muted-foreground">
-                                    {new Date(client.createdAt).toLocaleString('fr-FR', {
-                                        day: '2-digit',
-                                        month: '2-digit',
-                                        year: '2-digit',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })}
-                                </p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wider">{t.clients.lastUpdated}</p>
-                                <p className="font-medium text-muted-foreground">
-                                    {new Date(client.updatedAt).toLocaleString('fr-FR', {
-                                        day: '2-digit',
-                                        month: '2-digit',
-                                        year: '2-digit',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* Navigation Cards to Sub-Pages (Minimal Redesign) */}
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <NavigationCard
-                            href={`/dashboard/clients/${client.slug}/campaigns`}
-                            icon={Mail}
-                            title={t.common.campaigns}
-                            description={t.clients?.campaignsDescription || "Manage email campaigns"}
-                            count={client._count.campaigns}
-                            color="blue"
-                            variant="minimal"
-                            items={client.campaigns?.slice(0, 3).map(c => ({
-                                id: c.id,
-                                name: c.name,
-                                href: `/dashboard/clients/${client.slug}/campaigns/${c.id}`
-                            })) || []}
-                            maxItems={3}
-                            emptyLabel={t.clients?.noCampaigns || "No campaigns yet"}
-                        />
-                        <NavigationCard
-                            href={`/dashboard/clients/${client.slug}/audiences`}
-                            icon={Users}
-                            title={t.common.audiences}
-                            description={t.clients?.audiencesDescription || "Manage contacts and segments"}
-                            count={client._count.audiences}
-                            color="purple"
-                            variant="minimal"
-                            items={client.audiences?.slice(0, 3).map(a => ({
-                                id: a.id,
-                                name: a.name,
-                                href: `/dashboard/clients/${client.slug}/audiences/${a.id}`
-                            })) || []}
-                            maxItems={3}
-                            emptyLabel={t.clients?.noAudiences || "No audiences yet"}
-                        />
-                        <NavigationCard
-                            href={`/dashboard/clients/${client.slug}/templates`}
-                            icon={FileText}
-                            title={t.common.templates}
-                            description={t.clients?.templatesDescription || "Design email templates"}
-                            count={client._count.templates}
-                            color="green"
-                            variant="minimal"
-                            items={client.templates?.slice(0, 3).map(tmpl => ({
-                                id: tmpl.id,
-                                name: tmpl.name,
-                                href: `/dashboard/clients/${client.slug}/templates/${tmpl.id}`
-                            })) || []}
-                            maxItems={3}
-                            emptyLabel={t.clients?.noTemplates || "No templates yet"}
-                        />
-                        <NavigationCard
-                            href={`/dashboard/clients/${client.slug}/smtp`}
-                            icon={Server}
-                            title={t.clients.smtpConfiguration}
-                            description={t.clients.smtpConfigDescription}
-                            count={client.smtpProfiles?.length || 0}
-                            color="orange"
-                            variant="minimal"
-                            items={client.smtpProfiles?.slice(0, 3).map(p => ({
-                                id: p.id,
-                                name: p.name
-                            })) || []}
-                            maxItems={3}
-                            emptyLabel={t.clients?.noSmtpProfiles || "No SMTP profiles"}
-                        />
+                                    {/* SMTP Status Badges (Hierarchical Logic) */}
+                                    {client.smtpProfiles && client.smtpProfiles.length > 0 ? (
+                                        <>
+                                            <CardBadge
+                                                variant="border"
+                                                color="green"
+                                                icon={<Check className="h-3 w-3" />}
+                                            >
+                                                {t.clients.smtpVerified}
+                                            </CardBadge>
+                                            {client.smtpProfiles.slice(0, 3).map((profile) => (
+                                                <CardBadge
+                                                    key={profile.id}
+                                                    variant="border"
+                                                    color="green"
+                                                >
+                                                    {profile.name}
+                                                </CardBadge>
+                                            ))}
+                                            {client.smtpProfiles.length > 3 && (
+                                                <CardBadge variant="border" color="gray">
+                                                    +{client.smtpProfiles.length - 3} more
+                                                </CardBadge>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <CardBadge
+                                            variant="border"
+                                            color="red"
+                                            icon={<X className="h-3 w-3" />}
+                                        >
+                                            {t.clients.smtpFixRequired}
+                                        </CardBadge>
+                                    )}
+                                </div>
+                                <Link href={`/dashboard/clients/${client.slug}/edit`}>
+                                    <Button size="sm" className="gap-2">
+                                        <Settings className="h-4 w-4" />
+                                        {t.clients.editClient}
+                                    </Button>
+                                </Link>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                                <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider">{t.clients.slug}</p>
+                                    <p className="font-medium text-muted-foreground">@{client.slug}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider">{t.clients.created}</p>
+                                    <p className="font-medium text-muted-foreground">
+                                        {new Date(client.createdAt).toLocaleString('fr-FR', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: '2-digit',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })}
+                                    </p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider">{t.clients.lastUpdated}</p>
+                                    <p className="font-medium text-muted-foreground">
+                                        {new Date(client.updatedAt).toLocaleString('fr-FR', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: '2-digit',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Navigation Cards to Sub-Pages (Minimal Redesign) */}
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                            <NavigationCard
+                                href={`/dashboard/clients/${client.slug}/campaigns`}
+                                icon={Mail}
+                                title={t.common.campaigns}
+                                description={t.clients?.campaignsDescription || "Manage email campaigns"}
+                                count={client._count.campaigns}
+                                color="blue"
+                                variant="minimal"
+                                items={client.campaigns?.slice(0, 3).map(c => ({
+                                    id: c.id,
+                                    name: c.name,
+                                    href: `/dashboard/clients/${client.slug}/campaigns/${c.id}`
+                                })) || []}
+                                maxItems={3}
+                                emptyLabel={t.clients?.noCampaigns || "No campaigns yet"}
+                            />
+                            <NavigationCard
+                                href={`/dashboard/clients/${client.slug}/audiences`}
+                                icon={Users}
+                                title={t.common.audiences}
+                                description={t.clients?.audiencesDescription || "Manage contacts and segments"}
+                                count={client._count.audiences}
+                                color="purple"
+                                variant="minimal"
+                                items={client.audiences?.slice(0, 3).map(a => ({
+                                    id: a.id,
+                                    name: a.name,
+                                    href: `/dashboard/clients/${client.slug}/audiences/${a.id}`
+                                })) || []}
+                                maxItems={3}
+                                emptyLabel={t.clients?.noAudiences || "No audiences yet"}
+                            />
+                            <NavigationCard
+                                href={`/dashboard/clients/${client.slug}/templates`}
+                                icon={FileText}
+                                title={t.common.templates}
+                                description={t.clients?.templatesDescription || "Design email templates"}
+                                count={client._count.templates}
+                                color="green"
+                                variant="minimal"
+                                items={client.templates?.slice(0, 3).map(tmpl => ({
+                                    id: tmpl.id,
+                                    name: tmpl.name,
+                                    href: `/dashboard/clients/${client.slug}/templates/${tmpl.id}`
+                                })) || []}
+                                maxItems={3}
+                                emptyLabel={t.clients?.noTemplates || "No templates yet"}
+                            />
+                            <NavigationCard
+                                href={`/dashboard/clients/${client.slug}/smtp`}
+                                icon={Server}
+                                title={t.clients.smtpConfiguration}
+                                description={t.clients.smtpConfigDescription}
+                                count={client.smtpProfiles?.length || 0}
+                                color="orange"
+                                variant="minimal"
+                                items={client.smtpProfiles?.slice(0, 3).map(p => ({
+                                    id: p.id,
+                                    name: p.name
+                                })) || []}
+                                maxItems={3}
+                                emptyLabel={t.clients?.noSmtpProfiles || "No SMTP profiles"}
+                            />
+                        </div>
                     </div>
-                </div>
-            </PageContent>
+                </PageContent>
+            )}
 
             <CreateAudienceDialog
                 open={isCreateAudienceOpen}

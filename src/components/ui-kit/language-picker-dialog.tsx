@@ -44,8 +44,8 @@ export function LanguagePickerDialog({ trigger, className, open: controlledOpen,
     const defaultTrigger = (
         <Button variant="secondary" className="h-9 px-3 flex items-center gap-2 cursor-pointer">
             <img src={currentLang.icon} alt={currentLang.name} className="h-4 w-4 object-contain" />
-            <span className="text-sm font-medium">{currentLang.name}</span>
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="hidden sm:inline text-sm font-medium">{currentLang.name}</span>
+            <ChevronDown className="hidden sm:block h-3.5 w-3.5 text-muted-foreground" />
         </Button>
     );
 

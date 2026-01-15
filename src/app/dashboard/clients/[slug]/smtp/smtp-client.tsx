@@ -17,6 +17,9 @@ import { DashboardBreadcrumb } from "@/components/dashboard/layout";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
 import { Pagination } from "@/components/ui-kit/pagination";
+import { ClientTabs } from "@/components/dashboard/client-tabs";
+import { useTabLoading } from "@/lib/contexts/tab-loading-context";
+import { ClientContentSkeleton } from "@/components/skeletons/client-content-skeleton";
 
 interface SmtpProfile {
     id: string;
@@ -47,6 +50,7 @@ export function SmtpClient({ client, canEdit }: SmtpClientProps) {
     const { t } = useI18n();
     const router = useRouter();
     const { setOverride, removeOverride } = useBreadcrumbs();
+    const { isLoading } = useTabLoading();
 
     useEffect(() => {
         setOverride(client.slug, client.name);
@@ -243,7 +247,7 @@ export function SmtpClient({ client, canEdit }: SmtpClientProps) {
 
     return (
         <div className="h-dvh flex flex-col bg-background">
-            <header className="shrink-0 flex items-center justify-between px-6 py-4 border-b bg-background">
+            <header className="relative shrink-0 flex items-center justify-between px-6 h-16 border-b bg-background">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" asChild className="-ml-2">
                         <Link href={`/dashboard/clients/${client.slug}`}>
@@ -252,9 +256,14 @@ export function SmtpClient({ client, canEdit }: SmtpClientProps) {
                     </Button>
                     <DashboardBreadcrumb />
                 </div>
+
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:block">
+                    <ClientTabs slug={client.slug} />
+                </div>
+
                 <div className="flex items-center gap-2">
                     <Link href="/dashboard/postal">
-                        <Button variant="outline" className="gap-2">
+                        <Button variant="outline" className="gap-2" disabled={isLoading}>
                             <Server className="h-4 w-4" />
                             <span className="hidden sm:inline">{t.clients?.manageProfiles || "Manage All Profiles"}</span>
                         </Button>
@@ -264,46 +273,52 @@ export function SmtpClient({ client, canEdit }: SmtpClientProps) {
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto">
-                <div className="p-6 md:p-12 space-y-6">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">{t.clients?.smtpConfiguration || "SMTP Configuration"}</h1>
-                        <p className="text-muted-foreground">{t.clients?.manageSmtpDescription || "View and manage SMTP profiles for this client."}</p>
+            {isLoading ? (
+                <ClientContentSkeleton />
+            ) : (
+                <>
+                    <main className="flex-1 overflow-y-auto">
+                        <div className="p-6 md:p-12 space-y-6">
+                            <div>
+                                <h1 className="text-2xl font-bold tracking-tight">{t.clients?.smtpConfiguration || "SMTP Configuration"}</h1>
+                                <p className="text-muted-foreground">{t.clients?.manageSmtpDescription || "View and manage SMTP profiles for this client."}</p>
+                            </div>
+
+                            <FilterBar
+                                searchValue={searchValue}
+                                onSearchChange={setSearchValue}
+                                searchPlaceholder={t.clients?.searchProfiles || "Search profiles..."}
+                                onClearFilters={() => setSearchValue("")}
+                            />
+
+                            <DataTable
+                                data={paginatedProfiles}
+                                columns={columns}
+                                currentPage={currentPage}
+                                totalItems={totalItems}
+                                pageSize={pageSize}
+                                onPageChange={setCurrentPage}
+                                onPageSizeChange={setPageSize}
+                                pageSizeOptions={[10, 20, 30, 40, 50]}
+                                emptyMessage={t.clients?.noSmtpProfiles || "No SMTP profiles found"}
+                                emptyIcon={<Server className="h-10 w-10 text-muted-foreground/40" />}
+                            />
+                        </div>
+                    </main>
+
+                    <div className="shrink-0 border-t bg-background p-4 flex justify-between items-center z-10">
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                            pageSize={pageSize}
+                            onPageSizeChange={setPageSize}
+                            pageSizeOptions={[10, 20, 30, 40, 50]}
+                            totalItems={totalItems}
+                        />
                     </div>
-
-                    <FilterBar
-                        searchValue={searchValue}
-                        onSearchChange={setSearchValue}
-                        searchPlaceholder={t.clients?.searchProfiles || "Search profiles..."}
-                        onClearFilters={() => setSearchValue("")}
-                    />
-
-                    <DataTable
-                        data={paginatedProfiles}
-                        columns={columns}
-                        currentPage={currentPage}
-                        totalItems={totalItems}
-                        pageSize={pageSize}
-                        onPageChange={setCurrentPage}
-                        onPageSizeChange={setPageSize}
-                        pageSizeOptions={[10, 20, 30, 40, 50]}
-                        emptyMessage={t.clients?.noSmtpProfiles || "No SMTP profiles found"}
-                        emptyIcon={<Server className="h-10 w-10 text-muted-foreground/40" />}
-                    />
-                </div>
-            </main>
-
-            <div className="shrink-0 border-t bg-background p-4 flex justify-between items-center z-10">
-                <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
-                    pageSize={pageSize}
-                    onPageSizeChange={setPageSize}
-                    pageSizeOptions={[10, 20, 30, 40, 50]}
-                    totalItems={totalItems}
-                />
-            </div>
+                </>
+            )}
 
             {/* Edit Name Dialog */}
             <EditProfileNameDialog

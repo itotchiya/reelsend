@@ -19,6 +19,9 @@ import { DashboardBreadcrumb } from "@/components/dashboard/layout";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
 import { Pagination } from "@/components/ui-kit/pagination";
+import { ClientTabs } from "@/components/dashboard/client-tabs";
+import { useTabLoading } from "@/lib/contexts/tab-loading-context";
+import { ClientContentSkeleton } from "@/components/skeletons/client-content-skeleton";
 
 interface Template {
     id: string;
@@ -56,6 +59,7 @@ export function TemplatesClient({
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deletingTemplate, setDeletingTemplate] = useState<Template | null>(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
+    const { isLoading } = useTabLoading();
 
     // Edit Details State
     const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
@@ -269,7 +273,7 @@ export function TemplatesClient({
 
     return (
         <div className="h-dvh flex flex-col bg-background">
-            <header className="shrink-0 flex items-center justify-between px-6 py-4 border-b bg-background">
+            <header className="relative shrink-0 flex items-center justify-between px-6 h-16 border-b bg-background">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" asChild className="-ml-2">
                         <Link href={`/dashboard/clients/${client.slug}`}>
@@ -278,8 +282,13 @@ export function TemplatesClient({
                     </Button>
                     <DashboardBreadcrumb />
                 </div>
+
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:block">
+                    <ClientTabs slug={client.slug} />
+                </div>
+
                 <div className="flex items-center gap-2">
-                    <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)}>
+                    <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)} disabled={isLoading}>
                         <Plus className="h-4 w-4" />
                         <span className="hidden sm:inline">{t.templates?.createTemplate || "Create Template"}</span>
                     </Button>
@@ -288,46 +297,52 @@ export function TemplatesClient({
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto">
-                <div className="p-6 md:p-12 space-y-6">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">{t.templates?.title || "Templates"}</h1>
-                        <p className="text-muted-foreground">{t.templates?.description || "Manage your email templates."}</p>
+            {isLoading ? (
+                <ClientContentSkeleton />
+            ) : (
+                <>
+                    <main className="flex-1 overflow-y-auto">
+                        <div className="p-6 md:p-12 space-y-6">
+                            <div>
+                                <h1 className="text-2xl font-bold tracking-tight">{t.templates?.title || "Templates"}</h1>
+                                <p className="text-muted-foreground">{t.templates?.description || "Manage your email templates."}</p>
+                            </div>
+
+                            <FilterBar
+                                searchValue={searchValue}
+                                onSearchChange={handleSearch}
+                                searchPlaceholder={t.templates?.searchPlaceholder || "Search templates..."}
+                                onClearFilters={handleClearFilters}
+                            />
+
+                            <DataTable
+                                data={templates}
+                                columns={columns}
+                                currentPage={currentPage}
+                                totalItems={totalCount}
+                                pageSize={pageSize}
+                                // onPageChange={handlePageChange}
+                                // onPageSizeChange={handlePageSizeChange}
+                                pageSizeOptions={[10, 20, 30, 40, 50]}
+                                emptyMessage={t.templates?.noTemplates || "No templates found"}
+                                emptyIcon={<FileText className="h-10 w-10 text-muted-foreground/40" />}
+                            />
+                        </div>
+                    </main>
+
+                    <div className="shrink-0 border-t bg-background p-4 flex justify-between items-center z-10">
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                            pageSize={pageSize}
+                            onPageSizeChange={handlePageSizeChange}
+                            pageSizeOptions={[10, 20, 30, 40, 50]}
+                            totalItems={totalCount}
+                        />
                     </div>
-
-                    <FilterBar
-                        searchValue={searchValue}
-                        onSearchChange={handleSearch}
-                        searchPlaceholder={t.templates?.searchPlaceholder || "Search templates..."}
-                        onClearFilters={handleClearFilters}
-                    />
-
-                    <DataTable
-                        data={templates}
-                        columns={columns}
-                        currentPage={currentPage}
-                        totalItems={totalCount}
-                        pageSize={pageSize}
-                        // onPageChange={handlePageChange}
-                        // onPageSizeChange={handlePageSizeChange}
-                        pageSizeOptions={[10, 20, 30, 40, 50]}
-                        emptyMessage={t.templates?.noTemplates || "No templates found"}
-                        emptyIcon={<FileText className="h-10 w-10 text-muted-foreground/40" />}
-                    />
-                </div>
-            </main>
-
-            <div className="shrink-0 border-t bg-background p-4 flex justify-between items-center z-10">
-                <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                    pageSize={pageSize}
-                    onPageSizeChange={handlePageSizeChange}
-                    pageSizeOptions={[10, 20, 30, 40, 50]}
-                    totalItems={totalCount}
-                />
-            </div>
+                </>
+            )}
 
             <CreateTemplateDialog
                 open={isCreateDialogOpen}
