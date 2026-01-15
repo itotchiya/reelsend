@@ -16,6 +16,7 @@
         "signOut": "Déconnexion",
         "cancel": "Annuler",
         "save": "Enregistrer",
+        "change": "Modifier",
         "delete": "Supprimer",
         "edit": "Modifier",
         "create": "Créer",
@@ -115,7 +116,9 @@
         "statusActive": "Actif",
         "statusInvited": "Invité",
         "invitePlaceholder": "collegue@exemple.com",
-        "invitationSent": "Invitation Envoyée"
+        "invitationSent": "Invitation Envoyée",
+        "errorEmailExists": "L'email existe déjà dans l'équipe ou a une invitation active.",
+        "errorGeneric": "Quelque chose s'est mal passé. Veuillez réessayer."
     },
     "roles": {
         "title": "Rôles et Permissions",
@@ -182,7 +185,40 @@
             "templates.create": "Créer des Modèles",
             "templates.delete": "Supprimer des Modèles",
             "templates.edit": "Modifier les Modèles",
-            "templates.view": "Voir les Modèles"
+            "templates.view": "Voir les Modèles",
+            "newRole": "Nouveau Rôle",
+            "deleting": "Suppression...",
+            "deleteRoleTitle": "Supprimer le Rôle",
+            "deleteRoleConfirm": "Êtes-vous sûr de vouloir supprimer le rôle",
+            "deleteRoleWarning": "Cette action est irréversible. Les utilisateurs ayant ce rôle devront être réassignés.",
+            "wizard": {
+                "steps": {
+                    "name": "Nom",
+                    "appearance": "Apparence",
+                    "permissions": "Permissions"
+                },
+                "step1": {
+                    "title": "Créer un Nouveau Rôle",
+                    "description": "Entrez un nom pour votre nouveau rôle",
+                    "label": "Nom du Rôle",
+                    "placeholder": "ex., Éditeur, Observateur, Gestionnaire",
+                    "preview": "Sera affiché comme :"
+                },
+                "step2": {
+                    "title": "Choisir l'Apparence",
+                    "description": "Sélectionnez une icône et une couleur pour ce rôle",
+                    "color": "Couleur",
+                    "icon": "Icône"
+                },
+                "step3": {
+                    "title": "Définir les Permissions",
+                    "description": "Choisissez ce que ce rôle peut faire",
+                    "selected": "permissions sélectionnées"
+                },
+                "createSuccess": "Rôle créé avec succès",
+                "createError": "Échec de la création du rôle",
+                "createBtn": "Créer le Rôle"
+            }
         }
     },
     "auth": {
@@ -208,6 +244,136 @@
         "expiredInvitation": "Invitation Expirée",
         "expiredMessage": "Ce lien d'invitation a expiré. Veuillez contacter votre administrateur pour une nouvelle invitation.",
         "goToLogin": "Aller à la Connexion"
+    },
+    "contact": {
+        "title": "Contactez-nous",
+        "email": "Email",
+        "phone": "Téléphone",
+        "address": "Adresse",
+        "followUs": "Suivez-nous",
+        "yourName": "Votre Nom",
+        "yourEmail": "Adresse Email",
+        "message": "Message",
+        "sendMessage": "Envoyer le Message",
+        "company": "Entreprise",
+        "about": "À propos",
+        "press": "Presse et Médias",
+        "careers": "Carrières",
+        "support": "Support",
+        "helpCenter": "Centre d'aide",
+        "terms": "Conditions d'utilisation",
+        "privacy": "Politique de confidentialité",
+        "developers": "Développeurs",
+        "documentation": "Documentation",
+        "status": "Statut",
+        "newsletter": "Abonnez-vous à notre newsletter",
+        "subscribe": "S'abonner",
+        "rights": "© 2026 Reelsend. Tous droits réservés.",
+        "placeholderName": "Votre nom",
+        "placeholderEmail": "Votre adresse email",
+        "placeholderMessage": "Écrivez quelque chose...",
+        "placeholderSubscribe": "Entrez votre email"
+    },
+    "accountDeactivated": {
+        "title": "Compte Suspendu",
+        "description": "Ce compte est désactivé, suspendu ou n'existe plus.",
+        "instruction": "Si vous pensez qu'il s'agit d'une erreur, veuillez contacter le support.",
+        "contactSupport": "Contacter le Support",
+        "ok": "Se reconnecter"
+    },
+    "settings": {
+        "title": "Paramètres",
+        "description": "Gérez vos paramètres de compte et vos préférences.",
+        "backToDashboard": "Retour au tableau de bord",
+        "tabs": {
+            "general": "Général",
+            "roles": "Rôles et Permissions",
+            "team": "Équipe"
+        },
+        "categories": {
+            "account": "Compte",
+            "preferences": "Préférences"
+        },
+        "items": {
+            "avatar": "Photo de profil",
+            "avatarDesc": "Votre image de profil",
+            "fullName": "Nom complet",
+            "email": "Adresse e-mail",
+            "password": "Mot de passe",
+            "language": "Langue",
+            "languageDesc": "Sélectionnez votre langue préférée",
+            "darkMode": "Mode sombre",
+            "darkModeDesc": "Basculer entre le thème clair et sombre",
+            "profile": "Profil",
+            "profileDesc": "Ces informations seront affichées publiquement, faites attention à ce que vous partagez.",
+            "photo": "Photo",
+            "photoDesc": "Votre image de profil.",
+            "security": "Sécurité",
+            "securityDesc": "Gérez la protection de votre compte et les options de connexion.",
+            "twoFactor": "Authentification à deux facteurs",
+            "notEnabled": "Non activé",
+            "enable": "Activer",
+            "notifications": "Notifications",
+            "notificationsDesc": "Choisissez comment et quand vous souhaitez être notifié."
+        },
+        "avatarDialog": {
+            "title": "Mettre à jour la Photo",
+            "description": "Téléchargez une nouvelle photo de profil et recadrez-la au format carré.",
+            "chooseImage": "Choisir une Image",
+            "cropAlt": "Recadrez-moi",
+            "changeImage": "Choisir une autre image",
+            "errorNoImage": "Veuillez sélectionner et recadrer une image",
+            "success": "Avatar mis à jour avec succès",
+            "error": "Échec de la mise à jour de l'avatar"
+        },
+        "nameDialog": {
+            "title": "Mettre à jour le Nom",
+            "description": "Modifiez votre nom d'affichage.",
+            "label": "Nom Complet",
+            "placeholder": "Votre nom",
+            "success": "Nom mis à jour avec succès",
+            "error": "Échec de la mise à jour du nom"
+        },
+        "emailDialog": {
+            "titleUpdate": "Mettre à jour l'Email",
+            "titleVerify": "Vérifier l'OTP",
+            "descUpdate": "Entrez votre nouvelle adresse email. Nous enverrons un OTP pour la vérifier.",
+            "descVerify": "Entrez le code envoyé à {{email}}",
+            "labelEmail": "Nouvelle Adresse Email",
+            "labelOtp": "Code de Vérification",
+            "btnSendOtp": "Envoyer OTP",
+            "btnVerify": "Vérifier & Mettre à jour",
+            "errorSameEmail": "Veuillez entrer une adresse email différente",
+            "otpSent": "OTP envoyé à votre nouvel email",
+            "errorSendOtp": "Échec de l'envoi de l'OTP",
+            "errorInvalidOtp": "OTP Invalide",
+            "success": "Email mis à jour avec succès"
+        },
+        "passwordDialog": {
+            "title": "Changer le Mot de passe",
+            "description": "Sécurisez votre compte avec un nouveau mot de passe.",
+            "labelCurrent": "Mot de passe Actuel",
+            "labelNew": "Nouveau Mot de passe",
+            "labelConfirm": "Confirmer le Nouveau Mot de passe",
+            "btnUpdate": "Mettre à jour le Mot de passe",
+            "errorMatch": "Les nouveaux mots de passe ne correspondent pas",
+            "success": "Mot de passe changé avec succès",
+            "error": "Échec du changement de mot de passe"
+        },
+        "notificationsDialog": {
+            "title": "Préférences de Notification",
+            "description": "Configurez comment vous souhaitez être notifié.",
+            "sectionEmail": "Alertes Email",
+            "labelCampaign": "Mises à jour de Campagne",
+            "labelAudience": "Croissance de l'Audience",
+            "sectionPush": "Notifications Push",
+            "labelMentions": "Nouvelles Mentions",
+            "labelSystem": "Alertes Système",
+            "btnSave": "Enregistrer les Préférences",
+            "success": "Préférences de notification mises à jour",
+            "error": "Échec de la mise à jour des notifications"
+        },
+        "selectLanguage": "Sélectionner la langue"
     },
     "clients": {
         "description": "Gérez vos clients et leur identité visuelle",

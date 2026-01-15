@@ -16,6 +16,7 @@
         "signOut": "Sign out",
         "cancel": "Cancel",
         "save": "Save",
+        "change": "Change",
         "delete": "Delete",
         "edit": "Edit",
         "create": "Create",
@@ -115,7 +116,9 @@
         "statusActive": "Active",
         "statusInvited": "Invited",
         "invitePlaceholder": "colleague@example.com",
-        "invitationSent": "Invitation Sent"
+        "invitationSent": "Invitation Sent",
+        "errorEmailExists": "Email already exists in the team or has an active invitation.",
+        "errorGeneric": "Something went wrong. Please try again."
     },
     "roles": {
         "title": "Roles & Permissions",
@@ -182,7 +185,40 @@
             "templates.create": "Create Templates",
             "templates.delete": "Delete Templates",
             "templates.edit": "Edit Templates",
-            "templates.view": "View Templates"
+            "templates.view": "View Templates",
+            "newRole": "New Role",
+            "deleting": "Deleting...",
+            "deleteRoleTitle": "Delete Role",
+            "deleteRoleConfirm": "Are you sure you want to delete the role",
+            "deleteRoleWarning": "This action cannot be undone. Users with this role will need to be reassigned.",
+            "wizard": {
+                "steps": {
+                    "name": "Name",
+                    "appearance": "Appearance",
+                    "permissions": "Permissions"
+                },
+                "step1": {
+                    "title": "Create New Role",
+                    "description": "Enter a name for your new role",
+                    "label": "Role Name",
+                    "placeholder": "e.g., Editor, Viewer, Manager",
+                    "preview": "Will be displayed as:"
+                },
+                "step2": {
+                    "title": "Choose Appearance",
+                    "description": "Select an icon and color for this role",
+                    "color": "Color",
+                    "icon": "Icon"
+                },
+                "step3": {
+                    "title": "Set Permissions",
+                    "description": "Choose what this role can do",
+                    "selected": "permissions selected"
+                },
+                "createSuccess": "Role created successfully",
+                "createError": "Failed to create role",
+                "createBtn": "Create Role"
+            }
         }
     },
     "auth": {
@@ -208,6 +244,136 @@
         "expiredInvitation": "Invitation Expired",
         "expiredMessage": "This invitation link has expired. Please contact your administrator for a new invitation.",
         "goToLogin": "Go to Login"
+    },
+    "contact": {
+        "title": "Get in touch",
+        "email": "Email",
+        "phone": "Phone",
+        "address": "Address",
+        "followUs": "Follow Us",
+        "yourName": "Your Name",
+        "yourEmail": "Email address",
+        "message": "Message",
+        "sendMessage": "Send Message",
+        "company": "Company",
+        "about": "About",
+        "press": "Press and Media",
+        "careers": "Careers",
+        "support": "Support",
+        "helpCenter": "Help center",
+        "terms": "Terms of Service",
+        "privacy": "Privacy Policy",
+        "developers": "Developers",
+        "documentation": "Documentation",
+        "status": "Status",
+        "newsletter": "Subscribe to our newsletter",
+        "subscribe": "Subscribe",
+        "rights": "© 2026 Reelsend. All rights reserved.",
+        "placeholderName": "Your name",
+        "placeholderEmail": "Your email address",
+        "placeholderMessage": "Write something....",
+        "placeholderSubscribe": "Enter your email"
+    },
+    "accountDeactivated": {
+        "title": "Account Suspended",
+        "description": "This account is being deactivated, suspended, or no longer exists.",
+        "instruction": "If you believe this is an error or have any problems, please contact support.",
+        "contactSupport": "Contact Support",
+        "ok": "Login Again"
+    },
+    "settings": {
+        "title": "Settings",
+        "description": "Manage your account settings and preferences.",
+        "backToDashboard": "Back to Dashboard",
+        "tabs": {
+            "general": "General",
+            "roles": "Roles & Permissions",
+            "team": "Team"
+        },
+        "categories": {
+            "account": "Account",
+            "preferences": "Preferences"
+        },
+        "items": {
+            "avatar": "Profile Photo",
+            "avatarDesc": "Your profile image",
+            "fullName": "Full Name",
+            "email": "Email Address",
+            "password": "Password",
+            "language": "Language",
+            "languageDesc": "Select your preferred language",
+            "darkMode": "Dark Mode",
+            "darkModeDesc": "Switch between light and dark theme",
+            "profile": "Profile",
+            "profileDesc": "This information will be displayed publicly so be careful what you share.",
+            "photo": "Photo",
+            "photoDesc": "Your profile image.",
+            "security": "Security",
+            "securityDesc": "Manage your account protection and sign-in options.",
+            "twoFactor": "Two-factor authentication",
+            "notEnabled": "Not enabled",
+            "enable": "Enable",
+            "notifications": "Notifications",
+            "notificationsDesc": "Choose how and when you want to be notified."
+        },
+        "avatarDialog": {
+            "title": "Update Photo",
+            "description": "Upload a new profile photo and crop it to a square.",
+            "chooseImage": "Choose Image",
+            "cropAlt": "Crop me",
+            "changeImage": "Choose a different image",
+            "errorNoImage": "Please select and crop an image",
+            "success": "Avatar updated successfully",
+            "error": "Failed to update avatar"
+        },
+        "nameDialog": {
+            "title": "Update Name",
+            "description": "Change your display name.",
+            "label": "Full Name",
+            "placeholder": "Your name",
+            "success": "Name updated successfully",
+            "error": "Failed to update name"
+        },
+        "emailDialog": {
+            "titleUpdate": "Update Email",
+            "titleVerify": "Verify OTP",
+            "descUpdate": "Enter your new email address. We'll send an OTP to verify it.",
+            "descVerify": "Enter the code we sent to {{email}}",
+            "labelEmail": "New Email Address",
+            "labelOtp": "Verification Code",
+            "btnSendOtp": "Send OTP",
+            "btnVerify": "Verify & Update",
+            "errorSameEmail": "Please enter a different email address",
+            "otpSent": "OTP sent to your new email",
+            "errorSendOtp": "Failed to send OTP",
+            "errorInvalidOtp": "Invalid OTP",
+            "success": "Email updated successfully"
+        },
+        "passwordDialog": {
+            "title": "Change Password",
+            "description": "Secure your account with a new password.",
+            "labelCurrent": "Current Password",
+            "labelNew": "New Password",
+            "labelConfirm": "Confirm New Password",
+            "btnUpdate": "Update Password",
+            "errorMatch": "New passwords do not match",
+            "success": "Password changed successfully",
+            "error": "Failed to change password"
+        },
+        "notificationsDialog": {
+            "title": "Notification Preferences",
+            "description": "Configure how you want to be notified.",
+            "sectionEmail": "Email Alerts",
+            "labelCampaign": "Campaign Updates",
+            "labelAudience": "Audience Growth",
+            "sectionPush": "Push Notifications",
+            "labelMentions": "New Mentions",
+            "labelSystem": "System Alerts",
+            "btnSave": "Save Preferences",
+            "success": "Notification preferences updated",
+            "error": "Failed to update notifications"
+        },
+        "selectLanguage": "Select Language"
     },
     "clients": {
         "description": "Manage your clients and their branding",

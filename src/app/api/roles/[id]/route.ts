@@ -115,3 +115,73 @@ export async function GET(
         );
     }
 }
+
+export async function DELETE(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const session = await auth();
+
+        if (!session) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const userPermissions = (session.user as any)?.permissions as string[] | undefined;
+
+        if (!userPermissions?.includes("roles:manage")) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
+        const { id } = await params;
+
+        // Get the role
+        const role = await db.role.findUnique({
+            where: { id },
+            include: {
+                _count: {
+                    select: { users: true },
+                },
+            },
+        });
+
+        if (!role) {
+            return NextResponse.json({ error: "Role not found" }, { status: 404 });
+        }
+
+        // Protected roles that cannot be deleted
+        const protectedRoles = ["SUPER_ADMIN", "ADMIN", "MARKETER"];
+        if (protectedRoles.includes(role.name)) {
+            return NextResponse.json(
+                { error: "This role cannot be deleted" },
+                { status: 403 }
+            );
+        }
+
+        // Check if role has users
+        if (role._count.users > 0) {
+            return NextResponse.json(
+                { error: "Cannot delete role with assigned users" },
+                { status: 400 }
+            );
+        }
+
+        // Delete role permissions first
+        await db.rolePermission.deleteMany({
+            where: { roleId: id },
+        });
+
+        // Delete the role
+        await db.role.delete({
+            where: { id },
+        });
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error("Failed to delete role:", error);
+        return NextResponse.json(
+            { error: "Failed to delete role" },
+            { status: 500 }
+        );
+    }
+}

@@ -1,8 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { SettingsClient } from "./settings-client";
 import { db } from "@/lib/db";
-import { PageHeader, PageContent } from "@/components/dashboard/page-header";
+import { GeneralSettingsClient } from "./general-settings-client";
 
 export default async function SettingsPage() {
     const session = await auth();
@@ -19,12 +18,5 @@ export default async function SettingsPage() {
         redirect("/login");
     }
 
-    return (
-        <div className="flex flex-col h-full overflow-hidden">
-            <PageHeader title="Settings" />
-            <PageContent>
-                <SettingsClient user={user} />
-            </PageContent>
-        </div>
-    );
+    return <GeneralSettingsClient user={user} />;
 }

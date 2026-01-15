@@ -273,7 +273,7 @@ export function EmailCanvas({
                                     "absolute -top-8 left-0 right-0 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity z-10",
                                     selectedBlockId === block.id && "opacity-100"
                                 )}>
-                                    <div className="flex items-center gap-1 bg-background border rounded-md shadow-sm p-1">
+                                    <div className="flex items-center gap-1 bg-background border rounded-md shadow-none p-1">
                                         <Button
                                             variant="ghost"
                                             size="sm"
@@ -291,7 +291,7 @@ export function EmailCanvas({
                                             <MoveDown className="h-3.5 w-3.5" />
                                         </Button>
                                     </div>
-                                    <div className="flex items-center gap-1 bg-background border rounded-md shadow-sm p-1">
+                                    <div className="flex items-center gap-1 bg-background border rounded-md shadow-none p-1">
                                         <Button
                                             variant="ghost"
                                             size="sm"

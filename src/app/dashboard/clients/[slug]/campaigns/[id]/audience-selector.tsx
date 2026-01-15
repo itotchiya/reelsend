@@ -59,7 +59,7 @@ export function AudienceSelector({ open, onOpenChange, audiences, selectedId, on
                                 <div
                                     key={audience.id}
                                     className={`
-                                        group relative flex flex-col justify-between p-6 rounded-xl border bg-card cursor-pointer transition-all hover:shadow-md
+                                        group relative flex flex-col justify-between p-6 rounded-xl border bg-card cursor-pointer transition-all hover:shadow-none
                                         ${selectedId === audience.id ? 'ring-2 ring-primary border-primary' : 'hover:border-primary/50'}
                                     `}
                                     onClick={() => {

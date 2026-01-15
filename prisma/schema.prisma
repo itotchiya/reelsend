@@ -53,6 +53,8 @@ model Role {
   name        String   @unique
   description String?
   isSystem    Boolean  @default(false) // System roles can't be deleted
+  icon        String?  // Lucide icon name for custom roles
+  color       String?  // Hex color for custom roles
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   

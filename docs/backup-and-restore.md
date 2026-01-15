@@ -61,11 +61,7 @@ GOOGLE_REFRESH_TOKEN="..."
 
 ## 🛠️ Utilities (Danger Zone)
 
-### 🧹 Wipe Database
-To delete ALL data (users, clients, campaigns) to start fresh or test restoration:
-```bash
-npx tsx scripts/erase-db.ts
-```
+
 
 ### 👑 Create Super Admin
 To manually create a Super Admin user (useful after a reset):

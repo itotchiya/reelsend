@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
+
 import { Spinner } from "@/components/ui/spinner";
 import { useI18n } from "@/lib/i18n";
 import { TeamMemberCard } from "@/components/ui-kit/team-member-card";
@@ -95,9 +96,9 @@ export function TeamClient({ initialUsers, roles, currentUserId }: TeamClientPro
             } else {
                 const errorData = await res.json().catch(() => ({}));
                 if (errorData.error === "EMAIL_EXISTS") {
-                    toast.error((t.team as any).errorEmailExists || "Email already exists");
+                    toast.error((t.team as any)?.errorEmailExists || "Email already exists");
                 } else {
-                    toast.error((t.team as any).errorGeneric || "An error occurred");
+                    toast.error((t.team as any)?.errorGeneric || "An error occurred");
                 }
             }
         } catch (error) {
@@ -161,139 +162,148 @@ export function TeamClient({ initialUsers, roles, currentUserId }: TeamClientPro
     };
 
     return (
-        <>
-            <PageHeader title={t.team.title}>
+        <div className="space-y-8">
+
+
+            {/* Page Title */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold">{(t.team as any)?.title || "Team Members"}</h1>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        {(t.team as any)?.description || "Manage your team members and their roles."}
+                    </p>
+                </div>
                 <Button onClick={() => setIsInviteOpen(true)} className="gap-2">
                     <UserPlus className="h-4 w-4" />
-                    <span className="hidden sm:inline">{t.team.inviteMember}</span>
+                    <span className="hidden sm:inline">{(t.team as any)?.inviteMember || "Invite Member"}</span>
                 </Button>
-            </PageHeader>
-            <PageContent>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {users.map((user) => (
-                        <TeamMemberCard
-                            key={user.id}
-                            user={user}
-                            isSelf={user.id === currentUserId}
-                            onEdit={openEdit}
-                            onDelete={openDelete}
-                        />
-                    ))}
-                </div>
+            </div>
 
-                {/* Invite Dialog */}
-                <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-                    <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
-                            <DialogTitle>{t.team.inviteTitle}</DialogTitle>
-                            <DialogDescription>
-                                {t.team.inviteDescription}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleInvite} className="space-y-4 py-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="email">{t.team.emailAddress}</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder={t.team.invitePlaceholder}
-                                    value={inviteEmail}
-                                    onChange={(e) => setInviteEmail(e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="role">{t.team.role}</Label>
-                                <Select value={inviteRoleId} onValueChange={setInviteRoleId} required>
-                                    <SelectTrigger id="role">
-                                        <SelectValue placeholder={t.team.selectRole} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {roles.map((role) => (
-                                            <SelectItem key={role.id} value={role.id}>
-                                                {(t.roles.names as any)?.[role.name] || role.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <DialogFooter className="pt-4">
-                                <DialogClose asChild>
-                                    <Button variant="outline" type="button">{t.common.cancel}</Button>
-                                </DialogClose>
-                                <Button type="submit" disabled={loading}>
-                                    {loading ? (
-                                        <>
-                                            <Spinner className="mr-2" />
-                                            {t.team.sending}
-                                        </>
-                                    ) : (
-                                        t.team.sendInvitation
-                                    )}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+            {/* Team Grid */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {users.map((user) => (
+                    <TeamMemberCard
+                        key={user.id}
+                        user={user}
+                        isSelf={user.id === currentUserId}
+                        onEdit={openEdit}
+                        onDelete={openDelete}
+                    />
+                ))}
+            </div>
 
-                {/* Edit Role Dialog */}
-                <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                    <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
-                            <DialogTitle>{t.team.changeRoleTitle}</DialogTitle>
-                            <DialogDescription>
-                                {t.team.changeRoleDesc} <strong>{selectedUser?.name || selectedUser?.email}</strong>.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="edit-role">{t.team.role}</Label>
-                                <Select value={editRoleId} onValueChange={setEditRoleId}>
-                                    <SelectTrigger id="edit-role">
-                                        <SelectValue placeholder={t.team.selectRole} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {roles.map((role) => (
-                                            <SelectItem key={role.id} value={role.id}>
-                                                {(t.roles.names as any)?.[role.name] || role.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+            {/* Invite Dialog */}
+            <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>{(t.team as any)?.inviteTitle || "Invite Team Member"}</DialogTitle>
+                        <DialogDescription>
+                            {(t.team as any)?.inviteDescription || "Send an invitation to join your team."}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleInvite} className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="email">{(t.team as any)?.emailAddress || "Email Address"}</Label>
+                            <Input
+                                id="email"
+                                type="email"
+                                placeholder={(t.team as any)?.invitePlaceholder || "name@example.com"}
+                                value={inviteEmail}
+                                onChange={(e) => setInviteEmail(e.target.value)}
+                                required
+                            />
                         </div>
-                        <DialogFooter>
-                            <DialogClose asChild>
-                                <Button variant="outline">{t.common.cancel}</Button>
-                            </DialogClose>
-                            <Button onClick={handleUpdateRole} disabled={loading}>
-                                {loading ? <Spinner /> : t.team.updateRole}
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-
-                {/* Delete Dialog */}
-                <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                    <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
-                            <DialogTitle className="text-destructive">{t.team.removeMemberTitle}</DialogTitle>
-                            <DialogDescription>
-                                {t.team.removeMemberDesc} <strong>{selectedUser?.name || selectedUser?.email}</strong>?
-                                {t.team.removeMemberWarning}
-                            </DialogDescription>
-                        </DialogHeader>
+                        <div className="space-y-2">
+                            <Label htmlFor="role">{(t.team as any)?.role || "Role"}</Label>
+                            <Select value={inviteRoleId} onValueChange={setInviteRoleId} required>
+                                <SelectTrigger id="role">
+                                    <SelectValue placeholder={(t.team as any)?.selectRole || "Select a role"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {roles.map((role) => (
+                                        <SelectItem key={role.id} value={role.id}>
+                                            {(t.roles.names as any)?.[role.name] || role.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <DialogFooter className="pt-4">
                             <DialogClose asChild>
-                                <Button variant="outline">{t.common.cancel}</Button>
+                                <Button variant="outline" type="button">{(t.common as any)?.cancel || "Cancel"}</Button>
                             </DialogClose>
-                            <Button variant="destructive" onClick={handleDelete} disabled={loading}>
-                                {loading ? <Spinner /> : t.team.remove}
+                            <Button type="submit" disabled={loading}>
+                                {loading ? (
+                                    <>
+                                        <Spinner className="mr-2" />
+                                        {(t.team as any)?.sending || "Sending..."}
+                                    </>
+                                ) : (
+                                    (t.team as any)?.sendInvitation || "Send Invitation"
+                                )}
                             </Button>
                         </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-            </PageContent>
-        </>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Role Dialog */}
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>{(t.team as any)?.changeRoleTitle || "Change Role"}</DialogTitle>
+                        <DialogDescription>
+                            {(t.team as any)?.changeRoleDesc || "Change role for"} <strong>{selectedUser?.name || selectedUser?.email}</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-role">{(t.team as any)?.role || "Role"}</Label>
+                            <Select value={editRoleId} onValueChange={setEditRoleId}>
+                                <SelectTrigger id="edit-role">
+                                    <SelectValue placeholder={(t.team as any)?.selectRole || "Select a role"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {roles.map((role) => (
+                                        <SelectItem key={role.id} value={role.id}>
+                                            {(t.roles.names as any)?.[role.name] || role.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline">{(t.common as any)?.cancel || "Cancel"}</Button>
+                        </DialogClose>
+                        <Button onClick={handleUpdateRole} disabled={loading}>
+                            {loading ? <Spinner /> : (t.team as any)?.updateRole || "Update Role"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Dialog */}
+            <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle className="text-destructive">{(t.team as any)?.removeMemberTitle || "Remove Member"}</DialogTitle>
+                        <DialogDescription>
+                            {(t.team as any)?.removeMemberDesc || "Are you sure you want to remove"} <strong>{selectedUser?.name || selectedUser?.email}</strong>?
+                            {(t.team as any)?.removeMemberWarning || "This action cannot be undone."}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="pt-4">
+                        <DialogClose asChild>
+                            <Button variant="outline">{(t.common as any)?.cancel || "Cancel"}</Button>
+                        </DialogClose>
+                        <Button variant="destructive" onClick={handleDelete} disabled={loading}>
+                            {loading ? <Spinner /> : (t.team as any)?.remove || "Remove"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
     );
 }

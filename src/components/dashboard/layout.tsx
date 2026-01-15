@@ -40,6 +40,7 @@ import {
     SidebarTrigger,
     useSidebar,
 } from "@/components/ui/sidebar";
+import { AccountDeactivatedDialog } from "@/components/dashboard/account-deactivated-dialog";
 import { HeaderActions } from "@/components/dashboard/header-actions";
 import {
     DropdownMenu,
@@ -114,7 +115,7 @@ export function AppSidebar() {
     const pathname = usePathname();
     const { data: session } = useSession();
     const { t } = useI18n();
-    const { user: userProfile } = useUserProfile();
+    const { user: userProfile, isDeactivated } = useUserProfile();
 
     const { isMobile, setOpenMobile } = useSidebar();
     const userPermissions = (session?.user as any)?.permissions as string[] | undefined;
@@ -169,102 +170,105 @@ export function AppSidebar() {
         .filter((group) => group.items.length > 0);
 
     return (
-        <Sidebar className="border-r-0 bg-transparent">
-            {/* Logo - left aligned, just text */}
-            <SidebarHeader className="h-16 flex items-center justify-start px-6">
-                <Link href="/dashboard" className="flex items-center">
-                    <span className="text-xl font-bold tracking-tight">Reelsend</span>
-                </Link>
-            </SidebarHeader>
+        <>
+            <AccountDeactivatedDialog open={!!isDeactivated} />
+            <Sidebar className="border-r-0 bg-transparent">
+                {/* Logo - left aligned, just text */}
+                <SidebarHeader className="h-16 flex items-center justify-start px-6">
+                    <Link href="/dashboard" className="flex items-center">
+                        <span className="text-xl font-bold tracking-tight">Reelsend</span>
+                    </Link>
+                </SidebarHeader>
 
-            <SidebarContent className="px-4 py-2">
-                {filteredNavigation.map((group) => (
-                    <SidebarGroup key={group.titleKey} className="py-3">
-                        <SidebarGroupLabel className="px-3 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-widest mb-2">
-                            {navLabels[group.titleKey] || group.titleKey}
-                        </SidebarGroupLabel>
-                        <SidebarGroupContent>
-                            <SidebarMenu className="space-y-1">
-                                {group.items.map((item) => {
-                                    // For dashboard, only exact match. For others, allow prefix match
-                                    const isActive = item.href === "/dashboard"
-                                        ? pathname === item.href
-                                        : pathname === item.href || pathname.startsWith(item.href + "/");
-                                    return (
-                                        <SidebarMenuItem key={item.href}>
-                                            <SidebarMenuButton
-                                                asChild
-                                                isActive={isActive}
-                                            >
-                                                <Link
-                                                    href={item.href}
-                                                    onClick={() => isMobile && setOpenMobile(false)}
-                                                    className={`
+                <SidebarContent className="px-4 py-2">
+                    {filteredNavigation.map((group) => (
+                        <SidebarGroup key={group.titleKey} className="py-3">
+                            <SidebarGroupLabel className="px-3 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-widest mb-2">
+                                {navLabels[group.titleKey] || group.titleKey}
+                            </SidebarGroupLabel>
+                            <SidebarGroupContent>
+                                <SidebarMenu className="space-y-1">
+                                    {group.items.map((item) => {
+                                        // For dashboard, only exact match. For others, allow prefix match
+                                        const isActive = item.href === "/dashboard"
+                                            ? pathname === item.href
+                                            : pathname === item.href || pathname.startsWith(item.href + "/");
+                                        return (
+                                            <SidebarMenuItem key={item.href}>
+                                                <SidebarMenuButton
+                                                    asChild
+                                                    isActive={isActive}
+                                                >
+                                                    <Link
+                                                        href={item.href}
+                                                        onClick={() => isMobile && setOpenMobile(false)}
+                                                        className={`
                                                         flex items-center gap-3 px-3 py-2.5 rounded-lg
                                                         transition-all duration-150 ease-in-out
                                                         ${isActive
-                                                            ? "bg-background text-foreground font-medium"
-                                                            : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
-                                                        }
+                                                                ? "bg-background text-foreground font-medium"
+                                                                : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
+                                                            }
                                                     `}
-                                                >
-                                                    <item.icon className={`h-4 w-4 shrink-0 ${isActive ? "text-foreground" : ""}`} />
-                                                    <span className="truncate text-sm">{navLabels[item.titleKey] || item.titleKey}</span>
-                                                </Link>
-                                            </SidebarMenuButton>
-                                        </SidebarMenuItem>
-                                    );
-                                })}
-                            </SidebarMenu>
-                        </SidebarGroupContent>
-                    </SidebarGroup>
-                ))}
-            </SidebarContent>
+                                                    >
+                                                        <item.icon className={`h-4 w-4 shrink-0 ${isActive ? "text-foreground" : ""}`} />
+                                                        <span className="truncate text-sm">{navLabels[item.titleKey] || item.titleKey}</span>
+                                                    </Link>
+                                                </SidebarMenuButton>
+                                            </SidebarMenuItem>
+                                        );
+                                    })}
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+                    ))}
+                </SidebarContent>
 
-            <SidebarFooter className="p-4">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton
-                            size="lg"
-                            className="w-full flex items-center gap-3 px-3 h-14 hover:bg-background/60 rounded-xl transition-all cursor-pointer"
-                        >
-                            <Avatar className="h-8 w-8 rounded-full shrink-0">
-                                <AvatarImage src={userImage || ""} className="rounded-full" />
-                                <AvatarFallback className="rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                                    {initials}
-                                </AvatarFallback>
-                            </Avatar>
-                            <div className="flex flex-col items-start flex-1 min-w-0">
-                                <span className="text-sm font-bold truncate w-full text-foreground tracking-tight">{userName}</span>
-                                <span className="text-[11px] text-muted-foreground truncate w-full">{userEmail}</span>
+                <SidebarFooter className="p-4">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <SidebarMenuButton
+                                size="lg"
+                                className="w-full flex items-center gap-3 px-3 h-14 hover:bg-background/60 rounded-xl transition-all cursor-pointer"
+                            >
+                                <Avatar className="h-8 w-8 rounded-full shrink-0">
+                                    <AvatarImage src={userImage || ""} className="rounded-full" />
+                                    <AvatarFallback className="rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                                        {initials}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col items-start flex-1 min-w-0">
+                                    <span className="text-sm font-bold truncate w-full text-foreground tracking-tight">{userName}</span>
+                                    <span className="text-[11px] text-muted-foreground truncate w-full">{userEmail}</span>
+                                </div>
+                                <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                            </SidebarMenuButton>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56" side="right" sideOffset={10}>
+                            <div className="px-2 py-2">
+                                <p className="text-sm font-medium">{userName}</p>
+                                <p className="text-xs text-muted-foreground">{userEmail}</p>
                             </div>
-                            <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
-                        </SidebarMenuButton>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56" side="right" sideOffset={10}>
-                        <div className="px-2 py-2">
-                            <p className="text-sm font-medium">{userName}</p>
-                            <p className="text-xs text-muted-foreground">{userEmail}</p>
-                        </div>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                            <Link href="/dashboard/settings" className="cursor-pointer">
-                                <Settings className="mr-2 h-4 w-4" />
-                                {t.common.settings}
-                            </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            className="text-destructive cursor-pointer focus:text-destructive focus:bg-destructive/10"
-                            onClick={() => signOut({ callbackUrl: "/login" })}
-                        >
-                            <LogOut className="mr-2 h-4 w-4" />
-                            {t.common.signOut}
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </SidebarFooter>
-        </Sidebar>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild>
+                                <Link href="/dashboard/settings" className="cursor-pointer">
+                                    <Settings className="mr-2 h-4 w-4" />
+                                    {t.common.settings}
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                className="text-destructive cursor-pointer focus:text-destructive focus:bg-destructive/10"
+                                onClick={() => signOut({ callbackUrl: "/login" })}
+                            >
+                                <LogOut className="mr-2 h-4 w-4" />
+                                {t.common.signOut}
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </SidebarFooter>
+            </Sidebar>
+        </>
     );
 }
 
@@ -366,7 +370,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     // Check if we are on a template editor or block editor page
     const isEditor = /\/library\/templates\/[^/]+$/.test(pathname) || /\/library\/blocks\/[^/]+$/.test(pathname) || /\/templates\/[^/]+$/.test(pathname) || /\/blocks\/[^/]+$/.test(pathname);
 
-    if (isEditor) {
+    // Check if we are on a settings page (full-page layout without sidebar)
+    const isSettings = pathname.startsWith("/dashboard/settings");
+
+    if (isEditor || isSettings) {
         return (
             <BreadcrumbProvider>
                 {children}

@@ -19,6 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Upload } from "lucide-react";
 import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import { useI18n } from "@/lib/i18n";
 
 // Helper to center crop
 function centerAspectCrop(
@@ -51,6 +52,7 @@ interface EditAvatarDialogProps {
 }
 
 export function EditAvatarDialog({ open, onOpenChange, user }: EditAvatarDialogProps) {
+    const { t } = useI18n();
     const [imgSrc, setImgSrc] = useState('');
     const [crop, setCrop] = useState<Crop>();
     const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
@@ -111,7 +113,7 @@ export function EditAvatarDialog({ open, onOpenChange, user }: EditAvatarDialogP
         try {
             const blob = await getCroppedBlob();
             if (!blob) {
-                toast.error("Please select and crop an image");
+                toast.error((t.settings.avatarDialog as any)?.errorNoImage || "Please select and crop an image");
                 setLoading(false);
                 return;
             }
@@ -126,15 +128,15 @@ export function EditAvatarDialog({ open, onOpenChange, user }: EditAvatarDialogP
             });
 
             if (res.ok) {
-                toast.success("Avatar updated successfully");
+                toast.success((t.settings.avatarDialog as any)?.success || "Avatar updated successfully");
                 onOpenChange(false);
                 window.location.reload();
             } else {
                 const error = await res.text();
-                throw new Error(error || "Failed to update avatar");
+                throw new Error(error || (t.settings.avatarDialog as any)?.error || "Failed to update avatar");
             }
         } catch (error) {
-            toast.error("Failed to update avatar");
+            toast.error((t.settings.avatarDialog as any)?.error || "Failed to update avatar");
         } finally {
             setLoading(false);
         }
@@ -151,9 +153,9 @@ export function EditAvatarDialog({ open, onOpenChange, user }: EditAvatarDialogP
         <Dialog open={open} onOpenChange={(v) => { if (!v) setImgSrc(''); onOpenChange(v); }}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Update Photo</DialogTitle>
+                    <DialogTitle>{(t.settings as any)?.avatarDialog?.title || "Update Photo"}</DialogTitle>
                     <DialogDescription>
-                        Upload a new profile photo and crop it to a square.
+                        {(t.settings as any)?.avatarDialog?.description || "Upload a new profile photo."}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -169,7 +171,7 @@ export function EditAvatarDialog({ open, onOpenChange, user }: EditAvatarDialogP
                                 className="cursor-pointer flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-accent transition-colors"
                             >
                                 <Upload className="h-4 w-4" />
-                                Choose Image
+                                {(t.settings.avatarDialog as any)?.chooseImage || "Choose Image"}
                             </Label>
                             <Input
                                 id="avatar-upload"
@@ -190,14 +192,14 @@ export function EditAvatarDialog({ open, onOpenChange, user }: EditAvatarDialogP
                             >
                                 <img
                                     ref={imgRef}
-                                    alt="Crop me"
+                                    alt={(t.settings.avatarDialog as any)?.cropAlt || "Crop me"}
                                     src={imgSrc}
                                     onLoad={onImageLoad}
                                     className="max-h-[300px] rounded-md"
                                 />
                             </ReactCrop>
                             <Button variant="ghost" size="sm" onClick={() => setImgSrc('')}>
-                                Choose a different image
+                                {(t.settings.avatarDialog as any)?.changeImage || "Choose a different image"}
                             </Button>
                         </div>
                     )}
@@ -205,10 +207,10 @@ export function EditAvatarDialog({ open, onOpenChange, user }: EditAvatarDialogP
 
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancel
+                        {(t.common as any)?.cancel || "Cancel"}
                     </Button>
                     <Button onClick={handleSave} disabled={loading || !imgSrc}>
-                        {loading ? <Spinner className="h-4 w-4" /> : "Save"}
+                        {loading ? <Spinner className="h-4 w-4" /> : (t.common as any)?.save || "Save"}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -226,6 +228,7 @@ interface EditNameDialogProps {
 }
 
 export function EditNameDialog({ open, onOpenChange, user }: EditNameDialogProps) {
+    const { t } = useI18n();
     const [name, setName] = useState(user.name || "");
     const [loading, setLoading] = useState(false);
 
@@ -240,14 +243,14 @@ export function EditNameDialog({ open, onOpenChange, user }: EditNameDialogProps
             });
 
             if (res.ok) {
-                toast.success("Name updated successfully");
+                toast.success((t.settings.nameDialog as any)?.success || "Name updated successfully");
                 onOpenChange(false);
                 window.location.reload();
             } else {
-                throw new Error("Failed to update name");
+                throw new Error((t.settings.nameDialog as any)?.error || "Failed to update name");
             }
         } catch (error) {
-            toast.error("Failed to update name");
+            toast.error((t.settings.nameDialog as any)?.error || "Failed to update name");
         } finally {
             setLoading(false);
         }
@@ -257,30 +260,30 @@ export function EditNameDialog({ open, onOpenChange, user }: EditNameDialogProps
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Update Name</DialogTitle>
+                    <DialogTitle>{(t.settings as any)?.nameDialog?.title || "Update Name"}</DialogTitle>
                     <DialogDescription>
-                        Change your display name.
+                        {(t.settings as any)?.nameDialog?.description || "Change your display name."}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSave}>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="name">Full Name</Label>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">{(t.settings as any)?.nameDialog?.label || "Full Name"}</Label>
                             <Input
                                 id="name"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                placeholder="Your name"
+                                placeholder={(t.settings as any)?.nameDialog?.placeholder || "Your name"}
                                 required
                             />
                         </div>
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                            Cancel
+                            {(t.common as any)?.cancel || "Cancel"}
                         </Button>
                         <Button type="submit" disabled={loading}>
-                            {loading ? <Spinner className="h-4 w-4" /> : "Save"}
+                            {loading ? <Spinner className="h-4 w-4" /> : ((t.common as any)?.save || "Save")}
                         </Button>
                     </DialogFooter>
                 </form>
@@ -299,15 +302,16 @@ interface EditEmailDialogProps {
 }
 
 export function EditEmailDialog({ open, onOpenChange, user }: EditEmailDialogProps) {
+    const { t } = useI18n();
     const [email, setEmail] = useState(user.email || "");
-    const [step, setStep] = useState(1);
+    const [step, setStep] = useState<'input' | 'verify'>('input');
     const [otp, setOtp] = useState("");
     const [loading, setLoading] = useState(false);
 
     const handleRequestOtp = async (e: React.FormEvent) => {
         e.preventDefault();
         if (email === user.email) {
-            toast.error("Please enter a different email address");
+            toast.error((t.settings as any)?.emailDialog?.errorSameEmail || "New email cannot be the same as current email.");
             return;
         }
         setLoading(true);
@@ -318,14 +322,14 @@ export function EditEmailDialog({ open, onOpenChange, user }: EditEmailDialogPro
                 body: JSON.stringify({ email }),
             });
             if (res.ok) {
-                toast.success("OTP sent to your new email");
-                setStep(2);
+                toast.success((t.settings as any)?.emailDialog?.otpSent || "OTP sent to your new email.");
+                setStep('verify');
             } else {
                 const data = await res.json();
-                toast.error(data.message || "Failed to send OTP");
+                toast.error(data.message || ((t.settings as any)?.emailDialog?.errorSendOtp || "Failed to send OTP."));
             }
         } catch (error) {
-            toast.error("An error occurred");
+            toast.error((t.common as any)?.error || "An unexpected error occurred.");
         } finally {
             setLoading(false);
         }
@@ -341,37 +345,37 @@ export function EditEmailDialog({ open, onOpenChange, user }: EditEmailDialogPro
                 body: JSON.stringify({ email, otp }),
             });
             if (res.ok) {
-                toast.success("Email updated successfully");
+                toast.success((t.settings as any)?.emailDialog?.success || "Email updated successfully!");
                 onOpenChange(false);
                 window.location.reload();
             } else {
                 const data = await res.json();
-                toast.error(data.message || "Invalid OTP");
+                toast.error(data.message || ((t.settings as any)?.emailDialog?.errorInvalidOtp || "Invalid OTP."));
             }
         } catch (error) {
-            toast.error("An error occurred");
+            toast.error((t.common as any)?.error || "An unexpected error occurred.");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <Dialog open={open} onOpenChange={(v) => { if (!v) setStep(1); onOpenChange(v); }}>
+        <Dialog open={open} onOpenChange={(v) => { if (!v) setStep('input'); onOpenChange(v); }}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>{step === 1 ? "Update Email" : "Verify OTP"}</DialogTitle>
+                    <DialogTitle>{step === 'input' ? ((t.settings as any)?.emailDialog?.titleUpdate || "Update Email") : ((t.settings as any)?.emailDialog?.titleVerify || "Verify OTP")}</DialogTitle>
                     <DialogDescription>
-                        {step === 1
-                            ? "Enter your new email address. We'll send an OTP to verify it."
-                            : `Enter the code we sent to ${email}`}
+                        {step === 'input'
+                            ? ((t.settings as any)?.emailDialog?.descUpdate || "Enter your new email address.")
+                            : ((t.settings as any)?.emailDialog?.descVerify || "Enter the code we sent.")?.replace("{{email}}", email)}
                     </DialogDescription>
                 </DialogHeader>
 
-                {step === 1 ? (
+                {step === 'input' ? (
                     <form onSubmit={handleRequestOtp}>
                         <div className="grid gap-4 py-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="new-email">New Email Address</Label>
+                                <Label htmlFor="new-email">{(t.settings as any)?.emailDialog?.labelEmail || "New Email Address"}</Label>
                                 <Input
                                     id="new-email"
                                     type="email"
@@ -384,10 +388,10 @@ export function EditEmailDialog({ open, onOpenChange, user }: EditEmailDialogPro
                         </div>
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                                Cancel
+                                {(t.common as any)?.cancel || "Cancel"}
                             </Button>
                             <Button type="submit" disabled={loading}>
-                                {loading ? <Spinner className="h-4 w-4" /> : "Send OTP"}
+                                {loading ? <Spinner className="h-4 w-4" /> : ((t.settings as any)?.emailDialog?.btnSendOtp || "Send OTP")}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -395,7 +399,7 @@ export function EditEmailDialog({ open, onOpenChange, user }: EditEmailDialogPro
                     <form onSubmit={handleVerifyOtp}>
                         <div className="grid gap-4 py-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="otp">Verification Code</Label>
+                                <Label htmlFor="otp">{(t.settings as any)?.emailDialog?.labelOtp || "Verification Code"}</Label>
                                 <Input
                                     id="otp"
                                     value={otp}
@@ -409,11 +413,11 @@ export function EditEmailDialog({ open, onOpenChange, user }: EditEmailDialogPro
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button type="button" variant="ghost" onClick={() => setStep(1)}>
-                                Back
+                            <Button type="button" variant="ghost" onClick={() => setStep('input')}>
+                                {(t.common as any)?.back || "Back"}
                             </Button>
                             <Button type="submit" disabled={loading}>
-                                {loading ? <Spinner className="h-4 w-4" /> : "Verify & Update"}
+                                {loading ? <Spinner className="h-4 w-4" /> : ((t.settings as any)?.emailDialog?.btnVerify || "Verify")}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -432,6 +436,7 @@ interface EditPasswordDialogProps {
 }
 
 export function EditPasswordDialog({ open, onOpenChange }: EditPasswordDialogProps) {
+    const { t } = useI18n();
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -440,7 +445,7 @@ export function EditPasswordDialog({ open, onOpenChange }: EditPasswordDialogPro
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (newPassword !== confirmPassword) {
-            toast.error("New passwords do not match");
+            toast.error((t.settings as any)?.passwordDialog?.errorMatch || "New passwords do not match.");
             return;
         }
 
@@ -453,17 +458,17 @@ export function EditPasswordDialog({ open, onOpenChange }: EditPasswordDialogPro
             });
 
             if (res.ok) {
-                toast.success("Password changed successfully");
+                toast.success((t.settings as any)?.passwordDialog?.success || "Password updated successfully!");
                 onOpenChange(false);
                 setCurrentPassword("");
                 setNewPassword("");
                 setConfirmPassword("");
             } else {
                 const data = await res.json();
-                toast.error(data.message || "Failed to change password");
+                toast.error(data.message || ((t.settings as any)?.passwordDialog?.error || "Failed to update password."));
             }
         } catch (error) {
-            toast.error("An error occurred");
+            toast.error((t.common as any)?.error || "An unexpected error occurred.");
         } finally {
             setLoading(false);
         }
@@ -473,15 +478,15 @@ export function EditPasswordDialog({ open, onOpenChange }: EditPasswordDialogPro
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Change Password</DialogTitle>
+                    <DialogTitle>{(t.settings as any)?.passwordDialog?.title || "Change Password"}</DialogTitle>
                     <DialogDescription>
-                        Secure your account with a new password.
+                        {(t.settings as any)?.passwordDialog?.description || "Secure your account with a new password."}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSave}>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="current">Current Password</Label>
+                            <Label htmlFor="current">{(t.settings as any)?.passwordDialog?.labelCurrent || "Current Password"}</Label>
                             <Input
                                 id="current"
                                 type="password"
@@ -492,7 +497,7 @@ export function EditPasswordDialog({ open, onOpenChange }: EditPasswordDialogPro
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="new">New Password</Label>
+                            <Label htmlFor="new">{(t.settings as any)?.passwordDialog?.labelNew || "New Password"}</Label>
                             <Input
                                 id="new"
                                 type="password"
@@ -503,7 +508,7 @@ export function EditPasswordDialog({ open, onOpenChange }: EditPasswordDialogPro
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="confirm">Confirm New Password</Label>
+                            <Label htmlFor="confirm">{(t.settings as any)?.passwordDialog?.labelConfirm || "Confirm New Password"}</Label>
                             <Input
                                 id="confirm"
                                 type="password"
@@ -516,10 +521,10 @@ export function EditPasswordDialog({ open, onOpenChange }: EditPasswordDialogPro
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                            Cancel
+                            {(t.common as any)?.cancel || "Cancel"}
                         </Button>
                         <Button type="submit" disabled={loading}>
-                            {loading ? <Spinner className="h-4 w-4" /> : "Update Password"}
+                            {loading ? <Spinner className="h-4 w-4" /> : ((t.settings as any)?.passwordDialog?.btnUpdate || "Update Password")}
                         </Button>
                     </DialogFooter>
                 </form>
@@ -537,6 +542,7 @@ interface EditNotificationsDialogProps {
 }
 
 export function EditNotificationsDialog({ open, onOpenChange }: EditNotificationsDialogProps) {
+    const { t } = useI18n();
     const [loading, setLoading] = useState(false);
 
     const handleSave = async (e: React.FormEvent) => {
@@ -544,10 +550,10 @@ export function EditNotificationsDialog({ open, onOpenChange }: EditNotification
         setLoading(true);
         try {
             await new Promise(resolve => setTimeout(resolve, 1000));
-            toast.success("Notification preferences updated");
+            toast.success((t.settings as any)?.notificationsDialog?.success || "Notification preferences updated!");
             onOpenChange(false);
         } catch (error) {
-            toast.error("Failed to update notifications");
+            toast.error((t.settings as any)?.notificationsDialog?.error || "Failed to update notification preferences.");
         } finally {
             setLoading(false);
         }
@@ -555,45 +561,44 @@ export function EditNotificationsDialog({ open, onOpenChange }: EditNotification
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Notification Preferences</DialogTitle>
+                    <DialogTitle>{(t.settings as any)?.notificationsDialog?.title || "Notification Preferences"}</DialogTitle>
                     <DialogDescription>
-                        Configure how you want to be notified.
+                        {(t.settings as any)?.notificationsDialog?.description || "Configure how you want to be notified."}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSave}>
                     <div className="grid gap-6 py-4">
                         <div className="space-y-4">
-                            <h4 className="text-sm font-medium text-muted-foreground">Email Alerts</h4>
                             <div className="flex items-center justify-between">
-                                <Label htmlFor="campaign-upd" className="cursor-pointer">Campaign Updates</Label>
+                                <Label htmlFor="campaign-upd" className="cursor-pointer">{(t.settings.notificationsDialog as any)?.labelCampaign || "Campaign Updates"}</Label>
                                 <Switch id="campaign-upd" defaultChecked />
                             </div>
                             <div className="flex items-center justify-between">
-                                <Label htmlFor="audience-gr" className="cursor-pointer">Audience Growth</Label>
+                                <Label htmlFor="audience-gr" className="cursor-pointer">{(t.settings.notificationsDialog as any)?.labelAudience || "Audience Growth"}</Label>
                                 <Switch id="audience-gr" defaultChecked />
                             </div>
                         </div>
 
                         <div className="space-y-4">
-                            <h4 className="text-sm font-medium text-muted-foreground">Push Notifications</h4>
+                            <h4 className="text-sm font-medium text-muted-foreground">{(t.settings.notificationsDialog as any)?.sectionPush || "Push Notifications"}</h4>
                             <div className="flex items-center justify-between">
-                                <Label htmlFor="new-mentions" className="cursor-pointer">New Mentions</Label>
+                                <Label htmlFor="new-mentions" className="cursor-pointer">{(t.settings.notificationsDialog as any)?.labelMentions || "New Mentions"}</Label>
                                 <Switch id="new-mentions" defaultChecked />
                             </div>
                             <div className="flex items-center justify-between">
-                                <Label htmlFor="sys-alerts" className="cursor-pointer">System Alerts</Label>
+                                <Label htmlFor="sys-alerts" className="cursor-pointer">{(t.settings.notificationsDialog as any)?.labelSystem || "System Alerts"}</Label>
                                 <Switch id="sys-alerts" defaultChecked />
                             </div>
                         </div>
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                            Cancel
+                            {(t.common as any)?.cancel || "Cancel"}
                         </Button>
                         <Button type="submit" disabled={loading}>
-                            {loading ? <Spinner className="h-4 w-4" /> : "Save Preferences"}
+                            {loading ? <Spinner className="h-4 w-4" /> : (t.settings.notificationsDialog as any)?.btnSave || "Save Preferences"}
                         </Button>
                     </DialogFooter>
                 </form>

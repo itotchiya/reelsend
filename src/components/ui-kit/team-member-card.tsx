@@ -84,7 +84,7 @@ export function TeamMemberCard({
             className={cn(
                 "group relative rounded-xl border border-dashed bg-card p-6 overflow-hidden",
                 roleBorderColor,
-                "hover:border-solid hover:shadow-sm transition-all duration-200 cursor-pointer",
+                "hover:border-solid hover:shadow-none transition-all duration-200 cursor-pointer",
                 className
             )}
         >
@@ -108,7 +108,7 @@ export function TeamMemberCard({
             <div className="flex flex-col items-center text-center">
                 {/* Avatar & Status */}
                 <div className="relative mb-4">
-                    <Avatar className="h-20 w-20 border-2 border-background shadow-sm group-hover:scale-105 transition-transform duration-200">
+                    <Avatar className="h-20 w-20 border-2 border-background shadow-none group-hover:scale-105 transition-transform duration-200">
                         <AvatarImage src={user.image || ""} />
                         <AvatarFallback className="text-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 text-indigo-500">
                             {initials}

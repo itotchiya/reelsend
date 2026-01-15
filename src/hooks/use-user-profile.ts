@@ -12,6 +12,7 @@ interface UserProfile {
 export function useUserProfile() {
     const [user, setUser] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isDeactivated, setIsDeactivated] = useState(false);
 
     useEffect(() => {
         async function fetchUser() {
@@ -20,6 +21,8 @@ export function useUserProfile() {
                 if (res.ok) {
                     const data = await res.json();
                     setUser(data);
+                } else if (res.status === 401) {
+                    setIsDeactivated(true);
                 }
             } catch (error) {
                 console.error("Failed to fetch user profile:", error);
@@ -31,5 +34,6 @@ export function useUserProfile() {
         fetchUser();
     }, []);
 
-    return { user, loading };
+    return { user, loading, isDeactivated };
 }
+

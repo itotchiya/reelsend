@@ -15,21 +15,23 @@ import {
     EditPasswordDialog,
     EditNotificationsDialog
 } from "./edit-settings-dialogs";
+import { useI18n } from "@/lib/i18n";
 
 interface SettingsClientProps {
     user: User;
 }
 
-const tabs = [
-    { name: 'Profile', value: 'profile', icon: UserIcon },
-    { name: 'Security', value: 'security', icon: Shield },
-    { name: 'Notifications', value: 'notifications', icon: Bell }
-];
-
 export function SettingsClient({ user }: SettingsClientProps) {
+    const { t } = useI18n();
     const [activeTab, setActiveTab] = useState('profile');
     const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
     const [underlineStyle, setUnderlineStyle] = useState({ left: 0, width: 0 });
+
+    const tabs = [
+        { name: (t.settings as any)?.items?.profile || "Profile", value: 'profile', icon: UserIcon },
+        { name: (t.settings as any)?.items?.security || "Security", value: 'security', icon: Shield },
+        { name: (t.settings as any)?.items?.notifications || "Notifications", value: 'notifications', icon: Bell }
+    ];
 
     // Dialog states
     const [isAvatarOpen, setIsAvatarOpen] = useState(false);
@@ -109,21 +111,21 @@ export function SettingsClient({ user }: SettingsClientProps) {
                     >
                         <section className="space-y-6">
                             <div>
-                                <h3 className="text-lg font-bold">Profile</h3>
-                                <p className="text-sm text-muted-foreground">This information will be displayed publicly so be careful what you share.</p>
+                                <h3 className="text-lg font-bold">{(t.settings as any)?.items?.profile || "Profile"}</h3>
+                                <p className="text-sm text-muted-foreground">{(t.settings as any)?.items?.profileDesc || "Manage your public profile."}</p>
                             </div>
 
                             <div className="divide-y divide-border/50 border-t border-border/50">
                                 {/* Photo Preview */}
                                 <div className="py-6 flex items-center justify-between gap-4">
                                     <div className="flex items-center gap-4">
-                                        <Avatar className="h-14 w-14 border shadow-sm">
+                                        <Avatar className="h-14 w-14 border shadow-none">
                                             <AvatarImage src={user.image || ""} />
                                             <AvatarFallback className="bg-primary/5 text-sm font-bold">{initials}</AvatarFallback>
                                         </Avatar>
                                         <div>
-                                            <p className="text-sm font-medium">Photo</p>
-                                            <p className="text-sm text-muted-foreground">Your profile image.</p>
+                                            <p className="text-sm font-medium">{(t.settings as any)?.items?.photo || "Photo"}</p>
+                                            <p className="text-sm text-muted-foreground">{(t.settings as any)?.items?.photoDesc || "Your profile image."}</p>
                                         </div>
                                     </div>
                                     <Button
@@ -131,14 +133,14 @@ export function SettingsClient({ user }: SettingsClientProps) {
                                         className="text-primary font-medium"
                                         onClick={() => setIsAvatarOpen(true)}
                                     >
-                                        Update
+                                        {(t.common as any)?.edit || "Edit"}
                                     </Button>
                                 </div>
 
                                 {/* Full Name Preview */}
                                 <div className="py-6 flex items-center justify-between gap-4">
                                     <div className="grid grid-cols-1 sm:grid-cols-[200px,1fr] items-center gap-4 w-full">
-                                        <p className="text-sm font-medium">Full name</p>
+                                        <p className="text-sm font-medium">{(t.settings as any)?.items?.fullName || "Full Name"}</p>
                                         <p className="text-sm text-foreground/80">{userName}</p>
                                     </div>
                                     <Button
@@ -146,14 +148,14 @@ export function SettingsClient({ user }: SettingsClientProps) {
                                         className="text-primary font-medium shrink-0"
                                         onClick={() => setIsNameOpen(true)}
                                     >
-                                        Update
+                                        {(t.common as any)?.edit || "Edit"}
                                     </Button>
                                 </div>
 
                                 {/* Email Preview */}
                                 <div className="py-6 flex items-center justify-between gap-4">
                                     <div className="grid grid-cols-1 sm:grid-cols-[200px,1fr] items-center gap-4 w-full">
-                                        <p className="text-sm font-medium">Email address</p>
+                                        <p className="text-sm font-medium">{(t.settings as any)?.items?.email || "Email Address"}</p>
                                         <p className="text-sm text-foreground/80">{user.email}</p>
                                     </div>
                                     <Button
@@ -161,7 +163,7 @@ export function SettingsClient({ user }: SettingsClientProps) {
                                         className="text-primary font-medium shrink-0"
                                         onClick={() => setIsEmailOpen(true)}
                                     >
-                                        Update
+                                        {(t.common as any)?.edit || "Edit"}
                                     </Button>
                                 </div>
                             </div>
@@ -177,15 +179,15 @@ export function SettingsClient({ user }: SettingsClientProps) {
                     >
                         <section className="space-y-6">
                             <div>
-                                <h3 className="text-lg font-bold">Security</h3>
-                                <p className="text-sm text-muted-foreground">Manage your account protection and sign-in options.</p>
+                                <h3 className="text-lg font-bold">{(t.settings as any)?.items?.security || "Security"}</h3>
+                                <p className="text-sm text-muted-foreground">{(t.settings as any)?.items?.securityDesc || "Manage your account security."}</p>
                             </div>
 
                             <div className="divide-y divide-border/50 border-t border-border/50">
                                 {/* Password Preview */}
                                 <div className="py-6 flex items-center justify-between gap-4">
                                     <div className="grid grid-cols-1 sm:grid-cols-[200px,1fr] items-center gap-4 w-full">
-                                        <p className="text-sm font-medium">Password</p>
+                                        <p className="text-sm font-medium">{(t.settings as any)?.items?.password || "Password"}</p>
                                         <p className="text-sm text-foreground/80">••••••••••••</p>
                                     </div>
                                     <Button
@@ -193,18 +195,18 @@ export function SettingsClient({ user }: SettingsClientProps) {
                                         className="text-primary font-medium shrink-0"
                                         onClick={() => setIsPasswordOpen(true)}
                                     >
-                                        Update
+                                        {(t.common as any)?.edit || "Edit"}
                                     </Button>
                                 </div>
 
                                 {/* Two-Factor Preview (Placeholder) */}
                                 <div className="py-6 flex items-center justify-between gap-4">
                                     <div className="grid grid-cols-1 sm:grid-cols-[200px,1fr] items-center gap-4 w-full">
-                                        <p className="text-sm font-medium">Two-factor authentication</p>
-                                        <p className="text-sm text-muted-foreground italic">Not enabled</p>
+                                        <p className="text-sm font-medium">{(t.settings as any)?.items?.twoFactor || "Two-factor authentication"}</p>
+                                        <p className="text-sm text-muted-foreground italic">{(t.settings as any)?.items?.notEnabled || "Not enabled"}</p>
                                     </div>
                                     <Button variant="link" className="text-primary font-medium shrink-0">
-                                        Enable
+                                        {(t.settings as any)?.items?.enable || "Enable"}
                                     </Button>
                                 </div>
                             </div>
@@ -220,23 +222,23 @@ export function SettingsClient({ user }: SettingsClientProps) {
                     >
                         <section className="space-y-6">
                             <div>
-                                <h3 className="text-lg font-bold">Notifications</h3>
-                                <p className="text-sm text-muted-foreground">Choose how and when you want to be notified.</p>
+                                <h3 className="text-lg font-bold">{(t.settings as any)?.items?.notifications || "Notifications"}</h3>
+                                <p className="text-sm text-muted-foreground">{(t.settings as any)?.items?.notificationsDesc || "Manage your notifications."}</p>
                             </div>
 
                             <div className="divide-y divide-border/50 border-t border-border/50">
                                 {/* Email Notifications Preview */}
                                 <div className="py-6 flex items-center justify-between gap-4">
                                     <div className="grid grid-cols-1 sm:grid-cols-[200px,1fr] items-center gap-4 w-full">
-                                        <p className="text-sm font-medium">Email Notifications</p>
+                                        <p className="text-sm font-medium">{(t.settings as any)?.notificationsDialog?.sectionEmail || "Email Alerts"}</p>
                                         <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-2 text-sm text-foreground/80">
                                                 <Check className="h-4 w-4 text-green-500" />
-                                                Campaign Updates
+                                                {(t.settings as any)?.notificationsDialog?.labelCampaign || "Campaign Updates"}
                                             </div>
                                             <div className="flex items-center gap-2 text-sm text-foreground/80">
                                                 <Check className="h-4 w-4 text-green-500" />
-                                                Audience Growth
+                                                {(t.settings as any)?.notificationsDialog?.labelAudience || "Audience Growth"}
                                             </div>
                                         </div>
                                     </div>
@@ -245,22 +247,22 @@ export function SettingsClient({ user }: SettingsClientProps) {
                                         className="text-primary font-medium shrink-0"
                                         onClick={() => setIsNotificationsOpen(true)}
                                     >
-                                        Update
+                                        {(t.common as any)?.edit || "Edit"}
                                     </Button>
                                 </div>
 
                                 {/* App Notifications Preview */}
                                 <div className="py-6 flex items-center justify-between gap-4">
                                     <div className="grid grid-cols-1 sm:grid-cols-[200px,1fr] items-center gap-4 w-full">
-                                        <p className="text-sm font-medium">Push Notifications</p>
+                                        <p className="text-sm font-medium">{(t.settings as any)?.notificationsDialog?.sectionPush || "App Notifications"}</p>
                                         <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-2 text-sm text-foreground/80">
                                                 <Check className="h-4 w-4 text-green-500" />
-                                                New Mentions
+                                                {(t.settings as any)?.notificationsDialog?.labelMentions || "New Mentions"}
                                             </div>
                                             <div className="flex items-center gap-2 text-sm text-foreground/80">
                                                 <Check className="h-4 w-4 text-green-500" />
-                                                System Alerts
+                                                {(t.settings as any)?.notificationsDialog?.labelSystem || "System Alerts"}
                                             </div>
                                         </div>
                                     </div>
@@ -269,7 +271,7 @@ export function SettingsClient({ user }: SettingsClientProps) {
                                         className="text-primary font-medium shrink-0"
                                         onClick={() => setIsNotificationsOpen(true)}
                                     >
-                                        Update
+                                        {(t.common as any)?.edit || "Edit"}
                                     </Button>
                                 </div>
                             </div>

@@ -56,6 +56,8 @@ export default async function RolesPage() {
         name: role.name,
         description: role.description,
         isSystem: role.isSystem,
+        icon: role.icon,
+        color: role.color,
         userCount: role._count.users,
         permissions: role.permissions.map((rp) => rp.permission.key),
     }));

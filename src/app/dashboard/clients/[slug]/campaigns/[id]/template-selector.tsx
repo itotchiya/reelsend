@@ -55,7 +55,7 @@ export function TemplateSelector({ open, onOpenChange, templates, selectedId, on
                                 <div
                                     key={template.id}
                                     className={`
-                                        group relative rounded-xl border bg-card overflow-hidden cursor-pointer transition-all hover:shadow-md
+                                        group relative rounded-xl border bg-card overflow-hidden cursor-pointer transition-all hover:shadow-none
                                         ${selectedId === template.id ? 'ring-2 ring-primary border-primary' : 'hover:border-primary/50'}
                                     `}
                                     onClick={() => {
