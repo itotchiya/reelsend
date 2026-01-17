@@ -33,6 +33,7 @@ export interface NavigationCardProps {
     emptyLabel?: string;
     supportingText?: string; // Simple text to show instead of badges
     className?: string;
+    onClick?: () => void;
 }
 
 const colorVariants = {
@@ -102,6 +103,7 @@ export function NavigationCard({
     emptyLabel,
     supportingText,
     className,
+    onClick,
 }: NavigationCardProps) {
     const colors = colorVariants[color];
     const displayItems = items.slice(0, maxItems);
@@ -113,8 +115,14 @@ export function NavigationCard({
         return (
             <Link
                 href={href}
+                onClick={(e) => {
+                    if (onClick) {
+                        e.preventDefault();
+                        onClick();
+                    }
+                }}
                 className={cn(
-                    "group flex flex-col rounded-xl border border-dashed transition-all duration-200 bg-card overflow-hidden",
+                    "group flex flex-col rounded-xl border border-dashed transition-all duration-200 bg-transparent overflow-hidden",
                     colors.border,
                     colors.borderHover,
                     "hover:border-solid",
@@ -199,6 +207,12 @@ export function NavigationCard({
     return (
         <Link
             href={href}
+            onClick={(e) => {
+                if (onClick) {
+                    e.preventDefault();
+                    onClick();
+                }
+            }}
             className={cn(
                 "group flex flex-col gap-4 p-6 rounded-xl border transition-all duration-200",
                 colors.bg,

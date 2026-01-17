@@ -60,9 +60,9 @@ export function FilterBar({
     const hasActiveFilters = searchValue || Object.values(filterValues).some(v => v && v !== "all");
 
     return (
-        <div className={cn("flex flex-col sm:flex-row sm:items-center gap-3", className)}>
+        <div className={cn("flex flex-col sm:flex-row sm:items-center gap-3 w-full", className)}>
             {onSearchChange && (
-                <div className="relative w-full sm:max-w-sm">
+                <div className="relative flex-1 sm:max-w-md">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                         type="text"

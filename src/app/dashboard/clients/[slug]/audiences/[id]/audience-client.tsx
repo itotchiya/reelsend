@@ -17,6 +17,8 @@ import { EditAudienceDialog } from "./components/edit-audience-dialog";
 import { DashboardBreadcrumb } from "@/components/dashboard/layout";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
+import { useTabLoading } from "@/lib/contexts/tab-loading-context";
+import { ClientContentSkeleton } from "@/components/skeletons/client-content-skeleton";
 import Link from "next/link";
 
 interface Audience {
@@ -61,6 +63,7 @@ export function AudienceClient({ audience: initialAudience }: AudienceClientProp
 
     const [audience, setAudience] = useState(initialAudience);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const { isLoading, startLoading } = useTabLoading();
 
     // Sync state with props
     useEffect(() => {
@@ -112,98 +115,105 @@ export function AudienceClient({ audience: initialAudience }: AudienceClientProp
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto">
-                <div className="p-6 md:p-12 space-y-8">
-                    {/* Audience Details Section */}
-                    <div className="rounded-xl border border-dashed p-6">
-                        <div className="flex items-start justify-between mb-4">
-                            <div>
-                                <h1 className="text-2xl font-bold tracking-tight">{audience.name}</h1>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    {audience.description || t.audiences?.noDescription || "No description"}
-                                </p>
+            {isLoading ? (
+                <ClientContentSkeleton hasFilters={false} hasTable={false} rowCount={0} />
+            ) : (
+                <main className="flex-1 overflow-y-auto">
+                    <div className="p-6 md:p-12 space-y-8">
+                        {/* Audience Details Section */}
+                        <div className="rounded-xl border border-dashed p-6">
+                            <div className="flex items-start justify-between mb-4">
+                                <div>
+                                    <h1 className="text-2xl font-bold tracking-tight">{audience.name}</h1>
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                        {audience.description || t.audiences?.noDescription || "No description"}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                                <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                                        <Calendar className="h-3 w-3" />
+                                        {t.common?.createdAt || "Created"}
+                                    </p>
+                                    <p className="font-medium text-sm">
+                                        {formatDate(audience.createdAt)}
+                                    </p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                                        <Calendar className="h-3 w-3" />
+                                        {t.common?.updatedAt || "Updated"}
+                                    </p>
+                                    <p className="font-medium text-sm">
+                                        {formatDate(audience.updatedAt)}
+                                    </p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                                        {t.audiences?.createdBy || "Created By"}
+                                    </p>
+                                    <p className="font-medium text-sm">
+                                        {audience.createdBy?.name || audience.createdBy?.email || "—"}
+                                    </p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                                        {t.common?.client || "Client"}
+                                    </p>
+                                    <p className="font-medium text-sm">
+                                        {audience.client.name}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                            <div className="space-y-1">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    {t.common?.createdAt || "Created"}
-                                </p>
-                                <p className="font-medium text-sm">
-                                    {formatDate(audience.createdAt)}
-                                </p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    {t.common?.updatedAt || "Updated"}
-                                </p>
-                                <p className="font-medium text-sm">
-                                    {formatDate(audience.updatedAt)}
-                                </p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                                    {t.audiences?.createdBy || "Created By"}
-                                </p>
-                                <p className="font-medium text-sm">
-                                    {audience.createdBy?.name || audience.createdBy?.email || "—"}
-                                </p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                                    {t.common?.client || "Client"}
-                                </p>
-                                <p className="font-medium text-sm">
-                                    {audience.client.name}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* Navigation Cards */}
-                    <div className="grid gap-4 sm:grid-cols-3">
-                        <NavigationCard
-                            href={`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}/contacts`}
-                            icon={Users}
-                            title={t.common?.contacts || "Contacts"}
-                            description={t.audiences?.contactsDescription || "Manage your contact list"}
-                            count={audience._count.contacts}
-                            color="blue"
-                            variant="minimal"
-                            supportingText={t.audiences?.manageContactsImport || "Import, export or add contacts manually"}
-                        />
-                        <NavigationCard
-                            href={`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}/segments`}
-                            icon={LayoutGrid}
-                            title={t.audiences?.segments || "Segments"}
-                            description={t.audiences?.segmentsDescription || "Create targeted segments"}
-                            count={audience.segments?.length || 0}
-                            color="purple"
-                            variant="minimal"
-                            items={audience.segments?.map(s => ({ id: s.id, name: s.name })) || []}
-                            emptyLabel={t.audiences?.noSegments || "No segments yet"}
-                        />
-                        <NavigationCard
-                            href="#"
-                            icon={Calendar}
-                            title={t.tables?.campaigns || "Used In"}
-                            description="Campaigns using this audience"
-                            count={audience.campaigns?.length || 0}
-                            color="orange"
-                            variant="minimal"
-                            items={
-                                // Show segments that are used in campaigns
-                                audience.segments
-                                    ?.filter(s => s.campaigns && s.campaigns.length > 0)
-                                    .map(s => ({ id: s.id, name: s.name })) || []
-                            }
-                            emptyLabel={t.audiences?.notUsedBadge || "Not used"}
-                        />
+                        {/* Navigation Cards */}
+                        <div className="grid gap-4 sm:grid-cols-3">
+                            <NavigationCard
+                                href={`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}/contacts`}
+                                onClick={() => startLoading(() => router.push(`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}/contacts`))}
+                                icon={Users}
+                                title={t.common?.contacts || "Contacts"}
+                                description={t.audiences?.contactsDescription || "Manage your contact list"}
+                                count={audience._count.contacts}
+                                color="blue"
+                                variant="minimal"
+                                supportingText={t.audiences?.manageContactsImport || "Import, export or add contacts manually"}
+                            />
+                            <NavigationCard
+                                href={`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}/segments`}
+                                onClick={() => startLoading(() => router.push(`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}/segments`))}
+                                icon={LayoutGrid}
+                                title={t.audiences?.segments || "Segments"}
+                                description={t.audiences?.segmentsDescription || "Create targeted segments"}
+                                count={audience.segments?.length || 0}
+                                color="purple"
+                                variant="minimal"
+                                items={audience.segments?.map(s => ({ id: s.id, name: s.name })) || []}
+                                emptyLabel={t.audiences?.noSegments || "No segments yet"}
+                            />
+                            <NavigationCard
+                                href={`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}/used-in`}
+                                onClick={() => startLoading(() => router.push(`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}/used-in`))}
+                                icon={Calendar}
+                                title={t.tables?.campaigns || "Used In"}
+                                description="Campaigns using this audience"
+                                count={audience.campaigns?.length || 0}
+                                color="green"
+                                variant="minimal"
+                                items={
+                                    // Show segments that are used in campaigns
+                                    audience.segments
+                                        ?.filter(s => s.campaigns && s.campaigns.length > 0)
+                                        .map(s => ({ id: s.id, name: s.name })) || []
+                                }
+                                emptyLabel={t.audiences?.notUsedBadge || "Not used"}
+                            />
+                        </div>
                     </div>
-                </div>
-            </main>
+                </main>
+            )}
 
             <EditAudienceDialog
                 audience={audience}

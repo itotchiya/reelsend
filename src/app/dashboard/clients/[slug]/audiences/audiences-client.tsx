@@ -7,6 +7,9 @@ import { FilterBar } from "@/components/ui-kit/filter-bar";
 import { Button } from "@/components/ui/button";
 import { CardBadge } from "@/components/ui-kit/card-badge";
 import { Plus, Users, ArrowLeft } from "lucide-react";
+import { InteractiveDashedCard } from "@/components/ui-kit/interactive-dashed-card";
+import { ListPaginationFooter } from "@/components/ui-kit/list-pagination-footer";
+import { cn } from "@/lib/utils";
 import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
 import { useI18n } from "@/lib/i18n";
 import { CreateAudienceDialog } from "@/components/dashboard/create-entity-dialog";
@@ -17,8 +20,8 @@ import Link from "next/link";
 import { DashboardBreadcrumb } from "@/components/dashboard/layout";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
-import { Pagination } from "@/components/ui-kit/pagination";
-import { ClientTabs } from "@/components/dashboard/client-tabs";
+
+import { ClientTabs } from "@/components/ui-kit/motion-tabs";
 import { useTabLoading } from "@/lib/contexts/tab-loading-context";
 import { ClientContentSkeleton } from "@/components/skeletons/client-content-skeleton";
 
@@ -241,45 +244,61 @@ export function AudiencesClient({
                 <ClientContentSkeleton />
             ) : (
                 <>
-                    <main className="flex-1 overflow-y-auto">
-                        <div className="p-6 md:p-12 space-y-6">
-                            <div>
-                                <h1 className="text-2xl font-bold tracking-tight">{t.audiences?.title || "Audiences"}</h1>
-                                <p className="text-muted-foreground">{t.audiences?.description || "Manage your contacts and audiences."}</p>
-                            </div>
+                    <main className="flex-1 flex flex-col overflow-y-auto">
+                        <div className={cn(
+                            "p-6 md:p-12 space-y-6 flex flex-col",
+                            audiences.length === 0 ? "flex-1 justify-center" : ""
+                        )}>
+                            {audiences.length > 0 && (
+                                <>
+                                    <div>
+                                        <h1 className="text-2xl font-bold tracking-tight">{t.audiences?.title || "Audiences"}</h1>
+                                        <p className="text-muted-foreground">{t.audiences?.description || "Manage your contacts and audiences."}</p>
+                                    </div>
 
-                            <FilterBar
-                                searchValue={searchValue}
-                                onSearchChange={handleSearch}
-                                searchPlaceholder={t.audiences?.searchPlaceholder || "Search audiences..."}
-                                onClearFilters={handleClearFilters}
-                            />
+                                    <FilterBar
+                                        searchValue={searchValue}
+                                        onSearchChange={handleSearch}
+                                        searchPlaceholder={t.audiences?.searchPlaceholder || "Search audiences..."}
+                                        onClearFilters={handleClearFilters}
+                                    />
+                                </>
+                            )}
 
-                            <DataTable
-                                data={audiences}
-                                columns={columns}
-                                currentPage={currentPage}
-                                totalItems={totalCount}
-                                pageSize={pageSize}
-                                // onPageChange={handlePageChange}
-                                pageSizeOptions={[10, 20, 30, 40, 50]}
-                                emptyMessage={t.audiences?.noAudiences || "No audiences found"}
-                                emptyIcon={<Users className="h-10 w-10 text-muted-foreground/40" />}
-                            />
+                            {audiences.length > 0 ? (
+                                <DataTable
+                                    data={audiences}
+                                    columns={columns}
+                                    currentPage={currentPage}
+                                    totalItems={totalCount}
+                                    pageSize={pageSize}
+                                    pageSizeOptions={[10, 20, 30, 40, 50]}
+                                    emptyMessage={t.audiences?.noAudiences || "No audiences found"}
+                                    emptyIcon={<Users className="h-10 w-10 text-muted-foreground/40" />}
+                                />
+                            ) : (
+                                <div className="flex flex-col items-center justify-center">
+                                    <InteractiveDashedCard
+                                        title={t.audiences?.noAudiences || "No Audiences"}
+                                        description={t.audiences?.noAudiencesDescription || "Create your first audience to start managing your contacts."}
+                                        actionTitle={t.audiences?.createAudience || "Create Audience"}
+                                        icon={Users}
+                                        color="purple"
+                                        onClick={() => setIsCreateDialogOpen(true)}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </main>
 
-                    <div className="shrink-0 border-t bg-background p-4 flex justify-between items-center z-10">
-                        <Pagination
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            onPageChange={handlePageChange}
-                            pageSize={pageSize}
-                            onPageSizeChange={handlePageSizeChange}
-                            pageSizeOptions={[10, 20, 30, 40, 50]}
-                            totalItems={totalCount}
-                        />
-                    </div>
+                    <ListPaginationFooter
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={totalCount}
+                        pageSize={pageSize}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
+                    />
                 </>
             )}
 

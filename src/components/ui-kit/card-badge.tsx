@@ -395,6 +395,28 @@ export function CountBadge({
 }
 
 /**
+ * TabCountBadge Component
+ * A compact badge for displaying counts in tabs (e.g., saved profiles count)
+ */
+export function TabCountBadge({
+    count,
+    ...props
+}: Omit<CardBadgeProps, "variant" | "color" | "children"> & { count: number }) {
+    if (count === 0) return null;
+    return (
+        <span
+            className={cn(
+                "inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-medium rounded-full min-w-[18px]",
+                "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900",
+                props.className
+            )}
+        >
+            {count}
+        </span>
+    );
+}
+
+/**
  * AIGeneratedBadge Component
  * A badge to indicate AI-generated content with a sparkles icon
  */

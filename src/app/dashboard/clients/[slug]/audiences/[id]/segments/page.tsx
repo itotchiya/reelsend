@@ -8,11 +8,16 @@ interface SegmentsPageProps {
         slug: string;
         id: string;
     }>;
+    searchParams: Promise<{
+        page?: string;
+        pageSize?: string;
+    }>;
 }
 
-export default async function SegmentsPage({ params }: SegmentsPageProps) {
+export default async function SegmentsPage({ params, searchParams }: SegmentsPageProps) {
     const session = await auth();
     const { slug, id } = await params;
+    const { page = "1", pageSize: pageSizeParam } = await searchParams;
 
     if (!session?.user?.id) {
         redirect("/login");
@@ -28,6 +33,9 @@ export default async function SegmentsPage({ params }: SegmentsPageProps) {
     if (!audience || audience.client.slug !== slug) {
         redirect(`/dashboard/clients/${slug}`);
     }
+
+    const pageSize = parseInt(pageSizeParam || "20", 10);
+    const currentPage = parseInt(page, 10) || 1;
 
     const segments = await db.segment.findMany({
         where: { audienceId: id },
@@ -49,6 +57,8 @@ export default async function SegmentsPage({ params }: SegmentsPageProps) {
         <SegmentsClient
             audience={JSON.parse(JSON.stringify(audience))}
             segments={JSON.parse(JSON.stringify(segments))}
+            pageSize={pageSize}
+            currentPage={currentPage}
         />
     );
 }

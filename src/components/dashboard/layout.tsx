@@ -394,8 +394,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     const isNewClient = pathname.startsWith("/dashboard/clients/new");
     const isClientSubPage = /\/dashboard\/clients\/[^/]+\/(edit|campaigns|templates|smtp)$/.test(pathname) ||
         /\/dashboard\/clients\/[^/]+\/audiences(\/.*)?$/.test(pathname);
+    const isPostalSubPage = pathname.startsWith("/dashboard/postal/config") || pathname.startsWith("/dashboard/postal/saved");
 
-    if (isEditor || isSettings || isNewClient || isClientSubPage) {
+    if (isEditor || isSettings || isNewClient || isClientSubPage || isPostalSubPage) {
         return (
             <TabLoadingProvider>
                 <BreadcrumbProvider>

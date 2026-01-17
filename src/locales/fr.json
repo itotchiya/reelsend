@@ -435,6 +435,7 @@
         "manageSmtpDescription": "Voir et gérer les profils SMTP pour ce client.",
         "manageProfiles": "Gérer les Profils",
         "noSmtpProfiles": "Aucun profil SMTP configuré pour ce client.",
+        "noSmtpProfilesDescription": "Configurez un profil SMTP pour activer l'envoi d'e-mails pour ce client.",
         "smtpProfilesRequired": "Les paramètres SMTP sont requis pour envoyer des campagnes.",
         "profileName": "Nom",
         "profileUpdated": "Nom du profil mis à jour",
@@ -500,6 +501,7 @@
         "editDesc": "Mettre à jour les détails de votre audience.",
         "newAudience": "Nouvelle Audience",
         "noAudiences": "Aucune audience trouvée",
+        "noAudiencesDescription": "Créez votre première audience pour organiser vos contacts.",
         "deleteAudience": "Supprimer l'Audience",
         "selectAudience": "Sélectionner l'Audience",
         "selectSegment": "Sélectionner le Segment",
@@ -514,6 +516,8 @@
         "import": "Importer",
         "noDescription": "Aucune description fournie",
         "totalContacts": "Total Contacts",
+        "noContacts": "Aucun Contact",
+        "noContactsDescription": "Votre audience est vide. Ajoutez votre premier contact pour commencer.",
         "noContactsFound": "Aucun contact trouvé",
         "clearSearch": "Effacer la recherche",
         "loadingContacts": "Chargement des contacts...",
@@ -526,6 +530,7 @@
         "allUsage": "Toutes",
         "usedInCampaign": "Utilisée en Campagne",
         "notUsedYet": "Non Utilisée",
+        "notUsedYetDescription": "Cette audience n'a pas encore été utilisée dans des campagnes. Lancez une nouvelle campagne pour atteindre votre audience.",
         "audiencesCount": "audiences",
         "noResults": "Aucune audience trouvée",
         "noResultsDesc": "Essayez d'ajuster vos critères de recherche ou de filtre.",
@@ -646,6 +651,7 @@
         "searchPlaceholder": "Rechercher des campagnes...",
         "noCampaigns": "Aucune campagne trouvée",
         "noCampaignsDesc": "Créez votre première campagne pour commencer à envoyer des e-mails.",
+        "noCampaignsDescription": "Commencez par créer votre première campagne pour atteindre votre audience.",
         "deleteCampaign": "Supprimer la Campagne"
     },
     "tables": {
@@ -960,6 +966,8 @@
     "postal": {
         "title": "Configuration SMTP",
         "description": "Configurez vos paramètres SMTP pour l'envoi d'e-mails",
+        "openConfig": "Ouvrir la Configuration",
+        "viewProfiles": "Voir les Profils",
         "currentConfig": {
             "title": "Configuration Actuelle",
             "description": "Vos identifiants de serveur SMTP actifs",
@@ -1003,6 +1011,7 @@
         },
         "profiles": {
             "title": "Profils Enregistrés",
+            "description": "Gérez vos profils SMTP enregistrés pour un accès rapide",
             "selectProfile": "Sélectionner un profil SMTP",
             "searchPlaceholder": "Rechercher des profils...",
             "active": "Actif",

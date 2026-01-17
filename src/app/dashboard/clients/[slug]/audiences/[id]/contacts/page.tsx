@@ -10,6 +10,7 @@ interface ContactsPageProps {
     }>;
     searchParams: Promise<{
         page?: string;
+        pageSize?: string;
         search?: string;
         status?: string;
     }>;
@@ -18,7 +19,7 @@ interface ContactsPageProps {
 export default async function ContactsPage({ params, searchParams }: ContactsPageProps) {
     const session = await auth();
     const { slug, id } = await params;
-    const { page = "1", search = "", status = "all" } = await searchParams;
+    const { page = "1", pageSize: pageSizeParam, search = "", status = "all" } = await searchParams;
 
     if (!session?.user?.id) {
         redirect("/login");
@@ -35,7 +36,7 @@ export default async function ContactsPage({ params, searchParams }: ContactsPag
         redirect(`/dashboard/clients/${slug}`);
     }
 
-    const pageSize = 20;
+    const pageSize = parseInt(pageSizeParam || "20", 10);
     const currentPage = parseInt(page, 10) || 1;
 
     const where: any = { audienceId: id };

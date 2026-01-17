@@ -7,7 +7,8 @@ import { DataTable, Column } from "@/components/ui-kit/data-table";
 import { FilterBar } from "@/components/ui-kit/filter-bar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Upload, Download, UserCircle, ArrowLeft } from "lucide-react";
+import { Plus, Upload, Download, UserCircle, ArrowLeft, Users } from "lucide-react";
+import { InteractiveDashedCard } from "@/components/ui-kit/interactive-dashed-card";
 import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
 import { TableRowActions } from "@/components/ui-kit/table-row-actions";
 import { toast } from "sonner";
@@ -20,6 +21,10 @@ import { DashboardBreadcrumb } from "@/components/dashboard/layout";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
 import { Pagination } from "@/components/ui-kit/pagination";
+import { ListPaginationFooter } from "@/components/ui-kit/list-pagination-footer";
+import { AudienceTabs } from "@/components/ui-kit/motion-tabs/audience-tabs";
+import { useTabLoading } from "@/lib/contexts/tab-loading-context";
+import { ClientContentSkeleton } from "@/components/skeletons/client-content-skeleton";
 import Link from "next/link";
 
 interface Contact {
@@ -73,6 +78,7 @@ export function ContactsClient({
     const pathname = usePathname();
     const { t } = useI18n();
     const { setOverride, removeOverride } = useBreadcrumbs();
+    const { isLoading } = useTabLoading();
 
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
@@ -92,12 +98,20 @@ export function ContactsClient({
     }, [audience.client.slug, audience.client.name, audience.id, audience.name, setOverride, removeOverride]);
 
     const updateUrl = (params: Record<string, string>) => {
-        const searchParams = new URLSearchParams();
+        const searchParams = new URLSearchParams(window.location.search);
         Object.entries(params).forEach(([key, value]) => {
-            if (value && value !== "1" && value !== "all") {
+            if (value && value !== "all") {
                 searchParams.set(key, value);
+            } else {
+                searchParams.delete(key);
             }
         });
+
+        // Always reset to page 1 if search or status changes, unless page is explicitly provided
+        if ((params.search !== undefined || params.status !== undefined) && params.page === undefined) {
+            searchParams.set("page", "1");
+        }
+
         const queryString = searchParams.toString();
         router.push(queryString ? `${pathname}?${queryString}` : pathname);
     };
@@ -107,11 +121,11 @@ export function ContactsClient({
     };
 
     const handlePageChange = (page: number) => {
-        updateUrl({ search: searchValue, page: page.toString(), status: statusFilter, pageSize: pageSize.toString() });
+        updateUrl({ page: page.toString() });
     };
 
     const handlePageSizeChange = (size: number) => {
-        updateUrl({ search: searchValue, page: "1", status: statusFilter, pageSize: size.toString() });
+        updateUrl({ pageSize: size.toString(), page: "1" });
     };
 
     const handleClearFilters = () => {
@@ -264,7 +278,7 @@ export function ContactsClient({
 
     return (
         <div className="h-dvh flex flex-col bg-background">
-            <header className="shrink-0 flex items-center justify-between px-6 py-4 border-b bg-background">
+            <header className="relative shrink-0 flex items-center justify-between px-6 h-16 border-b bg-background">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" asChild className="-ml-2">
                         <Link href={`/dashboard/clients/${audience.client.slug}/audiences/${audience.id}`}>
@@ -273,16 +287,13 @@ export function ContactsClient({
                     </Button>
                     <DashboardBreadcrumb />
                 </div>
+
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:block">
+                    <AudienceTabs slug={audience.client.slug} id={audience.id} />
+                </div>
+
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}>
-                        <Download className="h-4 w-4" />
-                        <span className="hidden sm:inline">{t.audiences?.exportContacts || "Export CSV"}</span>
-                    </Button>
-                    <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsImportDialogOpen(true)}>
-                        <Upload className="h-4 w-4" />
-                        <span className="hidden sm:inline">{t.audiences?.details?.importContacts || "Import CSV"}</span>
-                    </Button>
-                    <Button size="sm" className="gap-2" onClick={() => setIsAddDialogOpen(true)}>
+                    <Button size="sm" className="gap-2" onClick={() => setIsAddDialogOpen(true)} disabled={isLoading}>
                         <Plus className="h-4 w-4" />
                         <span className="hidden sm:inline">{t.audiences?.details?.addContact || "Add Contact"}</span>
                     </Button>
@@ -291,45 +302,82 @@ export function ContactsClient({
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto">
-                <div className="p-6 md:p-12 space-y-6">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">{t.common?.contacts || "Contacts"}</h1>
-                        <p className="text-muted-foreground">{t.audiences?.contactsDescription || "Manage your contact list."}</p>
-                    </div>
+            {isLoading ? (
+                <ClientContentSkeleton />
+            ) : (
+                <>
+                    <main className="flex-1 flex flex-col overflow-y-auto">
+                        <div className={cn(
+                            "p-6 md:p-12 space-y-6 flex flex-col",
+                            contacts.length === 0 ? "flex-1 justify-center" : ""
+                        )}>
+                            {contacts.length > 0 && (
+                                <>
+                                    <div>
+                                        <h1 className="text-2xl font-bold tracking-tight">{t.common?.contacts || "Contacts"}</h1>
+                                        <p className="text-muted-foreground">{t.audiences?.contactsDescription || "Manage your contact list."}</p>
+                                    </div>
 
-                    <FilterBar
-                        searchValue={searchValue}
-                        onSearchChange={handleSearch}
-                        searchPlaceholder={t.audiences?.details?.searchContacts || "Search contacts..."}
-                        onClearFilters={handleClearFilters}
-                    />
+                                    <FilterBar
+                                        searchValue={searchValue}
+                                        onSearchChange={handleSearch}
+                                        searchPlaceholder={t.audiences?.details?.searchContacts || "Search contacts..."}
+                                        onClearFilters={handleClearFilters}
+                                        className="w-full"
+                                    >
+                                        <div className="flex items-center gap-2 ml-auto">
+                                            <Button variant="outline" size="sm" className="gap-2 h-9" onClick={handleExport} disabled={isLoading}>
+                                                <Download className="h-4 w-4" />
+                                                <span className="hidden sm:inline">{t.audiences?.exportContacts || "Export CSV"}</span>
+                                            </Button>
+                                            <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => setIsImportDialogOpen(true)} disabled={isLoading}>
+                                                <Upload className="h-4 w-4" />
+                                                <span className="hidden sm:inline">{t.audiences?.details?.importContacts || "Import CSV"}</span>
+                                            </Button>
+                                        </div>
+                                    </FilterBar>
+                                </>
+                            )}
 
-                    <DataTable
-                        data={contacts}
-                        columns={columns}
+                            {contacts.length > 0 ? (
+                                <DataTable
+                                    data={contacts}
+                                    columns={columns}
+                                    currentPage={currentPage}
+                                    totalItems={totalCount}
+                                    pageSize={pageSize}
+                                    // onPageChange={handlePageChange}
+                                    pageSizeOptions={[10, 20, 30, 40, 50]}
+                                    emptyMessage={t.audiences?.noContactsFound || "No contacts found"}
+                                    emptyIcon={<UserCircle className="h-10 w-10 text-muted-foreground/40" />}
+                                />
+                            ) : (
+                                <div className="flex flex-col items-center justify-center">
+                                    <InteractiveDashedCard
+                                        title={t.audiences?.noContacts || "No Contacts"}
+                                        description={t.audiences?.noContactsDescription || "Your audience is empty. Add your first contact to get started."}
+                                        actionTitle={t.audiences?.details?.addContact || "Add Contact"}
+                                        icon={Users}
+                                        color="blue"
+                                        onClick={() => {
+                                            setIsAddDialogOpen(true);
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </main>
+
+                    <ListPaginationFooter
                         currentPage={currentPage}
+                        totalPages={totalPages}
                         totalItems={totalCount}
                         pageSize={pageSize}
-                        // onPageChange={handlePageChange}
-                        pageSizeOptions={[10, 20, 30, 40, 50]}
-                        emptyMessage={t.audiences?.noContactsFound || "No contacts found"}
-                        emptyIcon={<UserCircle className="h-10 w-10 text-muted-foreground/40" />}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
                     />
-                </div>
-            </main>
-
-            <div className="shrink-0 border-t bg-background p-4 flex justify-between items-center z-10">
-                <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                    pageSize={pageSize}
-                    onPageSizeChange={handlePageSizeChange}
-                    pageSizeOptions={[10, 20, 30, 40, 50]}
-                    totalItems={totalCount}
-                />
-            </div>
+                </>
+            )}
 
             <AddContactDialog
                 audienceId={audience.id}

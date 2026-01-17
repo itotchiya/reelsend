@@ -8,6 +8,9 @@ import { FilterBar, FilterConfig } from "@/components/ui-kit/filter-bar";
 import { Button } from "@/components/ui/button";
 import { CardBadge } from "@/components/ui-kit/card-badge";
 import { Plus, Mail, Clock, CheckCircle, AlertCircle, Send, Ban, ArrowLeft } from "lucide-react";
+import { InteractiveDashedCard } from "@/components/ui-kit/interactive-dashed-card";
+import { ListPaginationFooter } from "@/components/ui-kit/list-pagination-footer";
+import { cn } from "@/lib/utils";
 import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
 import { useI18n } from "@/lib/i18n";
 import { CreateCampaignDialog } from "@/components/dashboard/create-entity-dialog";
@@ -18,8 +21,8 @@ import Link from "next/link";
 import { DashboardBreadcrumb } from "@/components/dashboard/layout";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
-import { Pagination } from "@/components/ui-kit/pagination";
-import { ClientTabs } from "@/components/dashboard/client-tabs";
+
+import { ClientTabs } from "@/components/ui-kit/motion-tabs/client-tabs";
 import { useTabLoading } from "@/lib/contexts/tab-loading-context";
 import { ClientContentSkeleton } from "@/components/skeletons/client-content-skeleton";
 
@@ -280,50 +283,64 @@ export function CampaignsClient({
                 <ClientContentSkeleton />
             ) : (
                 <>
-                    <main className="flex-1 overflow-y-auto">
-                        <div className="p-6 md:p-12 space-y-6">
-                            <div>
-                                <h1 className="text-2xl font-bold tracking-tight">{t.campaigns?.title || "Campaigns"}</h1>
-                                <p className="text-muted-foreground">{t.campaigns?.description || "Manage your email campaigns."}</p>
-                            </div>
+                    <main className="flex-1 flex flex-col overflow-y-auto">
+                        <div className={cn(
+                            "p-6 md:p-12 space-y-6 flex flex-col",
+                            campaigns.length === 0 ? "flex-1 justify-center" : ""
+                        )}>
+                            {campaigns.length > 0 && (
+                                <>
+                                    <div>
+                                        <h1 className="text-2xl font-bold tracking-tight">{t.campaigns?.title || "Campaigns"}</h1>
+                                        <p className="text-muted-foreground">{t.campaigns?.description || "Manage your email campaigns."}</p>
+                                    </div>
 
-                            <FilterBar
-                                searchValue={searchValue}
-                                onSearchChange={handleSearch}
-                                searchPlaceholder={t.campaigns?.searchPlaceholder || "Search campaigns..."}
-                                filters={filters}
-                                filterValues={{ status: statusFilter }}
-                                onFilterChange={handleFilterChange}
-                                onClearFilters={handleClearFilters}
-                            />
+                                    <FilterBar
+                                        searchValue={searchValue}
+                                        onSearchChange={handleSearch}
+                                        searchPlaceholder={t.campaigns?.searchPlaceholder || "Search campaigns..."}
+                                        filters={filters}
+                                        filterValues={{ status: statusFilter }}
+                                        onFilterChange={handleFilterChange}
+                                        onClearFilters={handleClearFilters}
+                                    />
+                                </>
+                            )}
 
-                            <DataTable
-                                data={campaigns}
-                                columns={columns}
-                                currentPage={currentPage}
-                                totalItems={totalCount}
-                                pageSize={pageSize}
-                                // We do NOT pass onPageChange here to avoid double pagination
-                                // onPageChange={handlePageChange}
-                                // onPageSizeChange={handlePageSizeChange}
-                                pageSizeOptions={[10, 20, 30, 40, 50]}
-                                emptyMessage={t.campaigns?.noCampaigns || "No campaigns found"}
-                                emptyIcon={<Mail className="h-10 w-10 text-muted-foreground/40" />}
-                            />
+                            {campaigns.length > 0 ? (
+                                <DataTable
+                                    data={campaigns}
+                                    columns={columns}
+                                    currentPage={currentPage}
+                                    totalItems={totalCount}
+                                    pageSize={pageSize}
+                                    pageSizeOptions={[10, 20, 30, 40, 50]}
+                                    emptyMessage={t.campaigns?.noCampaigns || "No campaigns found"}
+                                    emptyIcon={<Mail className="h-10 w-10 text-muted-foreground/40" />}
+                                />
+                            ) : (
+                                <div className="flex flex-col items-center justify-center">
+                                    <InteractiveDashedCard
+                                        title={t.campaigns?.noCampaigns || "No Campaigns"}
+                                        description={t.campaigns?.noCampaignsDescription || "Create your first campaign to start reaching your audience."}
+                                        actionTitle={t.campaigns?.createCampaign || "Create Campaign"}
+                                        icon={Mail}
+                                        color="blue"
+                                        onClick={() => setIsCreateDialogOpen(true)}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </main>
 
-                    <div className="shrink-0 border-t bg-background p-4 flex justify-between items-center z-10">
-                        <Pagination
-                            currentPage={currentPage}
-                            totalPages={Math.ceil(totalCount / pageSize)}
-                            onPageChange={handlePageChange}
-                            pageSize={pageSize}
-                            onPageSizeChange={handlePageSizeChange}
-                            pageSizeOptions={[10, 20, 30, 40, 50]}
-                            totalItems={totalCount}
-                        />
-                    </div>
+                    <ListPaginationFooter
+                        currentPage={currentPage}
+                        totalPages={Math.ceil(totalCount / pageSize)}
+                        totalItems={totalCount}
+                        pageSize={pageSize}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
+                    />
                 </>
             )}
 

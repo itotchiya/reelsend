@@ -153,7 +153,7 @@ interface ClientDetailClientProps {
 
 export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps) {
     const { t } = useI18n();
-    const { isLoading } = useTabLoading();
+    const { isLoading, startLoading } = useTabLoading();
 
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -441,6 +441,7 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                             <NavigationCard
                                 href={`/dashboard/clients/${client.slug}/campaigns`}
+                                onClick={() => startLoading(() => router.push(`/dashboard/clients/${client.slug}/campaigns`))}
                                 icon={Mail}
                                 title={t.common.campaigns}
                                 description={t.clients?.campaignsDescription || "Manage email campaigns"}
@@ -457,6 +458,7 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                             />
                             <NavigationCard
                                 href={`/dashboard/clients/${client.slug}/audiences`}
+                                onClick={() => startLoading(() => router.push(`/dashboard/clients/${client.slug}/audiences`))}
                                 icon={Users}
                                 title={t.common.audiences}
                                 description={t.clients?.audiencesDescription || "Manage contacts and segments"}
@@ -473,6 +475,7 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                             />
                             <NavigationCard
                                 href={`/dashboard/clients/${client.slug}/templates`}
+                                onClick={() => startLoading(() => router.push(`/dashboard/clients/${client.slug}/templates`))}
                                 icon={FileText}
                                 title={t.common.templates}
                                 description={t.clients?.templatesDescription || "Design email templates"}
@@ -489,6 +492,7 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                             />
                             <NavigationCard
                                 href={`/dashboard/clients/${client.slug}/smtp`}
+                                onClick={() => startLoading(() => router.push(`/dashboard/clients/${client.slug}/smtp`))}
                                 icon={Server}
                                 title={t.clients.smtpConfiguration}
                                 description={t.clients.smtpConfigDescription}

@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { InteractiveDashedCard } from "@/components/ui-kit/interactive-dashed-card";
+import { ListPaginationFooter } from "@/components/ui-kit/list-pagination-footer";
 import { FilterBar } from "@/components/ui-kit/filter-bar";
 import { DataTable, Column } from "@/components/ui-kit/data-table";
 import { CardBadge } from "@/components/ui-kit/card-badge";
@@ -16,8 +18,8 @@ import { EditProfileNameDialog, DeleteProfileDialog } from "@/components/dashboa
 import { DashboardBreadcrumb } from "@/components/dashboard/layout";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
-import { Pagination } from "@/components/ui-kit/pagination";
-import { ClientTabs } from "@/components/dashboard/client-tabs";
+
+import { ClientTabs } from "@/components/ui-kit/motion-tabs/client-tabs";
 import { useTabLoading } from "@/lib/contexts/tab-loading-context";
 import { ClientContentSkeleton } from "@/components/skeletons/client-content-skeleton";
 
@@ -277,46 +279,63 @@ export function SmtpClient({ client, canEdit }: SmtpClientProps) {
                 <ClientContentSkeleton />
             ) : (
                 <>
-                    <main className="flex-1 overflow-y-auto">
-                        <div className="p-6 md:p-12 space-y-6">
-                            <div>
-                                <h1 className="text-2xl font-bold tracking-tight">{t.clients?.smtpConfiguration || "SMTP Configuration"}</h1>
-                                <p className="text-muted-foreground">{t.clients?.manageSmtpDescription || "View and manage SMTP profiles for this client."}</p>
-                            </div>
+                    <main className="flex-1 flex flex-col overflow-y-auto">
+                        <div className={cn(
+                            "p-6 md:p-12 space-y-6 flex flex-col",
+                            paginatedProfiles.length === 0 ? "flex-1 justify-center" : ""
+                        )}>
+                            {paginatedProfiles.length > 0 && (
+                                <>
+                                    <div>
+                                        <h1 className="text-2xl font-bold tracking-tight">{t.clients?.smtpConfiguration || "SMTP Configuration"}</h1>
+                                        <p className="text-muted-foreground">{t.clients?.manageSmtpDescription || "View and manage SMTP profiles for this client."}</p>
+                                    </div>
 
-                            <FilterBar
-                                searchValue={searchValue}
-                                onSearchChange={setSearchValue}
-                                searchPlaceholder={t.clients?.searchProfiles || "Search profiles..."}
-                                onClearFilters={() => setSearchValue("")}
-                            />
+                                    <FilterBar
+                                        searchValue={searchValue}
+                                        onSearchChange={setSearchValue}
+                                        searchPlaceholder={t.clients?.searchProfiles || "Search profiles..."}
+                                        onClearFilters={() => setSearchValue("")}
+                                    />
+                                </>
+                            )}
 
-                            <DataTable
-                                data={paginatedProfiles}
-                                columns={columns}
-                                currentPage={currentPage}
-                                totalItems={totalItems}
-                                pageSize={pageSize}
-                                onPageChange={setCurrentPage}
-                                onPageSizeChange={setPageSize}
-                                pageSizeOptions={[10, 20, 30, 40, 50]}
-                                emptyMessage={t.clients?.noSmtpProfiles || "No SMTP profiles found"}
-                                emptyIcon={<Server className="h-10 w-10 text-muted-foreground/40" />}
-                            />
+                            {paginatedProfiles.length > 0 ? (
+                                <DataTable
+                                    data={paginatedProfiles}
+                                    columns={columns}
+                                    currentPage={currentPage}
+                                    totalItems={totalItems}
+                                    pageSize={pageSize}
+                                    onPageChange={setCurrentPage}
+                                    onPageSizeChange={setPageSize}
+                                    pageSizeOptions={[10, 20, 30, 40, 50]}
+                                    emptyMessage={t.clients?.noSmtpProfiles || "No SMTP profiles found"}
+                                    emptyIcon={<Server className="h-10 w-10 text-muted-foreground/40" />}
+                                />
+                            ) : (
+                                <div className="flex flex-col items-center justify-center">
+                                    <InteractiveDashedCard
+                                        title={t.clients?.noSmtpProfiles || "No SMTP Profiles"}
+                                        description={t.clients?.noSmtpProfilesDescription || "No SMTP profiles have been assigned to this client yet. Manage profiles from Postal."}
+                                        actionTitle={t.clients?.manageProfiles || "Manage All Profiles"}
+                                        icon={Server}
+                                        color="orange"
+                                        href="/dashboard/postal"
+                                    />
+                                </div>
+                            )}
                         </div>
                     </main>
 
-                    <div className="shrink-0 border-t bg-background p-4 flex justify-between items-center z-10">
-                        <Pagination
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            onPageChange={setCurrentPage}
-                            pageSize={pageSize}
-                            onPageSizeChange={setPageSize}
-                            pageSizeOptions={[10, 20, 30, 40, 50]}
-                            totalItems={totalItems}
-                        />
-                    </div>
+                    <ListPaginationFooter
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={totalItems}
+                        pageSize={pageSize}
+                        onPageChange={setCurrentPage}
+                        onPageSizeChange={setPageSize}
+                    />
                 </>
             )}
 

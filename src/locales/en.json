@@ -433,6 +433,7 @@
         "manageSmtpDescription": "View and manage SMTP profiles for this client.",
         "manageProfiles": "Manage Profiles",
         "noSmtpProfiles": "No SMTP profiles configured for this client.",
+        "noSmtpProfilesDescription": "Configure an SMTP profile to enable email sending for this client.",
         "smtpProfilesRequired": "SMTP settings are required to send campaigns.",
         "profileName": "Name",
         "profileUpdated": "Profile name updated",
@@ -498,6 +499,7 @@
         "editDesc": "Update your audience details.",
         "newAudience": "New Audience",
         "noAudiences": "No audiences found",
+        "noAudiencesDescription": "Create your first audience to organize your contacts.",
         "deleteAudience": "Delete Audience",
         "selectAudience": "Select Audience",
         "selectSegment": "Select Segment",
@@ -512,6 +514,8 @@
         "import": "Import",
         "noDescription": "No description provided",
         "totalContacts": "Total Contacts",
+        "noContacts": "No Contacts",
+        "noContactsDescription": "Your audience is empty. Add your first contact to get started.",
         "noContactsFound": "No contacts found",
         "clearSearch": "Clear search",
         "loadingContacts": "Loading contacts...",
@@ -524,6 +528,7 @@
         "allUsage": "All Usage",
         "usedInCampaign": "Used in Campaign",
         "notUsedYet": "Not Used Yet",
+        "notUsedYetDescription": "This audience hasn't been used in any campaigns yet. Start a new campaign to reach your audience.",
         "audiencesCount": "audiences",
         "noResults": "No audiences found",
         "noResultsDesc": "Try adjusting your search or filter criteria.",
@@ -644,6 +649,7 @@
         "searchPlaceholder": "Search campaigns...",
         "noCampaigns": "No campaigns found",
         "noCampaignsDesc": "Create your first campaign to start sending emails.",
+        "noCampaignsDescription": "Start by creating your first campaign to reach your audience.",
         "deleteCampaign": "Delete Campaign"
     },
     "tables": {
@@ -958,6 +964,8 @@
     "postal": {
         "title": "SMTP Configuration",
         "description": "Configure your SMTP settings for sending emails",
+        "openConfig": "Open Configuration",
+        "viewProfiles": "View Profiles",
         "currentConfig": {
             "title": "Current Configuration",
             "description": "Your active SMTP server credentials",
@@ -1001,6 +1009,7 @@
         },
         "profiles": {
             "title": "Saved Profiles",
+            "description": "Manage your saved SMTP profiles for quick access",
             "selectProfile": "Select SMTP Profile",
             "searchPlaceholder": "Search profiles...",
             "active": "Active",

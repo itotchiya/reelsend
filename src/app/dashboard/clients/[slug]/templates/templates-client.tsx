@@ -7,6 +7,9 @@ import { FilterBar } from "@/components/ui-kit/filter-bar";
 import { Button } from "@/components/ui/button";
 import { CardBadge, AIGeneratedBadge } from "@/components/ui-kit/card-badge";
 import { Plus, FileText, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react";
+import { InteractiveDashedCard } from "@/components/ui-kit/interactive-dashed-card";
+import { ListPaginationFooter } from "@/components/ui-kit/list-pagination-footer";
+import { cn } from "@/lib/utils";
 import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
 import { useI18n } from "@/lib/i18n";
 import { CreateTemplateDialog } from "@/components/dashboard/create-entity-dialog";
@@ -18,8 +21,8 @@ import Link from "next/link";
 import { DashboardBreadcrumb } from "@/components/dashboard/layout";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
-import { Pagination } from "@/components/ui-kit/pagination";
-import { ClientTabs } from "@/components/dashboard/client-tabs";
+
+import { ClientTabs } from "@/components/ui-kit/motion-tabs/client-tabs";
 import { useTabLoading } from "@/lib/contexts/tab-loading-context";
 import { ClientContentSkeleton } from "@/components/skeletons/client-content-skeleton";
 
@@ -301,46 +304,61 @@ export function TemplatesClient({
                 <ClientContentSkeleton />
             ) : (
                 <>
-                    <main className="flex-1 overflow-y-auto">
-                        <div className="p-6 md:p-12 space-y-6">
-                            <div>
-                                <h1 className="text-2xl font-bold tracking-tight">{t.templates?.title || "Templates"}</h1>
-                                <p className="text-muted-foreground">{t.templates?.description || "Manage your email templates."}</p>
-                            </div>
+                    <main className="flex-1 flex flex-col overflow-y-auto">
+                        <div className={cn(
+                            "p-6 md:p-12 space-y-6 flex flex-col",
+                            templates.length === 0 ? "flex-1 justify-center" : ""
+                        )}>
+                            {templates.length > 0 && (
+                                <>
+                                    <div>
+                                        <h1 className="text-2xl font-bold tracking-tight">{t.templates?.title || "Templates"}</h1>
+                                        <p className="text-muted-foreground">{t.templates?.description || "Manage your email templates."}</p>
+                                    </div>
 
-                            <FilterBar
-                                searchValue={searchValue}
-                                onSearchChange={handleSearch}
-                                searchPlaceholder={t.templates?.searchPlaceholder || "Search templates..."}
-                                onClearFilters={handleClearFilters}
-                            />
+                                    <FilterBar
+                                        searchValue={searchValue}
+                                        onSearchChange={handleSearch}
+                                        searchPlaceholder={t.templates?.searchPlaceholder || "Search templates..."}
+                                        onClearFilters={handleClearFilters}
+                                    />
+                                </>
+                            )}
 
-                            <DataTable
-                                data={templates}
-                                columns={columns}
-                                currentPage={currentPage}
-                                totalItems={totalCount}
-                                pageSize={pageSize}
-                                // onPageChange={handlePageChange}
-                                // onPageSizeChange={handlePageSizeChange}
-                                pageSizeOptions={[10, 20, 30, 40, 50]}
-                                emptyMessage={t.templates?.noTemplates || "No templates found"}
-                                emptyIcon={<FileText className="h-10 w-10 text-muted-foreground/40" />}
-                            />
+                            {templates.length > 0 ? (
+                                <DataTable
+                                    data={templates}
+                                    columns={columns}
+                                    currentPage={currentPage}
+                                    totalItems={totalCount}
+                                    pageSize={pageSize}
+                                    pageSizeOptions={[10, 20, 30, 40, 50]}
+                                    emptyMessage={t.templates?.noTemplates || "No templates found"}
+                                    emptyIcon={<FileText className="h-10 w-10 text-muted-foreground/40" />}
+                                />
+                            ) : (
+                                <div className="flex flex-col items-center justify-center">
+                                    <InteractiveDashedCard
+                                        title={t.templates?.noTemplates || "No Templates"}
+                                        description={t.templates?.noTemplatesDesc || "Create your first template to start designing your emails."}
+                                        actionTitle={t.templates?.createTemplate || "Create Template"}
+                                        icon={FileText}
+                                        color="green"
+                                        onClick={() => setIsCreateDialogOpen(true)}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </main>
 
-                    <div className="shrink-0 border-t bg-background p-4 flex justify-between items-center z-10">
-                        <Pagination
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            onPageChange={handlePageChange}
-                            pageSize={pageSize}
-                            onPageSizeChange={handlePageSizeChange}
-                            pageSizeOptions={[10, 20, 30, 40, 50]}
-                            totalItems={totalCount}
-                        />
-                    </div>
+                    <ListPaginationFooter
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={totalCount}
+                        pageSize={pageSize}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
+                    />
                 </>
             )}
 
