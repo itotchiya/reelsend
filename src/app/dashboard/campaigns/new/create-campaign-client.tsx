@@ -899,8 +899,8 @@ export function CreateCampaignClient() {
             <ProcessWizardLayout
                 steps={steps}
                 currentStep={currentStep}
-                title={null}
-                description={null}
+                title={undefined}
+                description={undefined}
                 onNext={handleNext}
                 onPrevious={handlePrevious}
                 onCancel={() => setShowCloseDialog(true)}

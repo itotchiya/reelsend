@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { z } from "zod";
+import { CampaignStatus } from "@prisma/client";
 
 const createCampaignSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -19,7 +20,7 @@ const createCampaignSchema = z.object({
     fromEmail: z.string().optional(),
     senderName: z.string().optional(), // alias for fromName from wizard
     replyTo: z.string().optional(),
-    status: z.enum(["DRAFT", "SCHEDULED", "SENDING", "SENT", "PAUSED", "CANCELLED"]).optional(),
+    status: z.enum(["DRAFT", "SCHEDULED", "SENDING", "COMPLETED", "FAILED", "CANCELLED"]).optional(),
     scheduledAt: z.string().optional().nullable(),
 });
 
@@ -94,7 +95,7 @@ export async function POST(req: NextRequest) {
                 previewText: previewText || null,
                 fromName: finalFromName,
                 fromEmail: fromEmail || replyTo || null,
-                status: finalStatus,
+                status: finalStatus as CampaignStatus,
                 scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
                 createdById: user.id,
                 updatedById: user.id,
