@@ -56,33 +56,52 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     name: user.name,
                     image: user.image,
                     role: user.role?.name || null,
+                    roleId: user.roleId,
+                    roleUpdatedAt: user.role?.updatedAt?.getTime() || null,
                     permissions: user.role?.permissions.map(rp => rp.permission.key) || [],
                 };
             },
         }),
     ],
     callbacks: {
-        async jwt({ token, user, trigger }) {
+        async jwt({ token, user }) {
             // On initial sign-in, populate the token
             if (user) {
-                token.id = user.id;
-                token.role = (user as any).role;
-                token.permissions = (user as any).permissions;
+                const u = user as { id?: string; role?: string; roleId?: string; roleUpdatedAt?: number; permissions?: string[] };
+                token.id = u.id;
+                token.role = u.role;
+                token.roleId = u.roleId;
+                token.roleUpdatedAt = u.roleUpdatedAt;
+                token.permissions = u.permissions;
             }
 
-            // On every request (session update), verify user still exists
-            // This handles the case where user was deleted from DB
-            if (trigger === "update" || !user) {
-                // Check if user exists in database
-                const existingUser = await db.user.findUnique({
+            // On every request (session update) or periodically, verify user state
+            // This handles the case where user was deleted, disabled, or role changed
+            if (token.id) {
+                // Check if user exists in database and get current role
+                const dbUser = await db.user.findUnique({
                     where: { id: token.id as string },
-                    select: { id: true, status: true },
+                    select: { 
+                        id: true, 
+                        status: true, 
+                        roleId: true,
+                        role: { select: { updatedAt: true } }
+                    },
                 });
 
-                // If user doesn't exist or is disabled, invalidate the session
-                if (!existingUser || existingUser.status === "DISABLED") {
-                    // Returning an empty object effectively invalidates the token
+                // 1. If user doesn't exist or is disabled, invalidate immediately
+                if (!dbUser || dbUser.status === "DISABLED") {
                     return { ...token, error: "UserNotFound" };
+                }
+
+                // 2. Detect Role or Permission Change
+                const currentRoleUpdatedAt = dbUser.role?.updatedAt?.getTime() || null;
+                
+                if (!token.roleId) {
+                    token.roleId = dbUser.roleId;
+                    token.roleUpdatedAt = currentRoleUpdatedAt;
+                } else if (dbUser.roleId !== token.roleId || (token.roleUpdatedAt && currentRoleUpdatedAt && currentRoleUpdatedAt > (token.roleUpdatedAt as number))) {
+                    token.requiresLogout = true;
                 }
             }
 
@@ -90,14 +109,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
         async session({ session, token }) {
             // If token has an error (user deleted), return null session
-            if ((token as any).error === "UserNotFound") {
+            if (token.error === "UserNotFound") {
                 return { ...session, user: undefined, expires: new Date(0).toISOString() };
             }
 
             if (token && session.user) {
-                session.user.id = token.id as string;
-                (session.user as any).role = token.role;
-                (session.user as any).permissions = token.permissions;
+                const sessUser = session.user as { 
+                    id: string; 
+                    role?: string; 
+                    roleId?: string; 
+                    permissions?: string[]; 
+                    requiresLogout?: boolean 
+                };
+                sessUser.id = token.id as string;
+                sessUser.role = token.role as string;
+                sessUser.roleId = token.roleId as string;
+                sessUser.permissions = token.permissions as string[];
+                sessUser.requiresLogout = token.requiresLogout as boolean;
             }
             return session;
         },

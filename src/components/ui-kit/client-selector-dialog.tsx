@@ -79,7 +79,7 @@ export function ClientSelectorDialog({
                     <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                 </button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[550px] p-0 gap-0 overflow-hidden">
+            <DialogContent className="sm:max-w-[550px] p-0 gap-0 overflow-hidden" aria-describedby={undefined}>
                 <DialogHeader className="px-6 pt-6 pb-4 border-b bg-muted/20">
                     <DialogTitle className="text-xl">
                         {t.promptBuilder?.selectClient || "Select Client"}

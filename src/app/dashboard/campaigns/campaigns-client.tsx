@@ -106,9 +106,11 @@ export function CampaignsClient({ initialCampaigns, clients }: CampaignsClientPr
                 title="Campaigns"
                 description="Manage all your email campaigns across clients"
                 action={
-                    <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        <span className="hidden sm:inline">New Campaign</span>
+                    <Button asChild className="gap-2">
+                        <a href="/dashboard/campaigns/new">
+                            <Plus className="h-4 w-4" />
+                            <span className="hidden sm:inline">New Campaign</span>
+                        </a>
                     </Button>
                 }
             />
@@ -194,9 +196,11 @@ export function CampaignsClient({ initialCampaigns, clients }: CampaignsClientPr
                                     Clear Filters
                                 </Button>
                             ) : (
-                                <Button onClick={() => setCreateDialogOpen(true)}>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    New Campaign
+                                <Button asChild>
+                                    <a href="/dashboard/campaigns/new">
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        New Campaign
+                                    </a>
                                 </Button>
                             )}
                         </div>

@@ -23,6 +23,8 @@ const badgeVariants = cva(
                 border: "ring-1 ring-inset",
                 pill: "rounded-full",
                 "pill-border": "rounded-full ring-1 ring-inset",
+                solid: "text-white",
+                "pill-solid": "rounded-full text-white",
             },
             color: {
                 gray: "",
@@ -77,6 +79,24 @@ const badgeVariants = cva(
             { variant: "pill-border", color: "purple", className: "bg-purple-400/10 text-purple-600 ring-purple-400/20 dark:text-purple-400" },
             { variant: "pill-border", color: "pink", className: "bg-pink-400/10 text-pink-600 ring-pink-400/20 dark:text-pink-400" },
             { variant: "pill-border", color: "cyan", className: "bg-cyan-400/10 text-cyan-600 ring-cyan-400/20 dark:text-cyan-400" },
+            // Solid variants
+            { variant: "solid", color: "gray", className: "bg-zinc-500 text-white" },
+            { variant: "solid", color: "green", className: "bg-green-600 text-white" },
+            { variant: "solid", color: "red", className: "bg-red-600 text-white" },
+            { variant: "solid", color: "orange", className: "bg-orange-600 text-white" },
+            { variant: "solid", color: "blue", className: "bg-blue-600 text-white" },
+            { variant: "solid", color: "purple", className: "bg-purple-600 text-white" },
+            { variant: "solid", color: "pink", className: "bg-pink-600 text-white" },
+            { variant: "solid", color: "cyan", className: "bg-cyan-600 text-white" },
+            // Pill solid variants
+            { variant: "pill-solid", color: "gray", className: "bg-zinc-500 text-white" },
+            { variant: "pill-solid", color: "green", className: "bg-green-600 text-white" },
+            { variant: "pill-solid", color: "red", className: "bg-red-600 text-white" },
+            { variant: "pill-solid", color: "orange", className: "bg-orange-600 text-white" },
+            { variant: "pill-solid", color: "blue", className: "bg-blue-600 text-white" },
+            { variant: "pill-solid", color: "purple", className: "bg-purple-600 text-white" },
+            { variant: "pill-solid", color: "pink", className: "bg-pink-600 text-white" },
+            { variant: "pill-solid", color: "cyan", className: "bg-cyan-600 text-white" },
         ],
         defaultVariants: {
             variant: "border",

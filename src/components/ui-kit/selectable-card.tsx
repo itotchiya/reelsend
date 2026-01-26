@@ -49,8 +49,8 @@ export function SelectableCard({
 
 interface SelectableCardHeaderProps {
     icon?: React.ReactNode;
-    title: string;
-    subtitle?: string;
+    title: React.ReactNode;
+    subtitle?: React.ReactNode;
     badge?: string;
     badgeVariant?: "primary" | "warning" | "secondary";
     className?: string;

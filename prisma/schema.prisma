@@ -399,6 +399,7 @@ model Campaign {
   fromName    String?
   fromEmail   String?
   status      CampaignStatus @default(DRAFT)
+  currentStep String         @default("basics") // Stores the last wizard step (e.g., "basics", "recipients")
   scheduledAt DateTime?
   sentAt      DateTime?
   sentiment   String?        // Not used but keeping for alignment

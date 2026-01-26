@@ -5,7 +5,7 @@ import { sendBulkCampaignEmails, getSmtpConfigFromDb, getDefaultFromEmail } from
 
 export async function POST(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
         const session = await auth();
@@ -13,7 +13,7 @@ export async function POST(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { id } = await params;
+        const { id } = await context.params;
 
         // Get campaign with all required data
         const campaign = await db.campaign.findUnique({
@@ -43,11 +43,23 @@ export async function POST(
         }
 
         // Get all contacts from the audience
+        // Get all contacts from the audience
+        const whereClause: any = {
+            audienceId: campaign.audienceId!,
+            status: "ACTIVE",
+        };
+
+        // If segment is selected, filter by segment relation
+        if (campaign.segmentId) {
+            whereClause.segments = {
+                some: {
+                    segmentId: campaign.segmentId
+                }
+            };
+        }
+
         const contacts = await db.contact.findMany({
-            where: {
-                audienceId: campaign.audienceId!,
-                status: "ACTIVE",
-            },
+            where: whereClause,
             select: {
                 id: true,
                 email: true,
@@ -197,4 +209,3 @@ export async function POST(
         );
     }
 }
-

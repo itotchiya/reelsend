@@ -9,7 +9,8 @@ import {
     Eye,
     EyeOff,
     Terminal,
-    Pencil
+    Pencil,
+    Check
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
@@ -49,10 +50,13 @@ interface SmtpProfileCardProps {
     profile: SmtpProfile;
     isActivating?: boolean;
     isDeleting?: boolean;
-    onActivate: (id: string) => void;
-    onDelete: (profile: SmtpProfile) => void;
+    onActivate?: (id: string) => void;
+    onDelete?: (profile: SmtpProfile) => void;
     onEdit?: (profile: SmtpProfile) => void;
     className?: string;
+    selectable?: boolean;
+    selected?: boolean;
+    onClick?: () => void;
 }
 
 export function SmtpProfileCard({
@@ -62,7 +66,10 @@ export function SmtpProfileCard({
     onActivate,
     onDelete,
     onEdit,
-    className
+    className,
+    selectable = false,
+    selected = false,
+    onClick
 }: SmtpProfileCardProps) {
     const { t } = useI18n();
     const [showPassword, setShowPassword] = useState(false);
@@ -74,10 +81,20 @@ export function SmtpProfileCard({
     return (
         <div
             className={cn(
-                "group relative flex flex-col rounded-xl border bg-card overflow-hidden transition-all duration-200 border-dashed border-zinc-500/50 hover:border-solid hover:border-zinc-500",
+                "group relative flex flex-col rounded-xl border bg-card overflow-hidden transition-all duration-200",
+                "border-dashed border-zinc-500/50", // Default dashed border
+                !selectable && "hover:border-solid hover:border-zinc-500",
+                selectable && "cursor-pointer hover:border-solid hover:border-primary/50 hover:bg-muted/50",
+                selected && "ring-2 ring-primary border-primary border-solid",
                 className
             )}
+            onClick={selectable ? onClick : undefined}
         >
+            {selectable && selected && (
+                <div className="absolute top-3 right-3 z-10 bg-primary text-primary-foreground rounded-full p-1 shadow-md animate-in fade-in zoom-in duration-200">
+                    <Check className="h-3.5 w-3.5" />
+                </div>
+            )}
             {/* Card Header & Content Wrapper */}
             <div className="p-4 pb-3">
                 {/* Header Row */}
@@ -93,7 +110,7 @@ export function SmtpProfileCard({
                     </div>
 
                     <div className="flex items-center gap-1">
-                        {onEdit && (
+                        {!selectable && onEdit && (
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -107,23 +124,25 @@ export function SmtpProfileCard({
                                 <Pencil className="h-4 w-4" />
                             </Button>
                         )}
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDelete(profile);
-                            }}
-                            disabled={isDeleting}
-                            aria-label={t.common?.delete || "Delete"}
-                        >
-                            {isDeleting ? (
-                                <RefreshCw className="h-4 w-4 animate-spin" />
-                            ) : (
-                                <Trash2 className="h-4 w-4" />
-                            )}
-                        </Button>
+                        {!selectable && onDelete && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDelete(profile);
+                                }}
+                                disabled={isDeleting}
+                                aria-label={t.common?.delete || "Delete"}
+                            >
+                                {isDeleting ? (
+                                    <RefreshCw className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                )}
+                            </Button>
+                        )}
                     </div>
                 </div>
 
@@ -228,21 +247,25 @@ export function SmtpProfileCard({
                 )}
             </div>
 
-            {/* Footer Action Area */}
-            <div
-                className="mt-auto border-t border-dashed border-zinc-500/50 transition-colors cursor-pointer flex items-center justify-center py-2 text-xs font-medium hover:bg-green-500/5 group-hover:border-green-500/20"
-                onClick={() => onActivate(profile.id)}
-            >
-                {isActivating ? (
-                    <span className="text-muted-foreground flex items-center gap-1.5">
-                        <RefreshCw className="h-3 w-3 animate-spin" /> {t.common?.loading || "Loading..."}
-                    </span>
-                ) : (
-                    <span className="text-muted-foreground hover:text-green-600 transition-colors">
-                        {t.postal?.profiles?.useConfig || "Load into Editor"}
-                    </span>
-                )}
-            </div>
-        </div>
+            {/* Footer Action Area - Hide if selectable */}
+            {
+                !selectable && onActivate && (
+                    <div
+                        className="mt-auto border-t border-dashed border-zinc-500/50 transition-colors cursor-pointer flex items-center justify-center py-2 text-xs font-medium hover:bg-green-500/5 group-hover:border-green-500/20"
+                        onClick={() => onActivate(profile.id)}
+                    >
+                        {isActivating ? (
+                            <span className="text-muted-foreground flex items-center gap-1.5">
+                                <RefreshCw className="h-3 w-3 animate-spin" /> {t.common?.loading || "Loading..."}
+                            </span>
+                        ) : (
+                            <span className="text-muted-foreground hover:text-green-600 transition-colors">
+                                {t.postal?.profiles?.useConfig || "Load into Editor"}
+                            </span>
+                        )}
+                    </div>
+                )
+            }
+        </div >
     );
 }

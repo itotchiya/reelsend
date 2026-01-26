@@ -26,6 +26,7 @@
         "success": "Succès",
         "noResults": "Aucun résultat trouvé",
         "added": "Ajouté",
+        "signingOut": "Déconnexion...",
         "share": "Partager",
         "name": "Nom",
         "description": "Description",
@@ -191,35 +192,35 @@
             "deleting": "Suppression...",
             "deleteRoleTitle": "Supprimer le Rôle",
             "deleteRoleConfirm": "Êtes-vous sûr de vouloir supprimer le rôle",
-            "deleteRoleWarning": "Cette action est irréversible. Les utilisateurs ayant ce rôle devront être réassignés.",
-            "wizard": {
-                "steps": {
-                    "name": "Nom",
-                    "appearance": "Apparence",
-                    "permissions": "Permissions"
-                },
-                "step1": {
-                    "title": "Créer un Nouveau Rôle",
-                    "description": "Entrez un nom pour votre nouveau rôle",
-                    "label": "Nom du Rôle",
-                    "placeholder": "ex., Éditeur, Observateur, Gestionnaire",
-                    "preview": "Sera affiché comme :"
-                },
-                "step2": {
-                    "title": "Choisir l'Apparence",
-                    "description": "Sélectionnez une icône et une couleur pour ce rôle",
-                    "color": "Couleur",
-                    "icon": "Icône"
-                },
-                "step3": {
-                    "title": "Définir les Permissions",
-                    "description": "Choisissez ce que ce rôle peut faire",
-                    "selected": "permissions sélectionnées"
-                },
-                "createSuccess": "Rôle créé avec succès",
-                "createError": "Échec de la création du rôle",
-                "createBtn": "Créer le Rôle"
-            }
+            "deleteRoleWarning": "Cette action est irréversible. Les utilisateurs ayant ce rôle devront être réassignés."
+        },
+        "wizard": {
+            "steps": {
+                "name": "Nom",
+                "appearance": "Apparence",
+                "permissions": "Permissions"
+            },
+            "step1": {
+                "title": "Créer un Nouveau Rôle",
+                "description": "Entrez un nom pour votre nouveau rôle",
+                "label": "Nom du Rôle",
+                "placeholder": "ex., Éditeur, Observateur, Gestionnaire",
+                "preview": "Sera affiché comme :"
+            },
+            "step2": {
+                "title": "Choisir l'Apparence",
+                "description": "Sélectionnez une icône et une couleur pour ce rôle",
+                "color": "Couleur",
+                "icon": "Icône"
+            },
+            "step3": {
+                "title": "Définir les Permissions",
+                "description": "Choisissez ce que ce rôle peut faire",
+                "selected": "permissions sélectionnées"
+            },
+            "createSuccess": "Rôle créé avec succès",
+            "createError": "Échec de la création du rôle",
+            "createBtn": "Créer le Rôle"
         }
     },
     "auth": {
@@ -228,7 +229,9 @@
         "password": "Mot de passe",
         "signIn": "Se connecter",
         "signingIn": "Connexion en cours...",
-        "invalidCredentials": "Email ou mot de passe invalide"
+        "invalidCredentials": "Email ou mot de passe invalide",
+        "sessionExpiredTitle": "Session Expirée",
+        "reloginRequired": "Veuillez vous reconnecter pour continuer."
     },
     "setup": {
         "welcome": "Bienvenue sur Reelsend",
@@ -652,7 +655,112 @@
         "noCampaigns": "Aucune campagne trouvée",
         "noCampaignsDesc": "Créez votre première campagne pour commencer à envoyer des e-mails.",
         "noCampaignsDescription": "Commencez par créer votre première campagne pour atteindre votre audience.",
-        "deleteCampaign": "Supprimer la Campagne"
+        "deleteCampaign": "Supprimer la Campagne",
+        "wizard": {
+            "steps": {
+                "basicInfo": "Infos de base",
+                "recipients": "Destinataires",
+                "template": "Modèle",
+                "smtp": "SMTP",
+                "setup": "Configuration",
+                "schedule": "Planification",
+                "review": "Révision"
+            },
+            "basicInfo": {
+                "title": "Détails de la Campagne",
+                "description": "Donnez un nom à votre campagne et sélectionnez le client",
+                "name": "Nom de la Campagne",
+                "namePlaceholder": "ex: Newsletter Soldes d'Été",
+                "descriptionLabel": "Description",
+                "descriptionPlaceholder": "Description optionnelle pour référence interne...",
+                "client": "Client"
+            },
+            "recipients": {
+                "title": "Choisir les Destinataires",
+                "description": "Sélectionnez l'audience et le segment optionnel pour cette campagne",
+                "audience": "Audience",
+                "segment": "Segment"
+            },
+            "template": {
+                "title": "Sélectionner le Modèle",
+                "description": "Choisissez le modèle d'email pour cette campagne"
+            },
+            "smtp": {
+                "title": "Sélectionner le Profil SMTP",
+                "description": "Choisissez le serveur de messagerie à utiliser"
+            },
+            "setup": {
+                "title": "Configuration Email",
+                "description": "Configurez le sujet et les détails de l'expéditeur",
+                "subject": "Ligne d'Objet",
+                "subjectPlaceholder": "ex: Ne manquez pas nos soldes d'été !",
+                "previewText": "Texte d'Aperçu",
+                "previewTextPlaceholder": "Bref texte affiché dans la boîte de réception...",
+                "senderName": "Nom de l'Expéditeur",
+                "senderNamePlaceholder": "ex: Jean de Acme",
+                "replyTo": "Email de Réponse",
+                "replyToPlaceholder": "reponses@exemple.com",
+                "sendingFrom": "Envoi depuis"
+            },
+            "schedule": {
+                "title": "Planifier la Campagne",
+                "description": "Choisissez quand envoyer votre campagne",
+                "immediate": "Envoyer Immédiatement",
+                "immediateDesc": "Commencer l'envoi dès le lancement",
+                "later": "Planifier pour Plus Tard",
+                "laterDesc": "Choisir une date et une heure spécifiques",
+                "date": "Date",
+                "time": "Heure"
+            },
+            "review": {
+                "title": "Révision & Lancement",
+                "description": "Vérifiez votre campagne avant le lancement",
+                "basicInfo": "Infos de base",
+                "recipients": "Destinataires",
+                "template": "Modèle",
+                "smtp": "Profil SMTP",
+                "setup": "Configuration Email",
+                "schedule": "Planification",
+                "untitled": "Campagne Sans Titre",
+                "noDescription": "Aucune description",
+                "notSelected": "Non sélectionné",
+                "noAudience": "Aucune audience sélectionnée",
+                "allContacts": "Tous les Contacts (Aucun Segment)",
+                "noTemplate": "Aucun modèle sélectionné",
+                "defaultMailer": "Serveur de Messagerie par Défaut",
+                "notSet": "Non défini",
+                "sendingImmediately": "Envoi Immédiat",
+                "notScheduled": "Non planifié"
+            },
+            "confirmDialog": {
+                "title": "Lancer la Campagne ?",
+                "immediateDesc": "Cette campagne commencera à envoyer immédiatement à tous les destinataires.",
+                "scheduledDesc": "Cette campagne sera planifiée pour l'envoi à l'heure spécifiée.",
+                "waiting": "Attendre pour Lancer",
+                "launchNow": "Lancer Maintenant",
+                "scheduleCampaign": "Planifier la Campagne"
+            },
+            "closeDialog": {
+                "title": "Enregistrer comme Brouillon ?",
+                "desc": "Vous avez des modifications non enregistrées. Voulez-vous enregistrer cette campagne comme brouillon ?",
+                "discard": "Supprimer & Quitter",
+                "save": "Enregistrer & Quitter"
+            },
+            "sending": "Envoi de la campagne...",
+            "errors": {
+                "createDraft": "Échec de la création du brouillon",
+                "loadDraft": "Échec du chargement du brouillon",
+                "dispatch": "Échec de l'envoi de la campagne",
+                "launch": "Échec du lancement de la campagne"
+            },
+            "success": {
+                "launched": "Lancé ! {{count}} emails envoyés.",
+                "scheduled": "Campagne planifiée avec succès !",
+                "discarded": "Brouillon supprimé"
+            },
+            "launchButton": "Lancer la Campagne",
+            "finishLabel": "Lancer la Campagne"
+        }
     },
     "tables": {
         "number": "#",

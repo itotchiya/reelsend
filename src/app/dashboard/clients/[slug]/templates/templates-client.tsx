@@ -23,8 +23,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
 
 import { ClientTabs } from "@/components/ui-kit/motion-tabs/client-tabs";
-import { useTabLoading } from "@/lib/contexts/tab-loading-context";
-import { ClientContentSkeleton } from "@/components/skeletons/client-content-skeleton";
+
 
 interface Template {
     id: string;
@@ -62,7 +61,7 @@ export function TemplatesClient({
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deletingTemplate, setDeletingTemplate] = useState<Template | null>(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
-    const { isLoading } = useTabLoading();
+
 
     // Edit Details State
     const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
@@ -291,7 +290,7 @@ export function TemplatesClient({
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)} disabled={isLoading}>
+                    <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)}>
                         <Plus className="h-4 w-4" />
                         <span className="hidden sm:inline">{t.templates?.createTemplate || "Create Template"}</span>
                     </Button>
@@ -300,67 +299,63 @@ export function TemplatesClient({
                 </div>
             </header>
 
-            {isLoading ? (
-                <ClientContentSkeleton />
-            ) : (
-                <>
-                    <main className="flex-1 flex flex-col overflow-y-auto">
-                        <div className={cn(
-                            "p-6 md:p-12 space-y-6 flex flex-col",
-                            templates.length === 0 ? "flex-1 justify-center" : ""
-                        )}>
-                            {templates.length > 0 && (
-                                <>
-                                    <div>
-                                        <h1 className="text-2xl font-bold tracking-tight">{t.templates?.title || "Templates"}</h1>
-                                        <p className="text-muted-foreground">{t.templates?.description || "Manage your email templates."}</p>
-                                    </div>
 
-                                    <FilterBar
-                                        searchValue={searchValue}
-                                        onSearchChange={handleSearch}
-                                        searchPlaceholder={t.templates?.searchPlaceholder || "Search templates..."}
-                                        onClearFilters={handleClearFilters}
-                                    />
-                                </>
-                            )}
+            <main className="flex-1 flex flex-col overflow-y-auto">
+                <div className={cn(
+                    "p-6 md:p-12 space-y-6 flex flex-col",
+                    templates.length === 0 ? "flex-1 justify-center" : ""
+                )}>
+                    {templates.length > 0 && (
+                        <>
+                            <div>
+                                <h1 className="text-2xl font-bold tracking-tight">{t.templates?.title || "Templates"}</h1>
+                                <p className="text-muted-foreground">{t.templates?.description || "Manage your email templates."}</p>
+                            </div>
 
-                            {templates.length > 0 ? (
-                                <DataTable
-                                    data={templates}
-                                    columns={columns}
-                                    currentPage={currentPage}
-                                    totalItems={totalCount}
-                                    pageSize={pageSize}
-                                    pageSizeOptions={[10, 20, 30, 40, 50]}
-                                    emptyMessage={t.templates?.noTemplates || "No templates found"}
-                                    emptyIcon={<FileText className="h-10 w-10 text-muted-foreground/40" />}
-                                />
-                            ) : (
-                                <div className="flex flex-col items-center justify-center">
-                                    <InteractiveDashedCard
-                                        title={t.templates?.noTemplates || "No Templates"}
-                                        description={t.templates?.noTemplatesDesc || "Create your first template to start designing your emails."}
-                                        actionTitle={t.templates?.createTemplate || "Create Template"}
-                                        icon={FileText}
-                                        color="green"
-                                        onClick={() => setIsCreateDialogOpen(true)}
-                                    />
-                                </div>
-                            )}
+                            <FilterBar
+                                searchValue={searchValue}
+                                onSearchChange={handleSearch}
+                                searchPlaceholder={t.templates?.searchPlaceholder || "Search templates..."}
+                                onClearFilters={handleClearFilters}
+                            />
+                        </>
+                    )}
+
+                    {templates.length > 0 ? (
+                        <DataTable
+                            data={templates}
+                            columns={columns}
+                            currentPage={currentPage}
+                            totalItems={totalCount}
+                            pageSize={pageSize}
+                            pageSizeOptions={[10, 20, 30, 40, 50]}
+                            emptyMessage={t.templates?.noTemplates || "No templates found"}
+                            emptyIcon={<FileText className="h-10 w-10 text-muted-foreground/40" />}
+                        />
+                    ) : (
+                        <div className="flex flex-col items-center justify-center">
+                            <InteractiveDashedCard
+                                title={t.templates?.noTemplates || "No Templates"}
+                                description={t.templates?.noTemplatesDesc || "Create your first template to start designing your emails."}
+                                actionTitle={t.templates?.createTemplate || "Create Template"}
+                                icon={FileText}
+                                color="green"
+                                onClick={() => setIsCreateDialogOpen(true)}
+                            />
                         </div>
-                    </main>
+                    )}
+                </div>
+            </main>
 
-                    <ListPaginationFooter
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        totalItems={totalCount}
-                        pageSize={pageSize}
-                        onPageChange={handlePageChange}
-                        onPageSizeChange={handlePageSizeChange}
-                    />
-                </>
-            )}
+            <ListPaginationFooter
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalCount}
+                pageSize={pageSize}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+            />
+
 
             <CreateTemplateDialog
                 open={isCreateDialogOpen}

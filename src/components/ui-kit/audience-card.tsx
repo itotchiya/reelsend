@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { Users, MoreHorizontal, ArrowRight, BarChart3, Check } from "lucide-react";
 import { ClientBadge, ClientBadgeSolid, CampaignBadge, NotUsedBadge, CountBadge } from "./card-badge";
 import { StandardCardActions } from "./card-actions";
 import { getContrastColor } from "@/lib/colors";
@@ -48,11 +49,14 @@ export interface AudienceCardData {
 export interface AudienceCardProps {
     audience: AudienceCardData;
     onView?: (audience: AudienceCardData) => void;
+    onClick?: (audience: AudienceCardData) => void;
     onEdit?: (audience: AudienceCardData) => void;
     onDelete?: (audience: AudienceCardData) => void;
     onCampaignClick?: (campaignId: string) => void;
     canEdit?: boolean;
     canDelete?: boolean;
+    selectable?: boolean;
+    selected?: boolean;
     labels?: {
         viewAudience?: string;
         edit?: string;
@@ -62,6 +66,7 @@ export interface AudienceCardProps {
         notUsed?: string;
         usedIn?: string;
     };
+    className?: string; // Added className prop
 }
 
 function getInitials(name: string): string {
@@ -76,12 +81,16 @@ function getInitials(name: string): string {
 export function AudienceCard({
     audience,
     onView,
+    onClick,
     onEdit,
     onDelete,
     onCampaignClick,
     canEdit = true,
     canDelete = true,
+    selectable = false,
+    selected = false,
     labels: customLabels,
+    className,
 }: AudienceCardProps) {
     const { t } = useI18n();
 
@@ -116,6 +125,11 @@ export function AudienceCard({
 
     const handleCampaignClick = (e: React.MouseEvent, campaignId: string) => {
         e.stopPropagation();
+
+        if (selectable) {
+            return;
+        }
+
         if (onCampaignClick) {
             onCampaignClick(campaignId);
         } else {
@@ -126,8 +140,13 @@ export function AudienceCard({
     return (
         <div
             className={cn(
-                "group rounded-xl border bg-card p-4 transition-all duration-200 cursor-pointer h-full flex flex-col",
-                borderClasses
+                "group rounded-xl border bg-card text-card-foreground transition-all duration-200",
+                borderClasses,
+                "relative overflow-hidden",
+                "p-4 cursor-pointer h-full flex flex-col", // Preserve original padding, cursor, height, flex-col
+                selected && "ring-2 ring-primary border-primary border-solid",
+                // selectable && "hover:ring-2 hover:ring-primary/50", // Removed per user request
+                className // Apply className
             )}
             style={!hasWarningBorder && primaryColor ? {
                 borderColor: `${primaryColor}99` // 60% opacity
@@ -142,8 +161,19 @@ export function AudienceCard({
                     e.currentTarget.style.borderColor = `${primaryColor}99`;
                 }
             }}
-            onClick={() => onView?.(audience)}
+            onClick={() => {
+                if (onClick) {
+                    onClick(audience);
+                } else if (onView) {
+                    onView(audience);
+                }
+            }}
         >
+            {selectable && selected && (
+                <div className="absolute top-3 right-3 z-10 bg-primary text-primary-foreground rounded-full p-1 shadow-md animate-in fade-in zoom-in duration-200">
+                    <Check className="h-3.5 w-3.5" />
+                </div>
+            )}
             {/* Header with Avatar and Info */}
             <div className="flex items-start gap-3">
                 {/* Avatar with client brand colors */}
@@ -193,16 +223,26 @@ export function AudienceCard({
             {/* Badges Section - grows to push stats to bottom */}
             <div className="flex flex-wrap gap-1.5 mt-3 flex-1 content-start">
                 {/* Client Badge */}
-                <Link
-                    href={`/dashboard/clients/${audience.client.slug}`}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <ClientBadgeSolid
-                        clientName={audience.client.name}
-                        primaryColor={audience.client.brandColors?.primary}
-                        className="hover:opacity-80 transition-opacity cursor-pointer"
-                    />
-                </Link>
+                {/* Client Badge - disable link if selectable */}
+                {selectable ? (
+                    <div onClick={(e) => e.stopPropagation()}>
+                        <ClientBadgeSolid
+                            clientName={audience.client.name}
+                            primaryColor={audience.client.brandColors?.primary}
+                        />
+                    </div>
+                ) : (
+                    <Link
+                        href={`/dashboard/clients/${audience.client.slug}`}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <ClientBadgeSolid
+                            clientName={audience.client.name}
+                            primaryColor={audience.client.brandColors?.primary}
+                            className="hover:opacity-80 transition-opacity cursor-pointer"
+                        />
+                    </Link>
+                )}
 
                 {/* Campaign Usage Badge */}
                 {isUsedInCampaign ? (

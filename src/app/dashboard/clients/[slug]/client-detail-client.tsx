@@ -34,7 +34,11 @@ import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
-import { PageHeader, PageContent } from "@/components/dashboard/page-header";
+import { DashboardBreadcrumb } from "@/components/dashboard/layout";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
+
+import { ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
 import { useEffect } from "react";
@@ -59,8 +63,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SmtpProfileCard } from "@/components/ui-kit/smtp-profile-card";
 import { CardBadge } from "@/components/ui-kit/card-badge";
-import { useTabLoading } from "@/lib/contexts/tab-loading-context";
-import { ClientContentSkeleton } from "@/components/skeletons/client-content-skeleton";
+
 
 import {
     Dialog,
@@ -153,7 +156,7 @@ interface ClientDetailClientProps {
 
 export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps) {
     const { t } = useI18n();
-    const { isLoading, startLoading } = useTabLoading();
+
 
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -289,39 +292,48 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
         .slice(0, 2);
 
     return (
-        <>
-            <PageHeader
-                title={client.name}
-                showBack
-                onBack={() => router.push("/dashboard/clients")}
-            >
-                <ButtonGroup>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2 text-foreground/80 hover:text-foreground"
-                        onClick={copyPortalUrl}
-                        disabled={!isPublic}
-                    >
-                        <LinkIcon className="h-4 w-4" />
-                        {t.clients?.copyPortalLink || "Copy Portal Link"}
+        <div className="h-dvh flex flex-col bg-background">
+            <header className="relative shrink-0 flex items-center justify-between px-6 h-16 border-b bg-background">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" asChild className="-ml-2">
+                        <Link href="/dashboard/clients">
+                            <ArrowLeft className="h-4 w-4" />
+                        </Link>
                     </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className={cn("gap-2", isPublic ? "text-green-500 hover:text-green-600 font-medium" : "text-red-500 hover:text-red-600 font-medium")}
-                        onClick={togglePrivacy}
-                        disabled={updating}
-                    >
-                        {updating ? <Spinner /> : isPublic ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-                        {isPublic ? (t.clients?.public || "Public") : (t.clients?.private || "Private")}
-                    </Button>
-                </ButtonGroup>
-            </PageHeader>
-            {isLoading ? (
-                <ClientContentSkeleton hasFilters={false} hasTable={false} rowCount={0} />
-            ) : (
-                <PageContent>
+                    <DashboardBreadcrumb />
+                </div>
+
+
+
+                <div className="flex items-center gap-2">
+                    <ButtonGroup>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2 text-foreground/80 hover:text-foreground"
+                            onClick={copyPortalUrl}
+                            disabled={!isPublic}
+                        >
+                            <LinkIcon className="h-4 w-4" />
+                            <span className="hidden sm:inline">{t.clients?.copyPortalLink || "Copy Portal Link"}</span>
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn("gap-2", isPublic ? "text-green-500 hover:text-green-600 font-medium" : "text-red-500 hover:text-red-600 font-medium")}
+                            onClick={togglePrivacy}
+                            disabled={updating}
+                        >
+                            {updating ? <Spinner /> : isPublic ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                            <span className="hidden sm:inline">{isPublic ? (t.clients?.public || "Public") : (t.clients?.private || "Private")}</span>
+                        </Button>
+                    </ButtonGroup>
+                    <LanguagePickerDialog />
+                    <ThemeToggle />
+                </div>
+            </header>
+            <main className="flex-1 flex flex-col overflow-y-auto">
+                <div className="flex-1 p-6 md:p-12 space-y-8">
                     <div className="space-y-8">
                         {/* Header with Avatar Only */}
                         <div className="relative">
@@ -441,7 +453,7 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                             <NavigationCard
                                 href={`/dashboard/clients/${client.slug}/campaigns`}
-                                onClick={() => startLoading(() => router.push(`/dashboard/clients/${client.slug}/campaigns`))}
+                                onClick={() => router.push(`/dashboard/clients/${client.slug}/campaigns`)}
                                 icon={Mail}
                                 title={t.common.campaigns}
                                 description={t.clients?.campaignsDescription || "Manage email campaigns"}
@@ -458,7 +470,7 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                             />
                             <NavigationCard
                                 href={`/dashboard/clients/${client.slug}/audiences`}
-                                onClick={() => startLoading(() => router.push(`/dashboard/clients/${client.slug}/audiences`))}
+                                onClick={() => router.push(`/dashboard/clients/${client.slug}/audiences`)}
                                 icon={Users}
                                 title={t.common.audiences}
                                 description={t.clients?.audiencesDescription || "Manage contacts and segments"}
@@ -475,7 +487,7 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                             />
                             <NavigationCard
                                 href={`/dashboard/clients/${client.slug}/templates`}
-                                onClick={() => startLoading(() => router.push(`/dashboard/clients/${client.slug}/templates`))}
+                                onClick={() => router.push(`/dashboard/clients/${client.slug}/templates`)}
                                 icon={FileText}
                                 title={t.common.templates}
                                 description={t.clients?.templatesDescription || "Design email templates"}
@@ -492,7 +504,7 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                             />
                             <NavigationCard
                                 href={`/dashboard/clients/${client.slug}/smtp`}
-                                onClick={() => startLoading(() => router.push(`/dashboard/clients/${client.slug}/smtp`))}
+                                onClick={() => router.push(`/dashboard/clients/${client.slug}/smtp`)}
                                 icon={Server}
                                 title={t.clients.smtpConfiguration}
                                 description={t.clients.smtpConfigDescription}
@@ -508,8 +520,8 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                             />
                         </div>
                     </div>
-                </PageContent>
-            )}
+                </div>
+            </main>
 
             <CreateAudienceDialog
                 open={isCreateAudienceOpen}
@@ -651,6 +663,6 @@ export function ClientDetailClient({ client, canEdit }: ClientDetailClientProps)
                     </div>
                 </DialogContent>
             </Dialog>
-        </>
+        </div >
     );
 }

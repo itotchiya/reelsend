@@ -4,19 +4,28 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 // GET /api/audiences - Fetch all audiences
-export async function GET() {
+export async function GET(req: Request) {
     const session = await auth();
 
     if (!session?.user?.id) {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const clientId = searchParams.get("clientId");
+
     try {
         const audiences = await db.audience.findMany({
+            where: {
+                ...(clientId && { clientId })
+            },
             include: {
                 client: true,
                 _count: {
-                    select: { contacts: true }
+                    select: {
+                        contacts: true,
+                        segments: true
+                    }
                 }
             },
             orderBy: { createdAt: "desc" }

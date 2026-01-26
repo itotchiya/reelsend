@@ -20,8 +20,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
 
 import { ClientTabs } from "@/components/ui-kit/motion-tabs/client-tabs";
-import { useTabLoading } from "@/lib/contexts/tab-loading-context";
-import { ClientContentSkeleton } from "@/components/skeletons/client-content-skeleton";
+
 
 interface SmtpProfile {
     id: string;
@@ -52,7 +51,7 @@ export function SmtpClient({ client, canEdit }: SmtpClientProps) {
     const { t } = useI18n();
     const router = useRouter();
     const { setOverride, removeOverride } = useBreadcrumbs();
-    const { isLoading } = useTabLoading();
+
 
     useEffect(() => {
         setOverride(client.slug, client.name);
@@ -265,7 +264,7 @@ export function SmtpClient({ client, canEdit }: SmtpClientProps) {
 
                 <div className="flex items-center gap-2">
                     <Link href="/dashboard/postal">
-                        <Button variant="outline" className="gap-2" disabled={isLoading}>
+                        <Button variant="outline" className="gap-2">
                             <Server className="h-4 w-4" />
                             <span className="hidden sm:inline">{t.clients?.manageProfiles || "Manage All Profiles"}</span>
                         </Button>
@@ -275,69 +274,65 @@ export function SmtpClient({ client, canEdit }: SmtpClientProps) {
                 </div>
             </header>
 
-            {isLoading ? (
-                <ClientContentSkeleton />
-            ) : (
-                <>
-                    <main className="flex-1 flex flex-col overflow-y-auto">
-                        <div className={cn(
-                            "p-6 md:p-12 space-y-6 flex flex-col",
-                            paginatedProfiles.length === 0 ? "flex-1 justify-center" : ""
-                        )}>
-                            {paginatedProfiles.length > 0 && (
-                                <>
-                                    <div>
-                                        <h1 className="text-2xl font-bold tracking-tight">{t.clients?.smtpConfiguration || "SMTP Configuration"}</h1>
-                                        <p className="text-muted-foreground">{t.clients?.manageSmtpDescription || "View and manage SMTP profiles for this client."}</p>
-                                    </div>
 
-                                    <FilterBar
-                                        searchValue={searchValue}
-                                        onSearchChange={setSearchValue}
-                                        searchPlaceholder={t.clients?.searchProfiles || "Search profiles..."}
-                                        onClearFilters={() => setSearchValue("")}
-                                    />
-                                </>
-                            )}
+            <main className="flex-1 flex flex-col overflow-y-auto">
+                <div className={cn(
+                    "p-6 md:p-12 space-y-6 flex flex-col",
+                    paginatedProfiles.length === 0 ? "flex-1 justify-center" : ""
+                )}>
+                    {paginatedProfiles.length > 0 && (
+                        <>
+                            <div>
+                                <h1 className="text-2xl font-bold tracking-tight">{t.clients?.smtpConfiguration || "SMTP Configuration"}</h1>
+                                <p className="text-muted-foreground">{t.clients?.manageSmtpDescription || "View and manage SMTP profiles for this client."}</p>
+                            </div>
 
-                            {paginatedProfiles.length > 0 ? (
-                                <DataTable
-                                    data={paginatedProfiles}
-                                    columns={columns}
-                                    currentPage={currentPage}
-                                    totalItems={totalItems}
-                                    pageSize={pageSize}
-                                    onPageChange={setCurrentPage}
-                                    onPageSizeChange={setPageSize}
-                                    pageSizeOptions={[10, 20, 30, 40, 50]}
-                                    emptyMessage={t.clients?.noSmtpProfiles || "No SMTP profiles found"}
-                                    emptyIcon={<Server className="h-10 w-10 text-muted-foreground/40" />}
-                                />
-                            ) : (
-                                <div className="flex flex-col items-center justify-center">
-                                    <InteractiveDashedCard
-                                        title={t.clients?.noSmtpProfiles || "No SMTP Profiles"}
-                                        description={t.clients?.noSmtpProfilesDescription || "No SMTP profiles have been assigned to this client yet. Manage profiles from Postal."}
-                                        actionTitle={t.clients?.manageProfiles || "Manage All Profiles"}
-                                        icon={Server}
-                                        color="orange"
-                                        href="/dashboard/postal"
-                                    />
-                                </div>
-                            )}
+                            <FilterBar
+                                searchValue={searchValue}
+                                onSearchChange={setSearchValue}
+                                searchPlaceholder={t.clients?.searchProfiles || "Search profiles..."}
+                                onClearFilters={() => setSearchValue("")}
+                            />
+                        </>
+                    )}
+
+                    {paginatedProfiles.length > 0 ? (
+                        <DataTable
+                            data={paginatedProfiles}
+                            columns={columns}
+                            currentPage={currentPage}
+                            totalItems={totalItems}
+                            pageSize={pageSize}
+                            onPageChange={setCurrentPage}
+                            onPageSizeChange={setPageSize}
+                            pageSizeOptions={[10, 20, 30, 40, 50]}
+                            emptyMessage={t.clients?.noSmtpProfiles || "No SMTP profiles found"}
+                            emptyIcon={<Server className="h-10 w-10 text-muted-foreground/40" />}
+                        />
+                    ) : (
+                        <div className="flex flex-col items-center justify-center">
+                            <InteractiveDashedCard
+                                title={t.clients?.noSmtpProfiles || "No SMTP Profiles"}
+                                description={t.clients?.noSmtpProfilesDescription || "No SMTP profiles have been assigned to this client yet. Manage profiles from Postal."}
+                                actionTitle={t.clients?.manageProfiles || "Manage All Profiles"}
+                                icon={Server}
+                                color="orange"
+                                href="/dashboard/postal"
+                            />
                         </div>
-                    </main>
+                    )}
+                </div>
+            </main>
 
-                    <ListPaginationFooter
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        totalItems={totalItems}
-                        pageSize={pageSize}
-                        onPageChange={setCurrentPage}
-                        onPageSizeChange={setPageSize}
-                    />
-                </>
-            )}
+            <ListPaginationFooter
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setPageSize}
+            />
+
 
             {/* Edit Name Dialog */}
             <EditProfileNameDialog

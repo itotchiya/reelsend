@@ -13,7 +13,7 @@ export async function PATCH(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const userPermissions = (session.user as any)?.permissions as string[] | undefined;
+        const userPermissions = (session.user as { permissions?: string[] })?.permissions;
 
         if (!userPermissions?.includes("roles:manage")) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -32,10 +32,13 @@ export async function PATCH(
             return NextResponse.json({ error: "Role not found" }, { status: 404 });
         }
 
-        // Update role description
+        // Update role description and timestamp to trigger session sync
         await db.role.update({
             where: { id },
-            data: { description },
+            data: { 
+                description,
+                updatedAt: new Date(),
+            },
         });
 
         // Get permission IDs from keys
@@ -127,7 +130,7 @@ export async function DELETE(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const userPermissions = (session.user as any)?.permissions as string[] | undefined;
+        const userPermissions = (session.user as { permissions?: string[] })?.permissions;
 
         if (!userPermissions?.includes("roles:manage")) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });

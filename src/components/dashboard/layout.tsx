@@ -42,6 +42,7 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar";
 import { AccountDeactivatedDialog } from "@/components/dashboard/account-deactivated-dialog";
+import { SessionSync } from "@/components/auth/session-sync";
 import { HeaderActions } from "@/components/dashboard/header-actions";
 import {
     DropdownMenu,
@@ -64,6 +65,8 @@ import {
 import { hasPermission, Permission } from "@/lib/permissions";
 import { BreadcrumbProvider, useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
 import { TabLoadingProvider } from "@/lib/contexts/tab-loading-context";
+import { getRoleStyle } from "@/lib/dashboard";
+import { CardBadge } from "@/components/ui-kit/card-badge";
 
 interface NavItem {
     titleKey: string;
@@ -120,10 +123,14 @@ export function AppSidebar() {
     const { user: userProfile, isDeactivated } = useUserProfile();
 
     const { isMobile, setOpenMobile } = useSidebar();
-    const userPermissions = (session?.user as any)?.permissions as string[] | undefined;
+    const userPermissions = (session?.user as { permissions?: string[] })?.permissions;
+    const userRole = (session?.user as { role?: string })?.role;
     const userName = userProfile?.name || session?.user?.name || "User";
     const userEmail = userProfile?.email || session?.user?.email || "";
     const userImage = userProfile?.image || null;
+
+    const roleStyle = getRoleStyle(userRole || "");
+
     const initials = userName
         .split(" ")
         .map((n) => n[0])
@@ -174,6 +181,7 @@ export function AppSidebar() {
     return (
         <>
             <AccountDeactivatedDialog open={!!isDeactivated} />
+            <SessionSync />
             <Sidebar className="border-r-0 bg-transparent">
                 {/* Logo - left aligned, just text */}
                 <SidebarHeader className="h-16 flex items-center justify-start px-6">
@@ -231,17 +239,25 @@ export function AppSidebar() {
                         <DropdownMenuTrigger asChild>
                             <SidebarMenuButton
                                 size="lg"
-                                className="w-full flex items-center gap-3 px-3 h-14 hover:bg-background/60 rounded-xl transition-all cursor-pointer"
+                                className="w-full flex items-center gap-3 px-3 h-auto py-3 hover:bg-background/60 rounded-xl transition-all cursor-pointer"
                             >
-                                <Avatar className="h-8 w-8 rounded-full shrink-0">
+                                <Avatar className="h-9 w-9 rounded-full shrink-0 border border-border/50">
                                     <AvatarImage src={userImage || ""} className="rounded-full" />
                                     <AvatarFallback className="rounded-full bg-primary text-primary-foreground text-xs font-bold">
                                         {initials}
                                     </AvatarFallback>
                                 </Avatar>
-                                <div className="flex flex-col items-start flex-1 min-w-0">
-                                    <span className="text-sm font-bold truncate w-full text-foreground tracking-tight">{userName}</span>
-                                    <span className="text-[11px] text-muted-foreground truncate w-full">{userEmail}</span>
+                                <div className="flex flex-col items-start flex-1 min-w-0 gap-1.5">
+                                    <span className="text-sm font-bold truncate text-foreground tracking-tight leading-none">{userName}</span>
+                                    {userRole && (
+                                        <CardBadge
+                                            variant="pill-solid"
+                                            color={roleStyle.color}
+                                            className="px-2.5 py-1 h-auto text-[10px] font-bold uppercase shrink-0 shadow-none"
+                                        >
+                                            {(t.roles.names as Record<string, string>)?.[userRole] || userRole}
+                                        </CardBadge>
+                                    )}
                                 </div>
                                 <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
                             </SidebarMenuButton>
@@ -392,11 +408,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     // Check if we are on a settings page or new client wizard (full-page layout without sidebar)
     const isSettings = pathname.startsWith("/dashboard/settings");
     const isNewClient = pathname.startsWith("/dashboard/clients/new");
-    const isClientSubPage = /\/dashboard\/clients\/[^/]+\/(edit|campaigns|templates|smtp)$/.test(pathname) ||
+    const isNewCampaign = pathname.startsWith("/dashboard/campaigns/new");
+    const isClientSubPage = /\/dashboard\/clients\/[^/]+(\/edit)?$/.test(pathname) ||
+        /\/dashboard\/clients\/[^/]+\/(campaigns|templates|smtp)(\/[^/]+)?$/.test(pathname) ||
         /\/dashboard\/clients\/[^/]+\/audiences(\/.*)?$/.test(pathname);
     const isPostalSubPage = pathname.startsWith("/dashboard/postal/config") || pathname.startsWith("/dashboard/postal/saved");
 
-    if (isEditor || isSettings || isNewClient || isClientSubPage || isPostalSubPage) {
+    if (isEditor || isSettings || isNewClient || isNewCampaign || isClientSubPage || isPostalSubPage) {
         return (
             <TabLoadingProvider>
                 <BreadcrumbProvider>

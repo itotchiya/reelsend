@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Users, Calendar } from "lucide-react";
+import { Users, Calendar, Check } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { CardBadge, CampaignBadge, NotUsedBadge, CountBadge } from "./card-badge";
 import { StandardCardActions } from "./card-actions";
@@ -114,14 +114,20 @@ export function SegmentCard({
     return (
         <div
             className={cn(
-                "group rounded-xl border bg-card overflow-hidden transition-all duration-200 cursor-pointer h-full flex flex-col",
+                "group rounded-xl border bg-card text-card-foreground transition-all duration-200",
                 borderClasses,
-                selected && "ring-2 ring-primary border-primary",
-                selectable && "hover:ring-2 hover:ring-primary/50",
+                "relative overflow-hidden",
+                selected && "ring-2 ring-primary border-primary border-solid",
+                // selectable && "hover:ring-2 hover:ring-primary/50", // Removed per user request
                 className
             )}
             onClick={handleClick}
         >
+            {selectable && selected && (
+                <div className="absolute top-3 right-3 z-10 bg-primary text-primary-foreground rounded-full p-1 shadow-md animate-in fade-in zoom-in duration-200">
+                    <Check className="h-3.5 w-3.5" />
+                </div>
+            )}
             {/* Card Header */}
             <div className="p-4 flex-1 flex flex-col">
                 {/* Title Row */}

@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { CampaignClient } from "./campaign-client";
 
@@ -35,6 +35,12 @@ export default async function CampaignPage({ params }: PageProps) {
 
     if (!campaign) {
         notFound();
+    }
+
+    // Redirect DRAFT campaigns to the creation wizard
+    if (campaign.status === "DRAFT") {
+        const step = campaign.currentStep || "basics";
+        redirect(`/dashboard/campaigns/new?id=${campaign.id}&step=${step}`);
     }
 
     // Fetch templates, audiences with segments, and SMTP profiles

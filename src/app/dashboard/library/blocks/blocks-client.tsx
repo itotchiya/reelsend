@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
-import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,10 +21,17 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, LayoutGrid, Loader2 } from "lucide-react";
+import { Plus, Search, LayoutGrid, Loader2, ArrowLeft } from "lucide-react";
 import { BlockCard, BlockCardData } from "@/components/ui-kit/block-card";
 import { useBreadcrumbs } from "@/lib/contexts/breadcrumb-context";
 import { toast } from "sonner";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
+import { DashboardBreadcrumb } from "@/components/dashboard/layout";
+import { LibraryTabs } from "@/components/ui-kit/motion-tabs/library-tabs";
+import { ListPaginationFooter } from "@/components/ui-kit/list-pagination-footer";
 
 interface Client {
     id: string;
@@ -86,7 +92,7 @@ export function BlocksClient({
 
     // Set breadcrumb
     useEffect(() => {
-        setOverride("blocks", t.blocks?.title || "Block Library");
+        setOverride("blocks", t.blocks?.title || "Blocks");
         return () => removeOverride("blocks");
     }, [setOverride, removeOverride, t]);
 
@@ -146,6 +152,16 @@ export function BlocksClient({
     const handlePageChange = (newPage: number) => {
         const params = new URLSearchParams(searchParams.toString());
         params.set("page", newPage.toString());
+        router.push(`/dashboard/library/blocks?${params.toString()}`);
+    };
+
+    // Handle page size change (if we want to support it, existing code didn't have UI for it but footer does)
+    const handlePageSizeChange = (size: number) => {
+        // Implementation would require backend support to read 'limit' param if not already supported
+        // For now just update URL or ignore if backend fixed
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("limit", size.toString()); // Assuming backend reads limit
+        params.set("page", "1");
         router.push(`/dashboard/library/blocks?${params.toString()}`);
     };
 
@@ -308,79 +324,104 @@ export function BlocksClient({
     ];
 
     return (
-        <>
-            <PageHeader
-                title={t.blocks?.title || "Block Library"}
-                description={t.blocks?.description || "Manage reusable email blocks"}
-                showBack={true}
-                onBack={() => router.push("/dashboard/library")}
-            >
-                <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    {t.blocks?.createBlock || "Create Block"}
-                </Button>
-            </PageHeader>
-
-            <PageContent>
-                {/* Filters */}
-                <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder={t.blocks?.searchPlaceholder || "Search blocks..."}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9"
-                        />
-                    </div>
-                    <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-                        <SelectTrigger className="w-full sm:w-48">
-                            <SelectValue placeholder={t.blocks?.filterByCategory || "Category"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">{t.blocks?.allCategories || "All Categories"}</SelectItem>
-                            {categoryOptions.map((cat) => (
-                                <SelectItem key={cat.value} value={cat.value}>
-                                    {cat.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Select value={selectedClientId || "all"} onValueChange={handleClientChange}>
-                        <SelectTrigger className="w-full sm:w-48">
-                            <SelectValue placeholder={t.blocks?.filterByClient || "Client"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">{t.blocks?.allClients || "All Clients"}</SelectItem>
-                            <SelectItem value="global">{t.blocks?.globalBlock || "Global"}</SelectItem>
-                            {filters.clients.map((client) => (
-                                <SelectItem key={client.id} value={client.id}>
-                                    {client.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+        <div className="h-dvh flex flex-col bg-background">
+            <header className="relative shrink-0 flex items-center justify-between px-6 h-16 border-b bg-background">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" asChild className="-ml-2">
+                        <Link href="/dashboard">
+                            <ArrowLeft className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <DashboardBreadcrumb />
                 </div>
 
-                {/* Blocks Grid */}
-                {blocks.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                        <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                            <LayoutGrid className="h-8 w-8 text-muted-foreground" />
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:block">
+                    <LibraryTabs />
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <LanguagePickerDialog />
+                    <ThemeToggle />
+                </div>
+            </header>
+
+            <main className="flex-1 flex flex-col overflow-y-auto">
+                <div className={cn(
+                    "p-6 md:p-12 space-y-6 flex flex-col",
+                    blocks.length === 0 ? "flex-1 justify-center" : ""
+                )}>
+                    {/* Header Controls */}
+                    <div className="flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center">
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight">{t.blocks?.title || "Blocks"}</h1>
+                            <p className="text-muted-foreground">
+                                {t.blocks?.description || "Manage reusable email blocks"}
+                            </p>
                         </div>
-                        <h3 className="text-lg font-semibold mb-2">
-                            {t.blocks?.noBlocks || "No blocks yet"}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-                            {t.blocks?.createFirst || "Create your first reusable block to use in your email templates."}
-                        </p>
                         <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
                             <Plus className="h-4 w-4" />
                             {t.blocks?.createBlock || "Create Block"}
                         </Button>
                     </div>
-                ) : (
-                    <>
+
+                    {/* Filters */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder={t.blocks?.searchPlaceholder || "Search blocks..."}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-9"
+                            />
+                        </div>
+                        <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+                            <SelectTrigger className="w-full sm:w-48">
+                                <SelectValue placeholder={t.blocks?.filterByCategory || "Category"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">{t.blocks?.allCategories || "All Categories"}</SelectItem>
+                                {categoryOptions.map((cat) => (
+                                    <SelectItem key={cat.value} value={cat.value}>
+                                        {cat.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Select value={selectedClientId || "all"} onValueChange={handleClientChange}>
+                            <SelectTrigger className="w-full sm:w-48">
+                                <SelectValue placeholder={t.blocks?.filterByClient || "Client"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">{t.blocks?.allClients || "All Clients"}</SelectItem>
+                                <SelectItem value="global">{t.blocks?.globalBlock || "Global"}</SelectItem>
+                                {filters.clients.map((client) => (
+                                    <SelectItem key={client.id} value={client.id}>
+                                        {client.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {/* Blocks Grid */}
+                    {blocks.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 text-center">
+                            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                                <LayoutGrid className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                            <h3 className="text-lg font-semibold mb-2">
+                                {t.blocks?.noBlocks || "No blocks yet"}
+                            </h3>
+                            <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+                                {t.blocks?.createFirst || "Create your first reusable block to use in your email templates."}
+                            </p>
+                            <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
+                                <Plus className="h-4 w-4" />
+                                {t.blocks?.createBlock || "Create Block"}
+                            </Button>
+                        </div>
+                    ) : (
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                             {blocks.map((block) => (
                                 <BlockCard
@@ -393,34 +434,18 @@ export function BlocksClient({
                                 />
                             ))}
                         </div>
+                    )}
+                </div>
+            </main>
 
-                        {/* Pagination */}
-                        {pagination.totalPages > 1 && (
-                            <div className="flex items-center justify-center gap-2 mt-8">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handlePageChange(pagination.page - 1)}
-                                    disabled={pagination.page === 1}
-                                >
-                                    {t.common?.back || "Previous"}
-                                </Button>
-                                <span className="text-sm text-muted-foreground px-4">
-                                    {t.audiences?.page || "Page"} {pagination.page} / {pagination.totalPages}
-                                </span>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handlePageChange(pagination.page + 1)}
-                                    disabled={pagination.page === pagination.totalPages}
-                                >
-                                    {t.common?.next || "Next"}
-                                </Button>
-                            </div>
-                        )}
-                    </>
-                )}
-            </PageContent>
+            <ListPaginationFooter
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                totalItems={pagination.total}
+                pageSize={pagination.limit}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+            />
 
             {/* Create Block Dialog */}
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
@@ -544,6 +569,6 @@ export function BlocksClient({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </>
+        </div>
     );
 }

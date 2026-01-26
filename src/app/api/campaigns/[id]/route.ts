@@ -13,7 +13,11 @@ const updateCampaignSchema = z.object({
     fromEmail: z.string().optional(),
     templateId: z.string().optional().nullable(),
     audienceId: z.string().optional().nullable(),
+    segmentId: z.string().optional().nullable(),
+    smtpProfileId: z.string().optional().nullable(),
+    scheduledAt: z.string().optional().nullable(),
     status: z.enum(["DRAFT", "SCHEDULED", "SENDING", "COMPLETED", "FAILED", "CANCELLED"]).optional(),
+    currentStep: z.string().optional(),
 });
 
 type Context = { params: Promise<{ id: string }> };
@@ -33,10 +37,21 @@ export async function GET(req: NextRequest, { params }: Context) {
                 audience: {
                     include: {
                         _count: {
+                            select: { contacts: true, segments: true },
+                        },
+                    },
+                },
+                segment: {
+                    include: {
+                        createdBy: {
+                            select: { id: true, name: true, email: true }
+                        },
+                        _count: {
                             select: { contacts: true },
                         },
                     },
                 },
+                smtpProfile: true,
                 analytics: true,
             },
         });
@@ -64,7 +79,7 @@ export async function PATCH(req: NextRequest, { params }: Context) {
             return new NextResponse(body.error.message, { status: 400 });
         }
 
-        const { templateId, audienceId, ...rest } = body.data;
+        const { templateId, audienceId, segmentId, smtpProfileId, scheduledAt, ...rest } = body.data;
 
         // Verify campaign exists
         const existingCampaign = await db.campaign.findUnique({
@@ -84,6 +99,18 @@ export async function PATCH(req: NextRequest, { params }: Context) {
 
         if (audienceId !== undefined) {
             data.audience = audienceId ? { connect: { id: audienceId } } : { disconnect: true };
+        }
+
+        if (segmentId !== undefined) {
+            data.segment = segmentId ? { connect: { id: segmentId } } : { disconnect: true };
+        }
+
+        if (smtpProfileId !== undefined) {
+            data.smtpProfile = smtpProfileId ? { connect: { id: smtpProfileId } } : { disconnect: true };
+        }
+
+        if (scheduledAt !== undefined) {
+            data.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
         }
 
         const campaign = await db.campaign.update({

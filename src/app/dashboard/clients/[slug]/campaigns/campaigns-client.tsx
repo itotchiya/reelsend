@@ -23,8 +23,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
 
 import { ClientTabs } from "@/components/ui-kit/motion-tabs/client-tabs";
-import { useTabLoading } from "@/lib/contexts/tab-loading-context";
-import { ClientContentSkeleton } from "@/components/skeletons/client-content-skeleton";
+
 
 interface Campaign {
     id: string;
@@ -74,7 +73,7 @@ export function CampaignsClient({
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deletingCampaign, setDeletingCampaign] = useState<Campaign | null>(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
-    const { isLoading } = useTabLoading();
+
 
     useEffect(() => {
         setOverride(client.slug, client.name);
@@ -270,7 +269,7 @@ export function CampaignsClient({
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)} disabled={isLoading}>
+                    <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)}>
                         <Plus className="h-4 w-4" />
                         <span className="hidden sm:inline">{t.campaigns?.createCampaign || "Create Campaign"}</span>
                     </Button>
@@ -279,70 +278,66 @@ export function CampaignsClient({
                 </div>
             </header>
 
-            {isLoading ? (
-                <ClientContentSkeleton />
-            ) : (
-                <>
-                    <main className="flex-1 flex flex-col overflow-y-auto">
-                        <div className={cn(
-                            "p-6 md:p-12 space-y-6 flex flex-col",
-                            campaigns.length === 0 ? "flex-1 justify-center" : ""
-                        )}>
-                            {campaigns.length > 0 && (
-                                <>
-                                    <div>
-                                        <h1 className="text-2xl font-bold tracking-tight">{t.campaigns?.title || "Campaigns"}</h1>
-                                        <p className="text-muted-foreground">{t.campaigns?.description || "Manage your email campaigns."}</p>
-                                    </div>
 
-                                    <FilterBar
-                                        searchValue={searchValue}
-                                        onSearchChange={handleSearch}
-                                        searchPlaceholder={t.campaigns?.searchPlaceholder || "Search campaigns..."}
-                                        filters={filters}
-                                        filterValues={{ status: statusFilter }}
-                                        onFilterChange={handleFilterChange}
-                                        onClearFilters={handleClearFilters}
-                                    />
-                                </>
-                            )}
+            <main className="flex-1 flex flex-col overflow-y-auto">
+                <div className={cn(
+                    "p-6 md:p-12 space-y-6 flex flex-col",
+                    campaigns.length === 0 ? "flex-1 justify-center" : ""
+                )}>
+                    {campaigns.length > 0 && (
+                        <>
+                            <div>
+                                <h1 className="text-2xl font-bold tracking-tight">{t.campaigns?.title || "Campaigns"}</h1>
+                                <p className="text-muted-foreground">{t.campaigns?.description || "Manage your email campaigns."}</p>
+                            </div>
 
-                            {campaigns.length > 0 ? (
-                                <DataTable
-                                    data={campaigns}
-                                    columns={columns}
-                                    currentPage={currentPage}
-                                    totalItems={totalCount}
-                                    pageSize={pageSize}
-                                    pageSizeOptions={[10, 20, 30, 40, 50]}
-                                    emptyMessage={t.campaigns?.noCampaigns || "No campaigns found"}
-                                    emptyIcon={<Mail className="h-10 w-10 text-muted-foreground/40" />}
-                                />
-                            ) : (
-                                <div className="flex flex-col items-center justify-center">
-                                    <InteractiveDashedCard
-                                        title={t.campaigns?.noCampaigns || "No Campaigns"}
-                                        description={t.campaigns?.noCampaignsDescription || "Create your first campaign to start reaching your audience."}
-                                        actionTitle={t.campaigns?.createCampaign || "Create Campaign"}
-                                        icon={Mail}
-                                        color="blue"
-                                        onClick={() => setIsCreateDialogOpen(true)}
-                                    />
-                                </div>
-                            )}
+                            <FilterBar
+                                searchValue={searchValue}
+                                onSearchChange={handleSearch}
+                                searchPlaceholder={t.campaigns?.searchPlaceholder || "Search campaigns..."}
+                                filters={filters}
+                                filterValues={{ status: statusFilter }}
+                                onFilterChange={handleFilterChange}
+                                onClearFilters={handleClearFilters}
+                            />
+                        </>
+                    )}
+
+                    {campaigns.length > 0 ? (
+                        <DataTable
+                            data={campaigns}
+                            columns={columns}
+                            currentPage={currentPage}
+                            totalItems={totalCount}
+                            pageSize={pageSize}
+                            pageSizeOptions={[10, 20, 30, 40, 50]}
+                            emptyMessage={t.campaigns?.noCampaigns || "No campaigns found"}
+                            emptyIcon={<Mail className="h-10 w-10 text-muted-foreground/40" />}
+                        />
+                    ) : (
+                        <div className="flex flex-col items-center justify-center">
+                            <InteractiveDashedCard
+                                title={t.campaigns?.noCampaigns || "No Campaigns"}
+                                description={t.campaigns?.noCampaignsDescription || "Create your first campaign to start reaching your audience."}
+                                actionTitle={t.campaigns?.createCampaign || "Create Campaign"}
+                                icon={Mail}
+                                color="blue"
+                                onClick={() => setIsCreateDialogOpen(true)}
+                            />
                         </div>
-                    </main>
+                    )}
+                </div>
+            </main>
 
-                    <ListPaginationFooter
-                        currentPage={currentPage}
-                        totalPages={Math.ceil(totalCount / pageSize)}
-                        totalItems={totalCount}
-                        pageSize={pageSize}
-                        onPageChange={handlePageChange}
-                        onPageSizeChange={handlePageSizeChange}
-                    />
-                </>
-            )}
+            <ListPaginationFooter
+                currentPage={currentPage}
+                totalPages={Math.ceil(totalCount / pageSize)}
+                totalItems={totalCount}
+                pageSize={pageSize}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+            />
+
 
             <CreateCampaignDialog
                 open={isCreateDialogOpen}

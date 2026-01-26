@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Plus, Search, X, Star } from "lucide-react";
+import { Plus, Search, X, Star, ArrowLeft, LayoutTemplate } from "lucide-react";
 import { TemplateCard, TemplateCardData } from "@/components/ui-kit/template-card";
 import { PageHeader, PageContent } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,13 @@ import { CreateTemplateDialog } from "@/components/dashboard/create-entity-dialo
 import { DeleteConfirmDialog } from "@/components/dashboard/delete-confirm-dialog";
 import { ActivityHistoryDialog } from "@/components/dashboard/activity-history-dialog";
 import { toast } from "sonner";
-import { LayoutTemplate } from "lucide-react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
+import { DashboardBreadcrumb } from "@/components/dashboard/layout";
+import { LibraryTabs } from "@/components/ui-kit/motion-tabs/library-tabs";
+import { ListPaginationFooter } from "@/components/ui-kit/list-pagination-footer";
 
 interface TemplatesClientProps {
     initialTemplates: TemplateCardData[];
@@ -159,31 +165,213 @@ export function TemplatesClient({ initialTemplates, clients = [], mode = "standa
         }
     };
 
+    const Dialogs = () => (
+        <>
+            <CreateTemplateDialog
+                open={createDialogOpen}
+                onOpenChange={setCreateDialogOpen}
+                onTemplateCreated={() => {
+                    setCreateDialogOpen(false);
+                    router.refresh();
+                }}
+            />
+
+            <DeleteConfirmDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                onConfirm={handleDelete}
+                loading={deleteLoading}
+                title="Delete Template"
+                description={`Are you sure you want to delete "${deletingTemplate?.name}"? This action cannot be undone.`}
+            />
+
+            {activityTemplate && (
+                <ActivityHistoryDialog
+                    open={activityDialogOpen}
+                    onOpenChange={setActivityDialogOpen}
+                    templateId={typeof activityTemplate.id === 'object' ? (activityTemplate.id as any)?.id || String(activityTemplate.id) : activityTemplate.id}
+                    templateName={activityTemplate.name}
+                />
+            )}
+
+            <CreateTemplateDialog
+                open={editDialogOpen}
+                onOpenChange={(open) => {
+                    setEditDialogOpen(open);
+                    if (!open) setEditingTemplate(null);
+                }}
+                initialData={editingTemplate ? {
+                    id: editingTemplate.id,
+                    name: editingTemplate.name,
+                    description: editingTemplate.description,
+                    client: editingTemplate.client ? { id: editingTemplate.client.id } : { id: "" },
+                } : null}
+                onTemplateCreated={() => {
+                    setEditDialogOpen(false);
+                    setEditingTemplate(null);
+                    router.refresh();
+                }}
+            />
+        </>
+    );
+
+    if (mode === "library") {
+        return (
+            <div className="h-dvh flex flex-col bg-background">
+                <header className="relative shrink-0 flex items-center justify-between px-6 h-16 border-b bg-background">
+                    <div className="flex items-center gap-4">
+                        <Button variant="ghost" size="icon" asChild className="-ml-2">
+                            <Link href="/dashboard">
+                                <ArrowLeft className="h-4 w-4" />
+                            </Link>
+                        </Button>
+                        <DashboardBreadcrumb />
+                    </div>
+
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:block">
+                        <LibraryTabs />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <LanguagePickerDialog />
+                        <ThemeToggle />
+                    </div>
+                </header>
+
+                <main className="flex-1 flex flex-col overflow-y-auto">
+                    <div className={cn(
+                        "p-6 md:p-12 space-y-6 flex flex-col",
+                        paginatedTemplates.length === 0 ? "flex-1 justify-center" : ""
+                    )}>
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight">Blueprints Library</h1>
+                            <p className="text-muted-foreground">Manage your saved blueprints</p>
+                        </div>
+
+                        {/* Filters */}
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search blueprints..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="pl-9"
+                                />
+                            </div>
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                <SelectTrigger className="w-full sm:w-[160px]">
+                                    <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Status</SelectItem>
+                                    <SelectItem value="ready">Ready</SelectItem>
+                                    <SelectItem value="draft">Draft</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            {/* Client filter if needed, though lib usually implies no client context or 'all' */}
+                            <Select value={clientFilter} onValueChange={setClientFilter}>
+                                <SelectTrigger className="w-full sm:w-[180px]">
+                                    <SelectValue placeholder="Client" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Clients</SelectItem>
+                                    {clients.map((client) => (
+                                        <SelectItem key={client.id} value={client.id}>
+                                            {client.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            {hasActiveFilters && (
+                                <Button variant="ghost" size="icon" onClick={clearFilters}>
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            )}
+                        </div>
+
+                        {/* Template Grid */}
+                        {paginatedTemplates.length > 0 ? (
+                            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                                {paginatedTemplates.map((template) => (
+                                    <TemplateCard
+                                        key={template.id}
+                                        template={template}
+                                        isLibrary={true}
+                                        onOpen={() => handleOpen(template)}
+                                        onEdit={() => {
+                                            setEditingTemplate(template);
+                                            setEditDialogOpen(true);
+                                        }}
+                                        onViewActivity={() => {
+                                            setActivityTemplate(template);
+                                            setActivityDialogOpen(true);
+                                        }}
+                                        onDelete={() => {
+                                            setDeletingTemplate(template);
+                                            setDeleteDialogOpen(true);
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-16 text-center">
+                                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                                    <LayoutTemplate className="h-8 w-8 text-muted-foreground" />
+                                </div>
+                                <h3 className="text-lg font-semibold mb-2">No blueprints found</h3>
+                                <p className="text-muted-foreground mb-4">
+                                    {hasActiveFilters
+                                        ? "Try adjusting your filters"
+                                        : "Blueprints saved from the editor will appear here"}
+                                </p>
+                                {hasActiveFilters && (
+                                    <Button variant="outline" onClick={clearFilters}>
+                                        Clear Filters
+                                    </Button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </main>
+
+                <ListPaginationFooter
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={filteredTemplates.length}
+                    pageSize={pageSize}
+                    onPageChange={setCurrentPage}
+                    onPageSizeChange={setPageSize}
+                />
+
+                <Dialogs />
+            </div>
+        );
+    }
+
+    // Standard Mode Render
     return (
         <>
             <PageHeader
-                title={mode === "library" ? "Blueprints Library" : "Templates"}
-                description={mode === "library" ? "Manage your saved blueprints" : "Manage all your email templates across clients"}
-                showBack={mode === "library"}
-                onBack={() => router.push("/dashboard/library")}
+                title="Templates"
+                description="Manage all your email templates across clients"
                 action={
-                    mode === "standard" ? (
-                        <div className="flex items-center gap-2">
-                            <Button
-                                onClick={handleCreateDemoTemplate}
-                                disabled={creatingDemo}
-                                variant="outline"
-                                className="gap-2 bg-amber-400/10 text-amber-600 border-amber-400/30 hover:bg-amber-400/20 hover:text-amber-700 dark:text-amber-400 dark:border-amber-400/20 dark:hover:bg-amber-400/15"
-                            >
-                                <Star className="h-4 w-4" />
-                                <span className="hidden sm:inline">{creatingDemo ? 'Creating...' : 'Demo Template'}</span>
-                            </Button>
-                            <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
-                                <Plus className="h-4 w-4" />
-                                <span className="hidden sm:inline">New Template</span>
-                            </Button>
-                        </div>
-                    ) : null
+                    <div className="flex items-center gap-2">
+                        <Button
+                            onClick={handleCreateDemoTemplate}
+                            disabled={creatingDemo}
+                            variant="outline"
+                            className="gap-2 bg-amber-400/10 text-amber-600 border-amber-400/30 hover:bg-amber-400/20 hover:text-amber-700 dark:text-amber-400 dark:border-amber-400/20 dark:hover:bg-amber-400/15"
+                        >
+                            <Star className="h-4 w-4" />
+                            <span className="hidden sm:inline">{creatingDemo ? 'Creating...' : 'Demo Template'}</span>
+                        </Button>
+                        <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
+                            <Plus className="h-4 w-4" />
+                            <span className="hidden sm:inline">New Template</span>
+                        </Button>
+                    </div>
                 }
             />
             <PageContent>
@@ -241,7 +429,7 @@ export function TemplatesClient({ initialTemplates, clients = [], mode = "standa
                                 <TemplateCard
                                     key={template.id}
                                     template={template}
-                                    isLibrary={mode === "library"}
+                                    isLibrary={false}
                                     onOpen={() => handleOpen(template)}
                                     onEdit={() => {
                                         setEditingTemplate(template);
@@ -274,12 +462,10 @@ export function TemplatesClient({ initialTemplates, clients = [], mode = "standa
                                     Clear Filters
                                 </Button>
                             ) : (
-                                mode === "standard" && (
-                                    <Button onClick={() => setCreateDialogOpen(true)}>
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        New Template
-                                    </Button>
-                                )
+                                <Button onClick={() => setCreateDialogOpen(true)}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    New Template
+                                </Button>
                             )}
                         </div>
                     )}
@@ -296,55 +482,7 @@ export function TemplatesClient({ initialTemplates, clients = [], mode = "standa
                 </div>
             </PageContent>
 
-            {/* Create Dialog */}
-            <CreateTemplateDialog
-                open={createDialogOpen}
-                onOpenChange={setCreateDialogOpen}
-                onTemplateCreated={() => {
-                    setCreateDialogOpen(false);
-                    router.refresh();
-                }}
-            />
-
-            {/* Delete Dialog */}
-            <DeleteConfirmDialog
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
-                onConfirm={handleDelete}
-                loading={deleteLoading}
-                title="Delete Template"
-                description={`Are you sure you want to delete "${deletingTemplate?.name}"? This action cannot be undone.`}
-            />
-
-            {/* Activity History Dialog */}
-            {activityTemplate && (
-                <ActivityHistoryDialog
-                    open={activityDialogOpen}
-                    onOpenChange={setActivityDialogOpen}
-                    templateId={typeof activityTemplate.id === 'object' ? (activityTemplate.id as any)?.id || String(activityTemplate.id) : activityTemplate.id}
-                    templateName={activityTemplate.name}
-                />
-            )}
-
-            {/* Edit Dialog */}
-            <CreateTemplateDialog
-                open={editDialogOpen}
-                onOpenChange={(open) => {
-                    setEditDialogOpen(open);
-                    if (!open) setEditingTemplate(null);
-                }}
-                initialData={editingTemplate ? {
-                    id: editingTemplate.id,
-                    name: editingTemplate.name,
-                    description: editingTemplate.description,
-                    client: editingTemplate.client ? { id: editingTemplate.client.id } : { id: "" },
-                } : null}
-                onTemplateCreated={() => {
-                    setEditDialogOpen(false);
-                    setEditingTemplate(null);
-                    router.refresh();
-                }}
-            />
+            <Dialogs />
         </>
     );
 }

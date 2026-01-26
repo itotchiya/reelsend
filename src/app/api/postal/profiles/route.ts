@@ -3,14 +3,20 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 // GET /api/postal/profiles - Get all saved SMTP profiles
-export async function GET() {
+export async function GET(req: Request) {
     try {
         const session = await auth();
         if (!session?.user) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        const { searchParams } = new URL(req.url);
+        const clientId = searchParams.get("clientId");
+
         const profiles = await db.smtpProfile.findMany({
+            where: {
+                ...(clientId && { clientId })
+            },
             orderBy: { createdAt: "desc" },
             include: {
                 client: {

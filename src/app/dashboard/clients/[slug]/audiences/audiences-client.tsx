@@ -22,8 +22,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguagePickerDialog } from "@/components/ui-kit/language-picker-dialog";
 
 import { ClientTabs } from "@/components/ui-kit/motion-tabs";
-import { useTabLoading } from "@/lib/contexts/tab-loading-context";
-import { ClientContentSkeleton } from "@/components/skeletons/client-content-skeleton";
+
 
 interface Audience {
     id: string;
@@ -59,7 +58,7 @@ export function AudiencesClient({
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deletingAudience, setDeletingAudience] = useState<Audience | null>(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
-    const { isLoading } = useTabLoading();
+
 
     useEffect(() => {
         setOverride(client.slug, client.name);
@@ -231,7 +230,7 @@ export function AudiencesClient({
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)} disabled={isLoading}>
+                    <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)}>
                         <Plus className="h-4 w-4" />
                         <span className="hidden sm:inline">{t.audiences?.createAudience || "Create Audience"}</span>
                     </Button>
@@ -240,67 +239,63 @@ export function AudiencesClient({
                 </div>
             </header>
 
-            {isLoading ? (
-                <ClientContentSkeleton />
-            ) : (
-                <>
-                    <main className="flex-1 flex flex-col overflow-y-auto">
-                        <div className={cn(
-                            "p-6 md:p-12 space-y-6 flex flex-col",
-                            audiences.length === 0 ? "flex-1 justify-center" : ""
-                        )}>
-                            {audiences.length > 0 && (
-                                <>
-                                    <div>
-                                        <h1 className="text-2xl font-bold tracking-tight">{t.audiences?.title || "Audiences"}</h1>
-                                        <p className="text-muted-foreground">{t.audiences?.description || "Manage your contacts and audiences."}</p>
-                                    </div>
 
-                                    <FilterBar
-                                        searchValue={searchValue}
-                                        onSearchChange={handleSearch}
-                                        searchPlaceholder={t.audiences?.searchPlaceholder || "Search audiences..."}
-                                        onClearFilters={handleClearFilters}
-                                    />
-                                </>
-                            )}
+            <main className="flex-1 flex flex-col overflow-y-auto">
+                <div className={cn(
+                    "p-6 md:p-12 space-y-6 flex flex-col",
+                    audiences.length === 0 ? "flex-1 justify-center" : ""
+                )}>
+                    {audiences.length > 0 && (
+                        <>
+                            <div>
+                                <h1 className="text-2xl font-bold tracking-tight">{t.audiences?.title || "Audiences"}</h1>
+                                <p className="text-muted-foreground">{t.audiences?.description || "Manage your contacts and audiences."}</p>
+                            </div>
 
-                            {audiences.length > 0 ? (
-                                <DataTable
-                                    data={audiences}
-                                    columns={columns}
-                                    currentPage={currentPage}
-                                    totalItems={totalCount}
-                                    pageSize={pageSize}
-                                    pageSizeOptions={[10, 20, 30, 40, 50]}
-                                    emptyMessage={t.audiences?.noAudiences || "No audiences found"}
-                                    emptyIcon={<Users className="h-10 w-10 text-muted-foreground/40" />}
-                                />
-                            ) : (
-                                <div className="flex flex-col items-center justify-center">
-                                    <InteractiveDashedCard
-                                        title={t.audiences?.noAudiences || "No Audiences"}
-                                        description={t.audiences?.noAudiencesDescription || "Create your first audience to start managing your contacts."}
-                                        actionTitle={t.audiences?.createAudience || "Create Audience"}
-                                        icon={Users}
-                                        color="purple"
-                                        onClick={() => setIsCreateDialogOpen(true)}
-                                    />
-                                </div>
-                            )}
+                            <FilterBar
+                                searchValue={searchValue}
+                                onSearchChange={handleSearch}
+                                searchPlaceholder={t.audiences?.searchPlaceholder || "Search audiences..."}
+                                onClearFilters={handleClearFilters}
+                            />
+                        </>
+                    )}
+
+                    {audiences.length > 0 ? (
+                        <DataTable
+                            data={audiences}
+                            columns={columns}
+                            currentPage={currentPage}
+                            totalItems={totalCount}
+                            pageSize={pageSize}
+                            pageSizeOptions={[10, 20, 30, 40, 50]}
+                            emptyMessage={t.audiences?.noAudiences || "No audiences found"}
+                            emptyIcon={<Users className="h-10 w-10 text-muted-foreground/40" />}
+                        />
+                    ) : (
+                        <div className="flex flex-col items-center justify-center">
+                            <InteractiveDashedCard
+                                title={t.audiences?.noAudiences || "No Audiences"}
+                                description={t.audiences?.noAudiencesDescription || "Create your first audience to start managing your contacts."}
+                                actionTitle={t.audiences?.createAudience || "Create Audience"}
+                                icon={Users}
+                                color="purple"
+                                onClick={() => setIsCreateDialogOpen(true)}
+                            />
                         </div>
-                    </main>
+                    )}
+                </div>
+            </main>
 
-                    <ListPaginationFooter
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        totalItems={totalCount}
-                        pageSize={pageSize}
-                        onPageChange={handlePageChange}
-                        onPageSizeChange={handlePageSizeChange}
-                    />
-                </>
-            )}
+            <ListPaginationFooter
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalCount}
+                pageSize={pageSize}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+            />
+
 
             <CreateAudienceDialog
                 open={isCreateDialogOpen}

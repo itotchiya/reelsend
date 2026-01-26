@@ -26,6 +26,7 @@
         "success": "Success",
         "noResults": "No results found",
         "added": "Added",
+        "signingOut": "Signing out...",
         "share": "Share",
         "name": "Name",
         "description": "Description",
@@ -191,35 +192,35 @@
             "deleting": "Deleting...",
             "deleteRoleTitle": "Delete Role",
             "deleteRoleConfirm": "Are you sure you want to delete the role",
-            "deleteRoleWarning": "This action cannot be undone. Users with this role will need to be reassigned.",
-            "wizard": {
-                "steps": {
-                    "name": "Name",
-                    "appearance": "Appearance",
-                    "permissions": "Permissions"
-                },
-                "step1": {
-                    "title": "Create New Role",
-                    "description": "Enter a name for your new role",
-                    "label": "Role Name",
-                    "placeholder": "e.g., Editor, Viewer, Manager",
-                    "preview": "Will be displayed as:"
-                },
-                "step2": {
-                    "title": "Choose Appearance",
-                    "description": "Select an icon and color for this role",
-                    "color": "Color",
-                    "icon": "Icon"
-                },
-                "step3": {
-                    "title": "Set Permissions",
-                    "description": "Choose what this role can do",
-                    "selected": "permissions selected"
-                },
-                "createSuccess": "Role created successfully",
-                "createError": "Failed to create role",
-                "createBtn": "Create Role"
-            }
+            "deleteRoleWarning": "This action cannot be undone. Users with this role will need to be reassigned."
+        },
+        "wizard": {
+            "steps": {
+                "name": "Name",
+                "appearance": "Appearance",
+                "permissions": "Permissions"
+            },
+            "step1": {
+                "title": "Create New Role",
+                "description": "Enter a name for your new role",
+                "label": "Role Name",
+                "placeholder": "e.g., Editor, Viewer, Manager",
+                "preview": "Will be displayed as:"
+            },
+            "step2": {
+                "title": "Choose Appearance",
+                "description": "Select an icon and color for this role",
+                "color": "Color",
+                "icon": "Icon"
+            },
+            "step3": {
+                "title": "Set Permissions",
+                "description": "Choose what this role can do",
+                "selected": "permissions selected"
+            },
+            "createSuccess": "Role created successfully",
+            "createError": "Failed to create role",
+            "createBtn": "Create Role"
         }
     },
     "auth": {
@@ -228,7 +229,9 @@
         "password": "Password",
         "signIn": "Sign In",
         "signingIn": "Signing in...",
-        "invalidCredentials": "Invalid email or password"
+        "invalidCredentials": "Invalid email or password",
+        "sessionExpiredTitle": "Session Expired",
+        "reloginRequired": "Please log in again to continue."
     },
     "setup": {
         "welcome": "Welcome to Reelsend",
@@ -650,7 +653,112 @@
         "noCampaigns": "No campaigns found",
         "noCampaignsDesc": "Create your first campaign to start sending emails.",
         "noCampaignsDescription": "Start by creating your first campaign to reach your audience.",
-        "deleteCampaign": "Delete Campaign"
+        "deleteCampaign": "Delete Campaign",
+        "wizard": {
+            "steps": {
+                "basicInfo": "Basic Info",
+                "recipients": "Recipients",
+                "template": "Template",
+                "smtp": "SMTP",
+                "setup": "Setup",
+                "schedule": "Schedule",
+                "review": "Review"
+            },
+            "basicInfo": {
+                "title": "Campaign Details",
+                "description": "Give your campaign a name and select the client",
+                "name": "Campaign Name",
+                "namePlaceholder": "e.g., Summer Sale Newsletter",
+                "descriptionLabel": "Description",
+                "descriptionPlaceholder": "Optional description for internal reference...",
+                "client": "Client"
+            },
+            "recipients": {
+                "title": "Choose Recipients",
+                "description": "Select the audience and optional segment for this campaign",
+                "audience": "Audience",
+                "segment": "Segment"
+            },
+            "template": {
+                "title": "Select Template",
+                "description": "Choose the email template for this campaign"
+            },
+            "smtp": {
+                "title": "Select SMTP Profile",
+                "description": "Choose which mail server to send from"
+            },
+            "setup": {
+                "title": "Email Setup",
+                "description": "Configure your email subject and sender details",
+                "subject": "Subject Line",
+                "subjectPlaceholder": "e.g., Don't miss our summer sale!",
+                "previewText": "Preview Text",
+                "previewTextPlaceholder": "Brief text shown in inbox...",
+                "senderName": "Sender Name",
+                "senderNamePlaceholder": "e.g., John from Acme",
+                "replyTo": "Reply-To Email",
+                "replyToPlaceholder": "replies@example.com",
+                "sendingFrom": "Sending from"
+            },
+            "schedule": {
+                "title": "Schedule Campaign",
+                "description": "Choose when to send your campaign",
+                "immediate": "Send Immediately",
+                "immediateDesc": "Start sending as soon as you launch",
+                "later": "Schedule for Later",
+                "laterDesc": "Pick a specific date and time",
+                "date": "Date",
+                "time": "Time"
+            },
+            "review": {
+                "title": "Review & Launch",
+                "description": "Double-check your campaign before launching",
+                "basicInfo": "Basic Info",
+                "recipients": "Recipients",
+                "template": "Template",
+                "smtp": "SMTP Profile",
+                "setup": "Email Setup",
+                "schedule": "Schedule",
+                "untitled": "Untitled Campaign",
+                "noDescription": "No description",
+                "notSelected": "Not selected",
+                "noAudience": "No audience selected",
+                "allContacts": "All Contacts (No Segment)",
+                "noTemplate": "No template selected",
+                "defaultMailer": "Default System Mailer",
+                "notSet": "Not set",
+                "sendingImmediately": "Sending Immediately",
+                "notScheduled": "Not scheduled"
+            },
+            "confirmDialog": {
+                "title": "Launch Campaign?",
+                "immediateDesc": "This campaign will start sending immediately to all recipients.",
+                "scheduledDesc": "This campaign will be scheduled to send at the specified time.",
+                "waiting": "Wait to Launch",
+                "launchNow": "Launch Now",
+                "scheduleCampaign": "Schedule Campaign"
+            },
+            "closeDialog": {
+                "title": "Save as Draft?",
+                "desc": "You have unsaved changes. Would you like to save this campaign as a draft?",
+                "discard": "Discard & Delete",
+                "save": "Save & Exit"
+            },
+            "sending": "Sending campaign...",
+            "errors": {
+                "createDraft": "Failed to create draft",
+                "loadDraft": "Failed to load draft",
+                "dispatch": "Failed to dispatch campaign",
+                "launch": "Failed to launch campaign"
+            },
+            "success": {
+                "launched": "Launched! {{count}} emails sent.",
+                "scheduled": "Campaign scheduled successfully!",
+                "discarded": "Draft discarded"
+            },
+            "launchButton": "Launch Campaign",
+            "finishLabel": "Launch Campaign"
+        }
     },
     "tables": {
         "number": "#",
